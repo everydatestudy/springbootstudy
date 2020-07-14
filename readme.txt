@@ -8,3 +8,5 @@ Git is very goods.`:
        <value>hdfs://localhost:9000</value>
    </property>
 </configuration>
+fdsafda凤飞飞
+发发发发刚刚
