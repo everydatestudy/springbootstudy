@@ -279,11 +279,41 @@ public class SpringApplication {
 		// 【2】给primarySources属性赋值，传入的primarySources其实就是SpringApplication.run(MainApplication.class, args);中的MainApplication.class
 		this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
 		// 【3】给webApplicationType属性赋值，根据classpath中存在哪种类型的类来确定是哪种应用类型
+		//如果是改项目，那就是SERVLET
 		this.webApplicationType = WebApplicationType.deduceFromClasspath();
 		// 【4】给initializers属性赋值，利用SpringBoot自定义的SPI从spring.factories中加载ApplicationContextInitializer接口的实现类并赋值给initializers属性
+		//对于当前来说,在spring-boot/META-INF/spring.factories中.org.springframework.context.ApplicationContextInitializer值如下:
+		//org.springframework.context.ApplicationContextInitializer=\
+		//org.springframework.boot.context.ConfigurationWarningsApplicationContextInitializer,\
+		//org.springframework.boot.context.ContextIdApplicationContextInitializer,\
+		//org.springframework.boot.context.config.DelegatingApplicationContextInitializer,\
+		//org.springframework.boot.context.embedded.ServerPortInfoApplicationContextInitializer
+//		逻辑如下:遍历传入的names,也就是之前通过SpringFactoriesLoader加载的类名.通过遍历,依次调用其构造器进行初始化.加入到instances.然后进行返回.
+//		对于当前场景来说:
+//		ConfigurationWarningsApplicationContextInitializer,DelegatingApplicationContextInitializer,ServerPortInfoApplicationContextInitializer初始化没有做任何事.
+//		ContextIdApplicationContextInitializer在初始化时.会获得spring boot的应用名.搜索路径如下:
+//		spring.application.name
+//		vcap.application.name
+//		spring.config.name
+//		如果都没有配置的话,返回application.
 		setInitializers((Collection) getSpringFactoriesInstances(
 				ApplicationContextInitializer.class));
 		// 【5】给listeners属性赋值，利用SpringBoot自定义的SPI从spring.factories中加载ApplicationListener接口的实现类并赋值给listeners属性
+		//设置SpringApplication#setListeners时,还是同样的套路.
+		//调用getSpringFactoriesInstances加载META-INF/spring.factories
+		//中配置的org.springframework.context.ApplicationListener.
+		//对于当前来说.加载的类如下:
+		//org.springframework.context.ApplicationListener=\
+		//org.springframework.boot.ClearCachesApplicationListener,\
+		//org.springframework.boot.builder.ParentContextCloserApplicationListener,\
+		//org.springframework.boot.context.FileEncodingApplicationListener,\
+		//org.springframework.boot.context.config.AnsiOutputApplicationListener,\
+		//org.springframework.boot.context.config.ConfigFileApplicationListener,\
+		//org.springframework.boot.context.config.DelegatingApplicationListener,\
+		//org.springframework.boot.liquibase.LiquibaseServiceLocatorApplicationListener,\
+		//org.springframework.boot.logging.ClasspathLoggingApplicationListener,\
+		//org.springframework.boot.logging.LoggingApplicationListener
+		//这些类在构造器中都没有做任何事.		
 		setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
 		// 【6】给mainApplicationClass属性赋值，即这里要推断哪个类调用了main函数，然后再赋值给mainApplicationClass属性，用于后面启动流程中打印一些日志。
 		this.mainApplicationClass = deduceMainApplicationClass();
@@ -327,9 +357,14 @@ public class SpringApplication {
 		configureHeadlessProperty();
 		// 【1】从spring.factories配置文件中加载到EventPublishingRunListener对象并赋值给SpringApplicationRunListeners
 		// EventPublishingRunListener对象主要用来发射SpringBoot启动过程中内置的一些生命周期事件，标志每个不同启动阶段
+		//对应当前场景来说,org.springframework.boot.SpringApplicationRunListener只有一个.如下:
+//		org.springframework.boot.SpringApplicationRunListener=\
+//				org.springframework.boot.context.event.EventPublishingRunListener
 		SpringApplicationRunListeners listeners = getRunListeners(args);
 		// 启动SpringApplicationRunListener的监听，表示SpringApplication开始启动。
 		// 》》》》》发射【ApplicationStartingEvent】事件
+		//由于只有一个,因此会调用EventPublishingRunListener的starting方法
+		//详细注释请点击{@link EventPublishingRunListener}
 		listeners.starting();
 		try {
 			// 创建ApplicationArguments对象，封装了args参数

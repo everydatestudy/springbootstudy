@@ -1,0 +1,27 @@
+package org.spring.boot.yanjiu;
+
+import org.springframework.util.StopWatch;
+
+public class StopWatchTest {
+
+	public static void main(String[] args) throws InterruptedException {
+		 StopWatch sw = new StopWatch("test");
+	     sw.start("task1");
+	     // do something
+	    Thread.sleep(100);
+	    sw.stop();
+	    sw.start("task2");
+	    // do something
+	    Thread.sleep(200);
+	    sw.stop();
+	    sw.start("task3");
+	    // do something
+	    Thread.sleep(2000);
+	    sw.stop();
+	    System.out.println("sw.prettyPrint()~~~~~~~~~~~~~~~~~");
+	    System.out.println(sw.prettyPrint());
+ 
+
+	}
+
+}

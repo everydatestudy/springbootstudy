@@ -32,10 +32,31 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.util.ErrorHandler;
 
 /**
- * {@link SpringApplicationRunListener} to publish {@link SpringApplicationEvent}s.
+ * 把所有的事件写在这里：因为spring的源码不能写注释， 初始化allListeners,
+ * listeners,listenerBeans,对于当前场景来说. listeners 中的元素如下:
+ * org.springframework.boot.context.config.ConfigFileApplicationListener,
+ * org.springframework.boot.context.config.AnsiOutputApplicationListener,
+ * org.springframework.boot.logging.LoggingApplicationListener,
+ * org.springframework.boot.logging.ClasspathLoggingApplicationListener,
+ * org.springframework.boot.autoconfigure.BackgroundPreinitializer,
+ * org.springframework.boot.context.config.DelegatingApplicationListener,
+ * org.springframework.boot.builder.ParentContextCloserApplicationListener,
+ * org.springframework.boot.ClearCachesApplicationListener,
+ * org.springframework.boot.context.FileEncodingApplicationListener,
+ * org.springframework.boot.liquibase.LiquibaseServiceLocatorApplicationListener
+ * 
+  * 对于当前场景ApplicationStartedEvent支持的listeners如下:
+ * org.springframework.boot.logging.LoggingApplicationListener,
+ * org.springframework.boot.autoconfigure.BackgroundPreinitializer,
+ * org.springframework.boot.context.config.DelegatingApplicationListener,
+ * org.springframework.boot.liquibase.LiquibaseServiceLocatorApplicationListener
+ * 
+ * 
+ * {@link SpringApplicationRunListener} to publish
+ * {@link SpringApplicationEvent}s.
  * <p>
- * Uses an internal {@link ApplicationEventMulticaster} for the events that are fired
- * before the context is actually refreshed.
+ * Uses an internal {@link ApplicationEventMulticaster} for the events that are
+ * fired before the context is actually refreshed.
  *
  * @author Phillip Webb
  * @author Stephane Nicoll
@@ -68,26 +89,29 @@ public class EventPublishingRunListener implements SpringApplicationRunListener,
 	public int getOrder() {
 		return 0;
 	}
+
 	// 》》》》》发射【ApplicationStartingEvent】事件
 	@Override
 	public void starting() {
 		// EventPublishingRunListener对象将发布ApplicationStartingEvent这件事情委托给了initialMulticaster对象
 		// 调用initialMulticaster的multicastEvent方法来发射ApplicationStartingEvent事件
-		this.initialMulticaster.multicastEvent(
-				new ApplicationStartingEvent(this.application, this.args));
+		this.initialMulticaster.multicastEvent(new ApplicationStartingEvent(this.application, this.args));
 	}
+
 	// 》》》》》发射【ApplicationEnvironmentPreparedEvent】事件
 	@Override
 	public void environmentPrepared(ConfigurableEnvironment environment) {
-		this.initialMulticaster.multicastEvent(new ApplicationEnvironmentPreparedEvent(
-				this.application, this.args, environment));
+		this.initialMulticaster
+				.multicastEvent(new ApplicationEnvironmentPreparedEvent(this.application, this.args, environment));
 	}
+
 	// 》》》》》发射【ApplicationContextInitializedEvent】事件
 	@Override
 	public void contextPrepared(ConfigurableApplicationContext context) {
-		this.initialMulticaster.multicastEvent(new ApplicationContextInitializedEvent(
-				this.application, this.args, context));
+		this.initialMulticaster
+				.multicastEvent(new ApplicationContextInitializedEvent(this.application, this.args, context));
 	}
+
 	// 》》》》》发射【ApplicationPreparedEvent】事件
 	@Override
 	public void contextLoaded(ConfigurableApplicationContext context) {
@@ -97,32 +121,30 @@ public class EventPublishingRunListener implements SpringApplicationRunListener,
 			}
 			context.addApplicationListener(listener);
 		}
-		this.initialMulticaster.multicastEvent(
-				new ApplicationPreparedEvent(this.application, this.args, context));
+		this.initialMulticaster.multicastEvent(new ApplicationPreparedEvent(this.application, this.args, context));
 	}
+
 	// 》》》》》发射【ApplicationStartedEvent】事件
 	@Override
 	public void started(ConfigurableApplicationContext context) {
-		context.publishEvent(
-				new ApplicationStartedEvent(this.application, this.args, context));
+		context.publishEvent(new ApplicationStartedEvent(this.application, this.args, context));
 	}
+
 	// 》》》》》发射【ApplicationReadyEvent】事件
 	@Override
 	public void running(ConfigurableApplicationContext context) {
-		context.publishEvent(
-				new ApplicationReadyEvent(this.application, this.args, context));
+		context.publishEvent(new ApplicationReadyEvent(this.application, this.args, context));
 	}
+
 	// 》》》》》发射【ApplicationFailedEvent】事件
 	@Override
 	public void failed(ConfigurableApplicationContext context, Throwable exception) {
-		ApplicationFailedEvent event = new ApplicationFailedEvent(this.application,
-				this.args, context, exception);
+		ApplicationFailedEvent event = new ApplicationFailedEvent(this.application, this.args, context, exception);
 		if (context != null && context.isActive()) {
 			// Listeners have been registered to the application context so we should
 			// use it at this point if we can
 			context.publishEvent(event);
-		}
-		else {
+		} else {
 			// An inactive context may not have a multicaster so we use our multicaster to
 			// call all of the context's listeners instead
 			if (context instanceof AbstractApplicationContext) {
