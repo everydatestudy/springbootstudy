@@ -45,7 +45,7 @@ import org.springframework.util.ErrorHandler;
  * org.springframework.boot.context.FileEncodingApplicationListener,
  * org.springframework.boot.liquibase.LiquibaseServiceLocatorApplicationListener
  * 
-  * 对于当前场景ApplicationStartedEvent支持的listeners如下:
+ * 对于当前场景ApplicationStartedEvent支持的listeners如下:
  * org.springframework.boot.logging.LoggingApplicationListener,
  * org.springframework.boot.autoconfigure.BackgroundPreinitializer,
  * org.springframework.boot.context.config.DelegatingApplicationListener,
@@ -99,6 +99,24 @@ public class EventPublishingRunListener implements SpringApplicationRunListener,
 	}
 
 	// 》》》》》发射【ApplicationEnvironmentPreparedEvent】事件
+	/**
+	 * .调用的是SpringApplicationRunListeners#environmentPrepared方法.关于这里上篇文章有解释到
+	 * .最终会调用EventPublishingRunListener#environmentPrepared
+	 * 发送ApplicationEnvironmentPreparedEvent事件.
+	 * 
+	 * 对ApplicationEnvironmentPreparedEvent事件感兴趣的有:
+	 * 
+	 * org.springframework.boot.context.config.ConfigFileApplicationListener,
+	 * org.springframework.boot.context.config.AnsiOutputApplicationListener,
+	 * org.springframework.boot.logging.LoggingApplicationListener,
+	 * org.springframework.boot.logging.ClasspathLoggingApplicationListener,
+	 * org.springframework.boot.autoconfigure.BackgroundPreinitializer,
+	 * org.springframework.boot.context.config.DelegatingApplicationListener,
+	 * org.springframework.boot.context.FileEncodingApplicationListener
+	 * ———————————————— 版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0
+	 * BY-SA版权协议，转载请附上原文出处链接及本声明。
+	 * 原文链接：https://blog.csdn.net/qq_26000415/article/details/78914944
+	 */
 	@Override
 	public void environmentPrepared(ConfigurableEnvironment environment) {
 		this.initialMulticaster

@@ -367,14 +367,20 @@ public class SpringApplication {
 		//详细注释请点击{@link EventPublishingRunListener}
 		listeners.starting();
 		try {
-			// 创建ApplicationArguments对象，封装了args参数
+			// 创建ApplicationArguments对象，封装了args参数,注意解析通过main传入的参数数据
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(
 					args);
 			// 【2】准备环境变量，包括系统变量，环境变量，命令行参数，默认变量，servlet相关配置变量，随机值，
 			// JNDI属性值，以及配置文件（比如application.properties）等，注意这些环境变量是有优先级的
 			// 》》》》》发射【ApplicationEnvironmentPreparedEvent】事件
-			// TODO 这里准备环境变量是不是加载所有application.properties等环境变量？跟Spring的加载环境变量有啥区别？是不是这里加载了Spring那边就不用再管了？自己在application.properties，外部参数等可以设置环境变量的地方上编辑多个环境变量看这里能否加载进来？？？
+			// TODO 这里准备环境变量是不是加载所有application.properties等环境变量？
+			//跟Spring的加载环境变量有啥区别？是不是这里加载了Spring那边就不用再管了？自己在application.properties，
+			//外部参数等可以设置环境变量的地方上编辑多个环境变量看这里能否加载进来？？？
 			// TODO 自己想想加密的属性是如何扩展的？如何改造？
+			//代码做了3件事:
+			//获取或者创建ConfigurableEnvironment
+			//配置ConfigurableEnvironment
+			//通知所有的观察者,发送ApplicationEnvironmentPreparedEvent事件.			
 			ConfigurableEnvironment environment = prepareEnvironment(listeners,
 					applicationArguments);
 			// 配置spring.beaninfo.ignore属性，默认为true，即跳过搜索BeanInfo classes.
@@ -383,6 +389,33 @@ public class SpringApplication {
 			Banner printedBanner = printBanner(environment);
 			// 【4】根据不同类型创建不同类型的spring applicationcontext容器
 			// 因为这里是servlet环境，所以创建的是AnnotationConfigServletWebServerApplicationContext容器对象
+			//又实例化了propertySources的属性，
+			//因此 包含了StandardEnvironment 也就持有了servletConfigInitParams，servletContextInitParams,systemProperties，systemEnvironment 4个PropertySource.
+			//会实例化容器和忽略自动配置和增加AnnotationConfigUtils方法的registerAnnotationConfigProcessors
+			// 1.获得DefaultListableBeanFactory 
+//			由于AnnotationConfigEmbeddedWebApplicationContext本身就是DefaultListableBeanFactory子类,
+//			因此这里将AnnotationConfigEmbeddedWebApplicationContext向上转型为DefaultListableBeanFactory后返回.
+//			TODO 	this.reader = new AnnotatedBeanDefinitionReader(this);这行代码非常重要的，
+			//下面都是在他的类里面实例化的
+//			2如果DefaultListableBeanFactory中的DependencyComparator不是AnnotationAwareOrderComparator实例的话,
+//			就设置DependencyComparator为AnnotationAwareOrderComparator.这里一般都会进行设置的.
+//
+//			3.如果DefaultListableBeanFactory中的AutowireCandidateResolver不是ContextAnnotationAutowireCandidateResolver实例的话,
+//			就实例化为ContextAnnotationAutowireCandidateResolver.
+//			4.如果不包含org.springframework.context.annotation.internalConfigurationAnnotationProcessor 
+//			的bean的定义.就注册一个bean class为 ConfigurationClassPostProcessor
+//			5.如果不包含org.springframework.context.annotation.internalAutowiredAnnotationProcessor 的 bean，
+//			 就注册一个 bean class 为 AutowiredAnnotationBeanPostProcessor
+//			6如果不包含org.springframework.context.annotation.internalRequiredAnnotationProcessor的 bean，
+//			就注册一个 bean class 为 RequiredAnnotationBeanPostProcessor
+//			7.如果当前类路径存在javax.annotation.Resource.
+//			并且registry中不包含org.springframework.context.annotation.internalCommonAnnotationProcessor的定义,
+//			那么就注册一个 bean class 为 CommonAnnotationBeanPostProcessor 的bean. 一般都会进行注册的.
+//			8.如果当前类路径存在javax.persistence.EntityManagerFactory和 
+//			org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor 并且registry中不包含org.springframework.context.annotation.internalPersistenceAnnotationProcessor的 定义,
+//			那么就注册一个 class 为 org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor 的bean. 一般都会进行注册的.
+//			9.如果registry 不包含org.springframework.context.event.internalEventListenerProcessor的 定义.就注册一个bean class 为 EventListenerMethodProcessor 的定义
+//			10.如果registry 不包含org.springframework.context.event.internalEventListenerFactory的 定义. 就注册一个 class 为 DefaultEventListenerFactory 的定义
 			context = createApplicationContext();
 			// 【5】从spring.factories配置文件中加载异常报告期实例，这里加载的是FailureAnalyzers
 			// 注意FailureAnalyzers的构造器要传入ConfigurableApplicationContext，因为要从context中获取beanFactory和environment
@@ -476,8 +509,11 @@ public class SpringApplication {
 			ApplicationArguments applicationArguments) {
 		// Create and configure the environment
 		ConfigurableEnvironment environment = getOrCreateEnvironment();
-		configureEnvironment(environment, applicationArguments.getSourceArgs()); // 这里为之前创建的environment配置一些命令行参数形式的环境变量
-		listeners.environmentPrepared(environment); // 利用事件监听机制来为environment环境变量配置application.properties中的环境变量或@{}形式的环境变量
+		// 这里为之前创建的environment配置一些命令行参数形式的环境变量
+		configureEnvironment(environment, applicationArguments.getSourceArgs()); 
+		//利用事件监听机制来为environment环境变量配置application.properties中的环境变量或@{}形式的环境变量
+		//这里有很多的事件，来处理数据对什么事件感兴趣
+		listeners.environmentPrepared(environment); 
 		bindToSpringApplication(environment); // TODO 将environment绑定在SpringApplication，后续用来干嘛呢？
 		if (!this.isCustomEnvironment) {
 			// TODO 这里什么情况下需要进行转换？
@@ -611,16 +647,25 @@ public class SpringApplication {
 			return this.environment;
 		}
 		switch (this.webApplicationType) {
+		  // 2. 如果是web环境则直接实例化StandardServletEnvironment类
 		case SERVLET:
+			//在StandardServletEnvironment实例化时,会触发AbstractEnvironment实例化.
+			//而在AbstractEnvironment的构造器中会调用customizePropertySources方法.
+			//customizePropertySources其实就是StandardServletEnvironment的方法，是通过父类调用了自己的抽象方法
 			return new StandardServletEnvironment();
 		case REACTIVE:
 			return new StandardReactiveWebEnvironment();
 		default:
+			  // 2. 如果是web环境则直接实例化StandardServletEnvironment类
 			return new StandardEnvironment();
 		}
 	}
 
 	/**
+	 * 做了2件事:
+		配置PropertySources
+		配置Profiles
+		增加转换的服务
 	 * Template method delegating to
 	 * {@link #configurePropertySources(ConfigurableEnvironment, String[])} and
 	 * {@link #configureProfiles(ConfigurableEnvironment, String[])} in that order.
@@ -644,6 +689,14 @@ public class SpringApplication {
 	}
 
 	/**
+	 * 做了2件事:
+	  *如果defaultProperties不为空，则继续添加defaultProperties
+	 * 在当前环境下defaultProperties没有添加进去.
+	 * 如果addCommandLineProperties为true并且有命令参数，
+	 *分两步骤走：第一步存在commandLineArgs则继续设置属性；第二步commandLineArgs不存在则在头部添加commandLineArgs
+	 *那么该方法执行完毕后,MutablePropertySources类中propertySourceList已经存在的属性为:
+	 commandLineArgs、servletConfigInitParams、servletContextInitParams、jndiProperties（如果存在）、
+	 systemProperties、systemEnvironment、defaultProperties（如果存在）
 	 * Add, remove or re-order any {@link PropertySource}s in this application's
 	 * environment.
 	 * @param environment this application's environment
@@ -652,11 +705,14 @@ public class SpringApplication {
 	 */
 	protected void configurePropertySources(ConfigurableEnvironment environment,
 			String[] args) {
+		//这个是在上面增加了org.springframework.core.env.MutablePropertySources
+		//应该总共有5个值的数据，defaultProperties的值好像是空的，没有数据。
 		MutablePropertySources sources = environment.getPropertySources();
 		if (this.defaultProperties != null && !this.defaultProperties.isEmpty()) {
 			sources.addLast(
 					new MapPropertySource("defaultProperties", this.defaultProperties));
 		}
+		//addCommandLineProperties解析命令行数据，
 		if (this.addCommandLineProperties && args.length > 0) {
 			String name = CommandLinePropertySource.COMMAND_LINE_PROPERTY_SOURCE_NAME;
 			if (sources.contains(name)) {
@@ -714,6 +770,7 @@ public class SpringApplication {
 	}
 
 	private Banner printBanner(ConfigurableEnvironment environment) {
+		 // 1. 首先判断banner的输出级别。如果禁用了，则直接返回空。
 		if (this.bannerMode == Banner.Mode.OFF) {
 			return null;
 		}

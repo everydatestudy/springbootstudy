@@ -39,14 +39,15 @@ import org.springframework.core.env.PropertiesPropertySource;
 import org.springframework.util.StringUtils;
 
 /**
- * An {@link EnvironmentPostProcessor} that knows where to find VCAP (a.k.a. Cloud
- * Foundry) meta data in the existing environment. It parses out the VCAP_APPLICATION and
- * VCAP_SERVICES meta data and dumps it in a form that is easily consumed by
- * {@link Environment} users. If the app is running in Cloud Foundry then both meta data
- * items are JSON objects encoded in OS environment variables. VCAP_APPLICATION is a
- * shallow hash with basic information about the application (name, instance id, instance
- * index, etc.), and VCAP_SERVICES is a hash of lists where the keys are service labels
- * and the values are lists of hashes of service instance meta data. Examples are:
+ * An {@link EnvironmentPostProcessor} that knows where to find VCAP (a.k.a.
+ * Cloud Foundry) meta data in the existing environment. It parses out the
+ * VCAP_APPLICATION and VCAP_SERVICES meta data and dumps it in a form that is
+ * easily consumed by {@link Environment} users. If the app is running in Cloud
+ * Foundry then both meta data items are JSON objects encoded in OS environment
+ * variables. VCAP_APPLICATION is a shallow hash with basic information about
+ * the application (name, instance id, instance index, etc.), and VCAP_SERVICES
+ * is a hash of lists where the keys are service labels and the values are lists
+ * of hashes of service instance meta data. Examples are:
  *
  * <pre class="code">
  * VCAP_APPLICATION: {"instance_id":"2ce0ac627a6c8e47e936d829a3a47b5b","instance_index":0,
@@ -59,11 +60,12 @@ import org.springframework.util.StringUtils;
  * }]}
  * </pre>
  *
- * These objects are flattened into properties. The VCAP_APPLICATION object goes straight
- * to {@code vcap.application.*} in a fairly obvious way, and the VCAP_SERVICES object is
- * unwrapped so that it is a hash of objects with key equal to the service instance name
- * (e.g. "mysql" in the example above), and value equal to that instances properties, and
- * then flattened in the same way. E.g.
+ * These objects are flattened into properties. The VCAP_APPLICATION object goes
+ * straight to {@code vcap.application.*} in a fairly obvious way, and the
+ * VCAP_SERVICES object is unwrapped so that it is a hash of objects with key
+ * equal to the service instance name (e.g. "mysql" in the example above), and
+ * value equal to that instances properties, and then flattened in the same way.
+ * E.g.
  *
  * <pre class="code">
  * vcap.application.instance_id: 2ce0ac627a6c8e47e936d829a3a47b5b
@@ -81,18 +83,17 @@ import org.springframework.util.StringUtils;
  * ...
  * </pre>
  *
- * N.B. this initializer is mainly intended for informational use (the application and
- * instance ids are particularly useful). For service binding you might find that Spring
- * Cloud is more convenient and more robust against potential changes in Cloud Foundry.
+ * N.B. this initializer is mainly intended for informational use (the
+ * application and instance ids are particularly useful). For service binding
+ * you might find that Spring Cloud is more convenient and more robust against
+ * potential changes in Cloud Foundry.
  *
  * @author Dave Syer
  * @author Andy Wilkinson
  */
-public class CloudFoundryVcapEnvironmentPostProcessor
-		implements EnvironmentPostProcessor, Ordered {
+public class CloudFoundryVcapEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
 
-	private static final Log logger = LogFactory
-			.getLog(CloudFoundryVcapEnvironmentPostProcessor.class);
+	private static final Log logger = LogFactory.getLog(CloudFoundryVcapEnvironmentPostProcessor.class);
 
 	private static final String VCAP_APPLICATION = "VCAP_APPLICATION";
 
@@ -109,28 +110,26 @@ public class CloudFoundryVcapEnvironmentPostProcessor
 	public int getOrder() {
 		return this.order;
 	}
+//1.	首先调用CloudPlatform.CLOUD_FOUNDRY#isActive进行判断是否在CloudFoundry中.
+	// 判断的逻辑为environment是否有VCAP_APPLICATION或者VCAP_SERVICES的配置
+//	2. 如果是在CloudFoundry的话.则将vcap.application.\*, vcap.services.* 的配置加入到Properties中. 接下来判断 environment中是否有commandLineArgs的Sources.如果有的话,则添加到commandLineArgs中,否则添加名为vcap的PropertiesPropertySource.
+//
+//	> 一般情况下 CloudPlatform.CLOUD_FOUNDRY 返回的false.
+//
 
 	@Override
-	public void postProcessEnvironment(ConfigurableEnvironment environment,
-			SpringApplication application) {
+	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
 		if (CloudPlatform.CLOUD_FOUNDRY.isActive(environment)) {
 			Properties properties = new Properties();
 			JsonParser jsonParser = JsonParserFactory.getJsonParser();
-			addWithPrefix(properties,
-					getPropertiesFromApplication(environment, jsonParser),
-					"vcap.application.");
-			addWithPrefix(properties, getPropertiesFromServices(environment, jsonParser),
-					"vcap.services.");
+			addWithPrefix(properties, getPropertiesFromApplication(environment, jsonParser), "vcap.application.");
+			addWithPrefix(properties, getPropertiesFromServices(environment, jsonParser), "vcap.services.");
 			MutablePropertySources propertySources = environment.getPropertySources();
-			if (propertySources.contains(
-					CommandLinePropertySource.COMMAND_LINE_PROPERTY_SOURCE_NAME)) {
-				propertySources.addAfter(
-						CommandLinePropertySource.COMMAND_LINE_PROPERTY_SOURCE_NAME,
+			if (propertySources.contains(CommandLinePropertySource.COMMAND_LINE_PROPERTY_SOURCE_NAME)) {
+				propertySources.addAfter(CommandLinePropertySource.COMMAND_LINE_PROPERTY_SOURCE_NAME,
 						new PropertiesPropertySource("vcap", properties));
-			}
-			else {
-				propertySources
-						.addFirst(new PropertiesPropertySource("vcap", properties));
+			} else {
+				propertySources.addFirst(new PropertiesPropertySource("vcap", properties));
 			}
 		}
 	}
@@ -142,43 +141,37 @@ public class CloudFoundryVcapEnvironmentPostProcessor
 		}
 	}
 
-	private Properties getPropertiesFromApplication(Environment environment,
-			JsonParser parser) {
+	private Properties getPropertiesFromApplication(Environment environment, JsonParser parser) {
 		Properties properties = new Properties();
 		try {
 			String property = environment.getProperty(VCAP_APPLICATION, "{}");
 			Map<String, Object> map = parser.parseMap(property);
 			extractPropertiesFromApplication(properties, map);
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 			logger.error("Could not parse VCAP_APPLICATION", ex);
 		}
 		return properties;
 	}
 
-	private Properties getPropertiesFromServices(Environment environment,
-			JsonParser parser) {
+	private Properties getPropertiesFromServices(Environment environment, JsonParser parser) {
 		Properties properties = new Properties();
 		try {
 			String property = environment.getProperty(VCAP_SERVICES, "{}");
 			Map<String, Object> map = parser.parseMap(property);
 			extractPropertiesFromServices(properties, map);
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 			logger.error("Could not parse VCAP_SERVICES", ex);
 		}
 		return properties;
 	}
 
-	private void extractPropertiesFromApplication(Properties properties,
-			Map<String, Object> map) {
+	private void extractPropertiesFromApplication(Properties properties, Map<String, Object> map) {
 		if (map != null) {
 			flatten(properties, map, "");
 		}
 	}
 
-	private void extractPropertiesFromServices(Properties properties,
-			Map<String, Object> map) {
+	private void extractPropertiesFromServices(Properties properties, Map<String, Object> map) {
 		if (map != null) {
 			for (Object services : map.values()) {
 				@SuppressWarnings("unchecked")
@@ -203,28 +196,22 @@ public class CloudFoundryVcapEnvironmentPostProcessor
 			if (value instanceof Map) {
 				// Need a compound key
 				flatten(properties, (Map<String, Object>) value, name);
-			}
-			else if (value instanceof Collection) {
+			} else if (value instanceof Collection) {
 				// Need a compound key
 				Collection<Object> collection = (Collection<Object>) value;
-				properties.put(name,
-						StringUtils.collectionToCommaDelimitedString(collection));
+				properties.put(name, StringUtils.collectionToCommaDelimitedString(collection));
 				int count = 0;
 				for (Object item : collection) {
 					String itemKey = "[" + (count++) + "]";
 					flatten(properties, Collections.singletonMap(itemKey, item), name);
 				}
-			}
-			else if (value instanceof String) {
+			} else if (value instanceof String) {
 				properties.put(name, value);
-			}
-			else if (value instanceof Number) {
+			} else if (value instanceof Number) {
 				properties.put(name, value.toString());
-			}
-			else if (value instanceof Boolean) {
+			} else if (value instanceof Boolean) {
 				properties.put(name, value.toString());
-			}
-			else {
+			} else {
 				properties.put(name, (value != null) ? value : "");
 			}
 		});

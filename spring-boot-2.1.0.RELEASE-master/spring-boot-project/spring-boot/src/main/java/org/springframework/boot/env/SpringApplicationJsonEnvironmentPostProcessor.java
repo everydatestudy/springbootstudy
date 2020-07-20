@@ -81,7 +81,10 @@ public class SpringApplicationJsonEnvironmentPostProcessor
 	public void setOrder(int order) {
 		this.order = order;
 	}
-
+//	实现逻辑如下:
+//
+//		1. 依次获取spring.application.json,SPRING_APPLICATION_JSON的值,如果没有配置的话,默认返回的空字符串.
+//		2. 如果有配置的话,就调用processJson方法,在environment中添加MapPropertySource.name为spring.application.json.
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment,
 			SpringApplication application) {

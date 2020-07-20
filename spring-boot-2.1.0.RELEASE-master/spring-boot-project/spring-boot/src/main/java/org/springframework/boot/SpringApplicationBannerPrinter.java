@@ -59,8 +59,7 @@ class SpringApplicationBannerPrinter {
 		Banner banner = getBanner(environment);
 		try {
 			logger.info(createStringFromBanner(banner, environment, sourceClass));
-		}
-		catch (UnsupportedEncodingException ex) {
+		} catch (UnsupportedEncodingException ex) {
 			logger.warn("Failed to create String for banner", ex);
 		}
 		return new PrintedBanner(banner, sourceClass);
@@ -84,10 +83,14 @@ class SpringApplicationBannerPrinter {
 		}
 		return DEFAULT_BANNER;
 	}
+	//还是同样的套路.
+	// 从environment中获取banner.location属性，默认为banner.txt
+	//  进行加载.如果存在的话,则返回ResourceBanner.否则返回null.
+	//对于当前场景来说.返回的是null.
+	//因此,对于当前场景来说. getBanner返回的是SpringBootBanner.
 
 	private Banner getTextBanner(Environment environment) {
-		String location = environment.getProperty(BANNER_LOCATION_PROPERTY,
-				DEFAULT_BANNER_LOCATION);
+		String location = environment.getProperty(BANNER_LOCATION_PROPERTY, DEFAULT_BANNER_LOCATION);
 		Resource resource = this.resourceLoader.getResource(location);
 		if (resource.exists()) {
 			return new ResourceBanner(resource);
@@ -95,6 +98,13 @@ class SpringApplicationBannerPrinter {
 		return null;
 	}
 
+//	逻辑如下:
+//	    首先判断是否配置了系统属性banner.image.location，如果有直接返回ImageBanner.
+//
+//	    如果没有配置则在classpath中查找banner.gif，banner.jpg，banner.png，如果找到，则创建一个ImageBanner对象并添加到Banners对象的banners属性中，该属性是一个List.
+//	————————————————
+//	版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//	原文链接：https://blog.csdn.net/qq_26000415/article/details/78915135
 	private Banner getImageBanner(Environment environment) {
 		String location = environment.getProperty(BANNER_IMAGE_LOCATION_PROPERTY);
 		if (StringUtils.hasLength(location)) {
@@ -110,8 +120,8 @@ class SpringApplicationBannerPrinter {
 		return null;
 	}
 
-	private String createStringFromBanner(Banner banner, Environment environment,
-			Class<?> mainApplicationClass) throws UnsupportedEncodingException {
+	private String createStringFromBanner(Banner banner, Environment environment, Class<?> mainApplicationClass)
+			throws UnsupportedEncodingException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		banner.printBanner(environment, mainApplicationClass, new PrintStream(baos));
 		String charset = environment.getProperty("spring.banner.charset", "UTF-8");
@@ -136,8 +146,7 @@ class SpringApplicationBannerPrinter {
 		}
 
 		@Override
-		public void printBanner(Environment environment, Class<?> sourceClass,
-				PrintStream out) {
+		public void printBanner(Environment environment, Class<?> sourceClass, PrintStream out) {
 			for (Banner banner : this.banners) {
 				banner.printBanner(environment, sourceClass, out);
 			}
@@ -161,8 +170,7 @@ class SpringApplicationBannerPrinter {
 		}
 
 		@Override
-		public void printBanner(Environment environment, Class<?> sourceClass,
-				PrintStream out) {
+		public void printBanner(Environment environment, Class<?> sourceClass, PrintStream out) {
 			sourceClass = (sourceClass != null) ? sourceClass : this.sourceClass;
 			this.banner.printBanner(environment, sourceClass, out);
 		}

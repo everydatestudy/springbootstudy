@@ -56,15 +56,19 @@ public class ResourceBanner implements Banner {
 		Assert.isTrue(resource.exists(), "Resource must exist");
 		this.resource = resource;
 	}
-
+	//	还是3步:
+	//	    获取resource中的输入流，并将其转化为字符串 通过environment获取banner.charset变量，如果不存在，则默认使用UTF-8编码
+	//	    循环遍历所有的PropertyResolver 去解析banner中配置的spel表达式.
+	//	    首先通过getPropertyResolvers 获得所有的PropertyResolver.
 	@Override
 	public void printBanner(Environment environment, Class<?> sourceClass,
 			PrintStream out) {
 		try {
+			  // 1. 获取resource中的输入流，并将其转化为字符串 通过environment获取banner.charset变量，如果不存在，则默认使用UTF-8编码
 			String banner = StreamUtils.copyToString(this.resource.getInputStream(),
 					environment.getProperty("spring.banner.charset", Charset.class,
 							StandardCharsets.UTF_8));
-
+			// 2. 循环遍历所有的PropertyResolver 去解析banner中配置的spel表达式
 			for (PropertyResolver resolver : getPropertyResolvers(environment,
 					sourceClass)) {
 				banner = resolver.resolvePlaceholders(banner);
@@ -79,14 +83,20 @@ public class ResourceBanner implements Banner {
 
 	protected List<PropertyResolver> getPropertyResolvers(Environment environment,
 			Class<?> sourceClass) {
+	    // 1. 实例化resolvers集合，并添加environment元素，Environment接口继承自PropertyResolver接口
 		List<PropertyResolver> resolvers = new ArrayList<>();
 		resolvers.add(environment);
+	    // 2. 调用getVersionResolver(sourceClass)方法并将其返回值添加到resolvers集合
 		resolvers.add(getVersionResolver(sourceClass));
+	    // 3. 调用getAnsiResolver(sourceClass)方法并将其返回值添加到resolvers集合 直接设置开启了ansi
 		resolvers.add(getAnsiResolver());
+	    // 4. 调用getTitleResolver(sourceClass)方法并将其返回值添加到resolvers集合
 		resolvers.add(getTitleResolver(sourceClass));
 		return resolvers;
 	}
-
+//	实例化resolvers集合，并添加environment元素，Environment接口继承自PropertyResolver接口
+//
+//	调用getVersionResolver(sourceClass)方法并将其返回值添加到resolvers集合
 	private PropertyResolver getVersionResolver(Class<?> sourceClass) {
 		MutablePropertySources propertySources = new MutablePropertySources();
 		propertySources
@@ -106,6 +116,14 @@ public class ResourceBanner implements Banner {
 		return versions;
 	}
 
+//    首先通过调用getApplicationVersion方法获得appVersion.其是通过获取sourceClass所在包的版本号. sourceClass为应用的启动类
+//    获取Boot版本号.同样是通过获得SpringApplication所在包的版本号完成的
+//    在map中存入数据.
+//
+//该方法最终的数据为:
+//
+//{application.formatted-version=, application.version=, spring-boot.formatted-version=, spring-boot.version=}
+// 
 	protected String getApplicationVersion(Class<?> sourceClass) {
 		Package sourcePackage = (sourceClass != null) ? sourceClass.getPackage() : null;
 		return (sourcePackage != null) ? sourcePackage.getImplementationVersion() : null;
