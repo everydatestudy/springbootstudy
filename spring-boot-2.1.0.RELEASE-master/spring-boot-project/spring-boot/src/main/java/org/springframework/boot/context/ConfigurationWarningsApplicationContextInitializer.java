@@ -42,7 +42,8 @@ import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
-/**
+/**这里使用了后置处理器，来处理数据包的配置，如果配置了org.springframework，org会有警告的
+ * 
  * {@link ApplicationContextInitializer} to report warnings for common misconfiguration
  * mistakes.
  *

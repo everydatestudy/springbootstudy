@@ -50,6 +50,7 @@ public class DelegatingApplicationContextInitializer implements
 	@Override
 	public void initialize(ConfigurableApplicationContext context) {
 		ConfigurableEnvironment environment = context.getEnvironment();
+	    // 1. 通过env获取到context.initializer.classes配置的值，如果有则直接获取到具体的值并进行实例化
 		List<Class<?>> initializerClasses = getInitializerClasses(environment);
 		if (!initializerClasses.isEmpty()) {
 			applyInitializerClasses(context, initializerClasses);

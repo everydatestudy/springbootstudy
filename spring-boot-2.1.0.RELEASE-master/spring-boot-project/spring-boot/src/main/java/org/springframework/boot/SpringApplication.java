@@ -419,16 +419,20 @@ public class SpringApplication {
 			context = createApplicationContext();
 			// 【5】从spring.factories配置文件中加载异常报告期实例，这里加载的是FailureAnalyzers
 			// 注意FailureAnalyzers的构造器要传入ConfigurableApplicationContext，因为要从context中获取beanFactory和environment
+			//org.springframework.boot.SpringBootExceptionReporter=\
+			//org.springframework.boot.diagnostics.FailureAnalyzers
+			//实例化FailureAnalyzers时将之前实例化的AnnotationConfigEmbeddedWebApplicationContext 传递给了构造器
 			exceptionReporters = getSpringFactoriesInstances(
 					SpringBootExceptionReporter.class,
-					new Class[] { ConfigurableApplicationContext.class }, context); // ConfigurableApplicationContext是AnnotationConfigServletWebServerApplicationContext的父接口
+					new Class[] { ConfigurableApplicationContext.class }, context);  
 			// 【6】为刚创建的AnnotationConfigServletWebServerApplicationContext容器对象做一些初始化工作，准备一些容器属性值等
 			// 1）为AnnotationConfigServletWebServerApplicationContext的属性AnnotatedBeanDefinitionReader和ClassPathBeanDefinitionScanner设置environgment属性
 			// 2）根据情况对ApplicationContext应用一些相关的后置处理，比如设置resourceLoader属性等
 			// 3）在容器刷新前调用各个ApplicationContextInitializer的初始化方法，ApplicationContextInitializer是在构建SpringApplication对象时从spring.factories中加载的
 			// 4）》》》》》发射【ApplicationContextInitializedEvent】事件，标志context容器被创建且已准备好
 			// 5）从context容器中获取beanFactory，并向beanFactory中注册一些单例bean，比如applicationArguments，printedBanner
-			// 6）TODO 加载bean到application context，注意这里只是加载了部分bean比如mainApplication这个bean，大部分bean应该是在AbstractApplicationContext.refresh方法中被加载？这里留个疑问先
+			// 6）TODO 加载bean到application context，注意这里只是加载了部分bean比如mainApplication这个bean，
+			//大部分bean应该是在AbstractApplicationContext.refresh方法中被加载？这里留个疑问先
 			// 7）》》》》》发射【ApplicationPreparedEvent】事件，标志Context容器已经准备完成
 			prepareContext(context, environment, listeners, applicationArguments,
 					printedBanner);
@@ -461,6 +465,7 @@ public class SpringApplication {
 			}
 
 			// 》》》》》发射【ApplicationStartedEvent】事件，标志spring容器已经刷新，此时所有的bean实例都已经加载完毕
+			//只有一个org.springframework.boot.autoconfigure.BackgroundPreinitializer，初始化一些数据
 			listeners.started(context);
 			// 【9】调用ApplicationRunner和CommandLineRunner的run方法，实现spring容器启动后需要做的一些东西比如加载一些业务数据等
 			callRunners(context, applicationArguments);
@@ -534,22 +539,39 @@ public class SpringApplication {
 			return StandardEnvironment.class;
 		}
 	}
-
+	//	做了8件事:
+	//	    为上下文设置Environment. 注意 这里传入的是 StandardServletEnvironment
+	//	    调用postProcessApplicationContext方法设置上下文的beanNameGenerator和resourceLoader(如果SpringApplication有的话)
+	//	    拿到之前实例化SpringApplication对象的时候设置的ApplicationContextInitializer，调用它们的initialize方法，对上下文做初始化
+	//	    调用listeners#contextPrepared,该方法是一个空实现
+	//	    打印启动日志
+	//	    往上下文的beanFactory中注册一个singleton的bean，bean的名字是springApplicationArguments，bean的实例是之前实例化的ApplicationArguments对象,
+	//	    如果之前获取的printedBanner不为空，那么往上下文的beanFactory中注册一个singleton的bean，bean的名字是springBootBanner，bean的实例就是这个printedBanner.这里默认是SpringBootBanner.
+	//	    调用load方法注册启动类的bean定义，也就是调用SpringApplication.run(Application.class, args);的类，SpringApplication的load方法内会创建BeanDefinitionLoader的对象，并调用它的load()方法
+	//	    调用listeners的contextLoaded方法，说明上下文已经加载，该方法先找到所有的ApplicationListener，遍历这些listener，如果该listener继承了ApplicationContextAware类，那么在这一步会调用它的setApplicationContext方法，设置context
+ 
 	private void prepareContext(ConfigurableApplicationContext context,
 			ConfigurableEnvironment environment, SpringApplicationRunListeners listeners,
 			ApplicationArguments applicationArguments, Banner printedBanner) {
-
+		  // 1. 上下文设置环境 ，这个类的 {@link AnnotationConfigServletWebServerApplicationContext}，#setEnvironment,
 		context.setEnvironment(environment);
+	    // 2. 调用postProcessApplicationContext方法设置上下文的beanNameGenerator和resourceLoader(如果SpringApplication有的话)
 		postProcessApplicationContext(context);
+	    // 3. 拿到之前实例化SpringApplication对象的时候设置的ApplicationContextInitializer，调用它们的initialize方法，对上下文做初始化
 		applyInitializers(context);
+		// 4. contextPrepareds 是一个空实现 
 		listeners.contextPrepared(context);
+		//5.打印日志文件
 		if (this.logStartupInfo) {
 			logStartupInfo(context.getParent() == null);
 			logStartupProfileInfo(context);
 		}
 		// Add boot specific singleton beans
+	    // 6. 日志往上下文的beanFactory中注册一个singleton的bean，
+		//bean的名字是springApplicationArguments，bean的实例是之前实例化的ApplicationArguments对象
 		ConfigurableListableBeanFactory beanFactory = context.getBeanFactory();
 		beanFactory.registerSingleton("springApplicationArguments", applicationArguments);
+	    // 如果之前获取的printedBanner不为空，那么往上下文的beanFactory中注册一个singleton的bean，bean的名字是springBootBanner，bean的实例就是这个printedBanner
 		if (printedBanner != null) {
 			beanFactory.registerSingleton("springBootBanner", printedBanner);
 		}
@@ -561,7 +583,9 @@ public class SpringApplication {
 		Set<Object> sources = getAllSources();
 		Assert.notEmpty(sources, "Sources must not be empty");
 		// TODO 这里加载的是什么bean?这里加载bean后，spring容器刷新过程中还会继续加载bean吗？
+	    // 7. 调用load方法注册启动类的bean定义，也就是调用SpringApplication.run(Application.class, args);的类，SpringApplication的load方法内会创建BeanDefinitionLoader的对象，并调用它的load()方法
 		load(context, sources.toArray(new Object[0]));
+	    // 8. 调用listeners的contextLoaded方法，说明上下文已经加载，该方法先找到所有的ApplicationListener，遍历这些listener，如果该listener继承了ApplicationContextAware类，那么在这一步会调用它的setApplicationContext方法，设置context
 		listeners.contextLoaded(context);
 	}
 
@@ -827,6 +851,7 @@ public class SpringApplication {
 					AnnotationConfigUtils.CONFIGURATION_BEAN_NAME_GENERATOR,
 					this.beanNameGenerator);
 		}
+		//这个是空值
 		if (this.resourceLoader != null) {
 			if (context instanceof GenericApplicationContext) {
 				((GenericApplicationContext) context)
@@ -837,6 +862,7 @@ public class SpringApplication {
 						.setClassLoader(this.resourceLoader.getClassLoader());
 			}
 		}
+		//把类型转成增加到org.springframework.beans.factory.support.DefaultListableBeanFactory这个容器中
 		if (this.addConversionService) {
 			context.getBeanFactory().setConversionService(
 					ApplicationConversionService.getSharedInstance());
@@ -844,6 +870,16 @@ public class SpringApplication {
 	}
 
 	/**
+	 * 这里是在spring.factories,这里进行实例化和调用初始化initialize方法
+	 * 遍历之,调用其initialize 进行初始化.当前的initialize有如下:
+			org.springframework.boot.context.config.DelegatingApplicationContextInitializer, 
+			org.springframework.boot.context.ContextIdApplicationContextInitializer, 
+			org.springframework.boot.context.ConfigurationWarningsApplicationContextInitializer, 
+			org.springframework.boot.context.embedded.ServerPortInfoApplicationContextInitializer, 
+			org.springframework.boot.autoconfigure.SharedMetadataReaderFactoryContextInitializer, 
+			org.springframework.boot.autoconfigure.logging.AutoConfigurationReportLoggingInitializer
+ 
+	 * 
 	 * Apply any {@link ApplicationContextInitializer}s to the context before it is
 	 * refreshed.
 	 * @param context the configured ApplicationContext (not refreshed yet)
@@ -851,10 +887,12 @@ public class SpringApplication {
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	protected void applyInitializers(ConfigurableApplicationContext context) {
+	    // 1. 从SpringApplication类中的initializers集合获取所有的ApplicationContextInitializer
 		for (ApplicationContextInitializer initializer : getInitializers()) {
 			Class<?> requiredType = GenericTypeResolver.resolveTypeArgument(
 					initializer.getClass(), ApplicationContextInitializer.class);
 			Assert.isInstanceOf(requiredType, context, "Unable to call initializer.");
+			   // 2. 循环调用ApplicationContextInitializer中的initialize方法
 			initializer.initialize(context);
 		}
 	}
@@ -912,18 +950,22 @@ public class SpringApplication {
 			logger.debug(
 					"Loading source " + StringUtils.arrayToCommaDelimitedString(sources));
 		}
+	    // 1. 实例化BeanDefinitionLoader
 		BeanDefinitionLoader loader = createBeanDefinitionLoader(
 				getBeanDefinitionRegistry(context), sources);
+	    // 2. 如果当前的beanNameGenerator 不会null的话,就将SpringApplication中的beanNameGenerator赋值给BeanDefinitionLoader
 		if (this.beanNameGenerator != null) {
 			loader.setBeanNameGenerator(this.beanNameGenerator);
 		}
+	    // 3. 如果当前的resourceLoader 不会null的话,就将SpringApplication中的resourceLoader赋值给BeanDefinitionLoader
 		if (this.resourceLoader != null) {
 			loader.setResourceLoader(this.resourceLoader);
 		}
+	    // 4. 如果当前的environment 不会null的话,就将SpringApplication中的environment赋值给BeanDefinitionLoader
 		if (this.environment != null) {
 			loader.setEnvironment(this.environment);
 		}
-		// 这里应该只是把标有@SpringBootApplication注解的启动类注册到容器中
+		// 5这里应该只是把标有@SpringBootApplication注解的启动类注册到容器中
 		loader.load();
 	}
 

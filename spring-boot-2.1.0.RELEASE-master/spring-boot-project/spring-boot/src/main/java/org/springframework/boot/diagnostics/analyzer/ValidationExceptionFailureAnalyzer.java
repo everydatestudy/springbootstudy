@@ -25,7 +25,10 @@ import org.springframework.boot.diagnostics.FailureAnalyzer;
 /**
  * A {@link FailureAnalyzer} that performs analysis of failures caused by a
  * {@link ValidationException}.
- *
+ *ValidationExceptionFailureAnalyzer–>继承自AbstractFailureAnalyzer,
+ *泛型参数为ValidationException(当使用validation相关的注解,但是没有加入相关实现时触发,
+ *一般不容易触发,因为一旦加入spring-boot-starter-web依赖,就会加入hibernate-validator), analyze代码实现如下:
+ 
  * @author Andy Wilkinson
  */
 class ValidationExceptionFailureAnalyzer

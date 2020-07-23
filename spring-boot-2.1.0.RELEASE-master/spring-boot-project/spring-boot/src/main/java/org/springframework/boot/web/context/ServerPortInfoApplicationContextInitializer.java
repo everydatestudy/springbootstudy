@@ -33,15 +33,17 @@ import org.springframework.core.env.PropertySource;
 import org.springframework.util.StringUtils;
 
 /**
- * {@link ApplicationContextInitializer} that sets {@link Environment} properties for the
- * ports that {@link WebServer} servers are actually listening on. The property
- * {@literal "local.server.port"} can be injected directly into tests using
- * {@link Value @Value} or obtained via the {@link Environment}.
+ * {@link ApplicationContextInitializer} that sets {@link Environment}
+ * properties for the ports that {@link WebServer} servers are actually
+ * listening on. The property {@literal "local.server.port"} can be injected
+ * directly into tests using {@link Value @Value} or obtained via the
+ * {@link Environment}.
  * <p>
  * If the {@link WebServerInitializedEvent} has a
- * {@link WebServerApplicationContext#getServerNamespace() server namespace} , it will be
- * used to construct the property name. For example, the "management" actuator context
- * will have the property name {@literal "local.management.port"}.
+ * {@link WebServerApplicationContext#getServerNamespace() server namespace} ,
+ * it will be used to construct the property name. For example, the "management"
+ * actuator context will have the property name
+ * {@literal "local.management.port"}.
  * <p>
  * Properties are automatically propagated up to any parent context.
  *
@@ -49,9 +51,12 @@ import org.springframework.util.StringUtils;
  * @author Phillip Webb
  * @since 2.0.0
  */
-public class ServerPortInfoApplicationContextInitializer
-		implements ApplicationContextInitializer<ConfigurableApplicationContext>,
-		ApplicationListener<WebServerInitializedEvent> {
+public class ServerPortInfoApplicationContextInitializer implements
+		ApplicationContextInitializer<ConfigurableApplicationContext>, ApplicationListener<WebServerInitializedEvent> {
+
+//	向applicationContext 添加一个监听.当发生EmbeddedServletContainerInitializedEvent时间时.
+	// 会执行ServerPortInfoApplicationContextInitializer#onApplicationEvent方法.将server.ports添加到名为server.ports
+	// 的MapPropertySource
 
 	@Override
 	public void initialize(ConfigurableApplicationContext applicationContext) {
@@ -61,8 +66,7 @@ public class ServerPortInfoApplicationContextInitializer
 	@Override
 	public void onApplicationEvent(WebServerInitializedEvent event) {
 		String propertyName = "local." + getName(event.getApplicationContext()) + ".port";
-		setPortProperty(event.getApplicationContext(), propertyName,
-				event.getWebServer().getPort());
+		setPortProperty(event.getApplicationContext(), propertyName, event.getWebServer().getPort());
 	}
 
 	private String getName(WebServerApplicationContext context) {
@@ -70,11 +74,9 @@ public class ServerPortInfoApplicationContextInitializer
 		return StringUtils.hasText(name) ? name : "server";
 	}
 
-	private void setPortProperty(ApplicationContext context, String propertyName,
-			int port) {
+	private void setPortProperty(ApplicationContext context, String propertyName, int port) {
 		if (context instanceof ConfigurableApplicationContext) {
-			setPortProperty(((ConfigurableApplicationContext) context).getEnvironment(),
-					propertyName, port);
+			setPortProperty(((ConfigurableApplicationContext) context).getEnvironment(), propertyName, port);
 		}
 		if (context.getParent() != null) {
 			setPortProperty(context.getParent(), propertyName, port);
@@ -82,8 +84,7 @@ public class ServerPortInfoApplicationContextInitializer
 	}
 
 	@SuppressWarnings("unchecked")
-	private void setPortProperty(ConfigurableEnvironment environment, String propertyName,
-			int port) {
+	private void setPortProperty(ConfigurableEnvironment environment, String propertyName, int port) {
 		MutablePropertySources sources = environment.getPropertySources();
 		PropertySource<?> source = sources.get("server.ports");
 		if (source == null) {

@@ -28,57 +28,73 @@ import org.springframework.boot.diagnostics.FailureAnalysis;
 import org.springframework.util.StringUtils;
 
 /**
- * An {@link AbstractFailureAnalyzer} that performs analysis of failures caused by a
- * {@link BeanCurrentlyInCreationException}.
+ * BeanCurrentlyInCreationFailureAnalyzer–>继承自AbstractFailureAnalyzer,泛型参数为BeanCurrentlyInCreationException.
+ * 对BeanCurrentlyInCreationException(循环依赖)进行分析.代码如下:
+ * 
+ * An {@link AbstractFailureAnalyzer} that performs analysis of failures caused
+ * by a {@link BeanCurrentlyInCreationException}.
  *
  * @author Andy Wilkinson
  */
-class BeanCurrentlyInCreationFailureAnalyzer
-		extends AbstractFailureAnalyzer<BeanCurrentlyInCreationException> {
+class BeanCurrentlyInCreationFailureAnalyzer extends AbstractFailureAnalyzer<BeanCurrentlyInCreationException> {
 
 	@Override
-	protected FailureAnalysis analyze(Throwable rootFailure,
-			BeanCurrentlyInCreationException cause) {
+	protected FailureAnalysis analyze(Throwable rootFailure, BeanCurrentlyInCreationException cause) {
 		DependencyCycle dependencyCycle = findCycle(rootFailure);
 		if (dependencyCycle == null) {
 			return null;
 		}
 		return new FailureAnalysis(buildMessage(dependencyCycle), null, cause);
 	}
+	// 获得DependencyCycle,如果DependencyCycle等于null,则返回null.代码如下:
+	// 递归异常堆栈
+	// 如果找到BeanCreationException,则构造BeanInCycle,否则,返回null
+	// 从beansInCycle中看是否存在该bean,如果不存在,则加入
+	// 跟新cycleStart
+	// 获得异常堆栈的上一层,继续处理
+
+	// 如果cycleStart等于-1,则返回null
+	// 返回DependencyCycle
 
 	private DependencyCycle findCycle(Throwable rootFailure) {
 		List<BeanInCycle> beansInCycle = new ArrayList<>();
 		Throwable candidate = rootFailure;
 		int cycleStart = -1;
+		// 1. 递归异常堆栈
 		while (candidate != null) {
+			// 1.1 如果找到BeanCreationException,则构造BeanInCycle,否则,返回null
 			BeanInCycle beanInCycle = BeanInCycle.get(candidate);
 			if (beanInCycle != null) {
+				// 1.2 从beansInCycle中看是否存在该bean,如果不存在,则加入
 				int index = beansInCycle.indexOf(beanInCycle);
 				if (index == -1) {
 					beansInCycle.add(beanInCycle);
 				}
+				// 1.3 跟新cycleStart
 				cycleStart = (cycleStart != -1) ? cycleStart : index;
 			}
+			// 1.4 获得异常堆栈的上一层,继续处理
 			candidate = candidate.getCause();
 		}
+		// 2. 如果cycleStart等于-1,则返回null
 		if (cycleStart == -1) {
 			return null;
 		}
+		// 3. 返回DependencyCycle
 		return new DependencyCycle(beansInCycle, cycleStart);
 	}
 
 	private String buildMessage(DependencyCycle dependencyCycle) {
 		StringBuilder message = new StringBuilder();
-		message.append(String.format("The dependencies of some of the beans in the "
-				+ "application context form a cycle:%n%n"));
+		message.append(String
+				.format("The dependencies of some of the beans in the " + "application context form a cycle:%n%n"));
 		List<BeanInCycle> beansInCycle = dependencyCycle.getBeansInCycle();
 		int cycleStart = dependencyCycle.getCycleStart();
 		for (int i = 0; i < beansInCycle.size(); i++) {
 			BeanInCycle beanInCycle = beansInCycle.get(i);
 			if (i == cycleStart) {
 				message.append(String.format("┌─────┐%n"));
-			}
-			else if (i > 0) {
+			} else if (i > 0) {
 				String leftSide = (i < cycleStart) ? " " : "↑";
 				message.append(String.format("%s     ↓%n", leftSide));
 			}

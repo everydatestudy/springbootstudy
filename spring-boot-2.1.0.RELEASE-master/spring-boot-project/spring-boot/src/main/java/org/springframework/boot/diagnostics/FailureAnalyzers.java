@@ -35,13 +35,14 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
 /**
- * Utility to trigger {@link FailureAnalyzer} and {@link FailureAnalysisReporter}
- * instances loaded from {@code spring.factories}.
+ * Utility to trigger {@link FailureAnalyzer} and
+ * {@link FailureAnalysisReporter} instances loaded from
+ * {@code spring.factories}.
  * <p>
- * A {@code FailureAnalyzer} that requires access to the {@link BeanFactory} in order to
- * perform its analysis can implement {@code BeanFactoryAware} to have the
- * {@code BeanFactory} injected prior to {@link FailureAnalyzer#analyze(Throwable)} being
- * called.
+ * A {@code FailureAnalyzer} that requires access to the {@link BeanFactory} in
+ * order to perform its analysis can implement {@code BeanFactoryAware} to have
+ * the {@code BeanFactory} injected prior to
+ * {@link FailureAnalyzer#analyze(Throwable)} being called.
  *
  * @author Andy Wilkinson
  * @author Phillip Webb
@@ -67,17 +68,27 @@ final class FailureAnalyzers implements SpringBootExceptionReporter {
 	}
 
 	private List<FailureAnalyzer> loadFailureAnalyzers(ClassLoader classLoader) {
-		List<String> analyzerNames = SpringFactoriesLoader
-				.loadFactoryNames(FailureAnalyzer.class, classLoader);
+//		加载/META/spring.factories 中的org.springframework.boot.diagnostics.FailureAnalyzer. 配置如下:
+//
+//			org.springframework.boot.diagnostics.FailureAnalyzer=\
+//			org.springframework.boot.diagnostics.analyzer.BeanCurrentlyInCreationFailureAnalyzer,\
+//			org.springframework.boot.diagnostics.analyzer.BeanNotOfRequiredTypeFailureAnalyzer,\
+//			org.springframework.boot.diagnostics.analyzer.BindFailureAnalyzer,\
+//			org.springframework.boot.diagnostics.analyzer.ConnectorStartFailureAnalyzer,\
+//			org.springframework.boot.diagnostics.analyzer.NoUniqueBeanDefinitionFailureAnalyzer,\
+//			org.springframework.boot.diagnostics.analyzer.PortInUseFailureAnalyzer,\
+//			org.springframework.boot.diagnostics.analyzer.ValidationExceptionFailureAnalyzer
+//			————————————————
+//			版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//			原文链接：https://blog.csdn.net/qq_26000415/article/details/78915189
+		List<String> analyzerNames = SpringFactoriesLoader.loadFactoryNames(FailureAnalyzer.class, classLoader);
 		List<FailureAnalyzer> analyzers = new ArrayList<>();
 		for (String analyzerName : analyzerNames) {
 			try {
-				Constructor<?> constructor = ClassUtils.forName(analyzerName, classLoader)
-						.getDeclaredConstructor();
+				Constructor<?> constructor = ClassUtils.forName(analyzerName, classLoader).getDeclaredConstructor();
 				ReflectionUtils.makeAccessible(constructor);
 				analyzers.add((FailureAnalyzer) constructor.newInstance());
-			}
-			catch (Throwable ex) {
+			} catch (Throwable ex) {
 				logger.trace("Failed to load " + analyzerName, ex);
 			}
 		}
@@ -85,15 +96,13 @@ final class FailureAnalyzers implements SpringBootExceptionReporter {
 		return analyzers;
 	}
 
-	private void prepareFailureAnalyzers(List<FailureAnalyzer> analyzers,
-			ConfigurableApplicationContext context) {
+	private void prepareFailureAnalyzers(List<FailureAnalyzer> analyzers, ConfigurableApplicationContext context) {
 		for (FailureAnalyzer analyzer : analyzers) {
 			prepareAnalyzer(context, analyzer);
 		}
 	}
 
-	private void prepareAnalyzer(ConfigurableApplicationContext context,
-			FailureAnalyzer analyzer) {
+	private void prepareAnalyzer(ConfigurableApplicationContext context, FailureAnalyzer analyzer) {
 		if (analyzer instanceof BeanFactoryAware) {
 			((BeanFactoryAware) analyzer).setBeanFactory(context.getBeanFactory());
 		}
@@ -115,8 +124,7 @@ final class FailureAnalyzers implements SpringBootExceptionReporter {
 				if (analysis != null) {
 					return analysis;
 				}
-			}
-			catch (Throwable ex) {
+			} catch (Throwable ex) {
 				logger.debug("FailureAnalyzer " + analyzer + " failed", ex);
 			}
 		}
@@ -124,8 +132,8 @@ final class FailureAnalyzers implements SpringBootExceptionReporter {
 	}
 
 	private boolean report(FailureAnalysis analysis, ClassLoader classLoader) {
-		List<FailureAnalysisReporter> reporters = SpringFactoriesLoader
-				.loadFactories(FailureAnalysisReporter.class, classLoader);
+		List<FailureAnalysisReporter> reporters = SpringFactoriesLoader.loadFactories(FailureAnalysisReporter.class,
+				classLoader);
 		if (analysis == null || reporters.isEmpty()) {
 			return false;
 		}

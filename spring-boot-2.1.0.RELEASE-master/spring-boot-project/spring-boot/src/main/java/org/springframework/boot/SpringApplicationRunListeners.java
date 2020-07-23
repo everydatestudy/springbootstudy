@@ -63,7 +63,28 @@ class SpringApplicationRunListeners {
 			listener.contextPrepared(context);
 		}
 	}
-
+	//调用EventPublishingRunListener#contextLoaded,
+//	
+//	2件事
+//
+//    遍历application 中的ApplicationListener,如果listener 实现了ApplicationContextAware的话,就调用其setApplicationContext进行赋值.当前的如下:
+//
+//    org.springframework.boot.context.config.ConfigFileApplicationListener,
+//    org.springframework.boot.context.config.AnsiOutputApplicationListener, 
+//    org.springframework.boot.logging.LoggingApplicationListener, 
+//    org.springframework.boot.logging.ClasspathLoggingApplicationListener, 
+//    org.springframework.boot.autoconfigure.BackgroundPreinitializer, 
+//    org.springframework.boot.context.config.DelegatingApplicationListener, 
+//    org.springframework.boot.builder.ParentContextCloserApplicationListener,  
+//    org.springframework.boot.ClearCachesApplicationListener, 
+//    org.springframework.boot.context.FileEncodingApplicationListener,
+//    org.springframework.boot.liquibase.LiquibaseServiceLocatorApplicationListener
+//  
+//
+//    只有ParentContextCloserApplicationListener实现了ApplicationContextAware接口.
+//    发送ApplicationPreparedEvent 事件.由前可知,会依次调用listener的onApplicationEvent事件,
+ 
+	
 	public void contextLoaded(ConfigurableApplicationContext context) {
 		for (SpringApplicationRunListener listener : this.listeners) {
 			listener.contextLoaded(context);

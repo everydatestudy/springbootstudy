@@ -25,6 +25,7 @@ import org.springframework.boot.diagnostics.FailureAnalyzer;
 import org.springframework.util.ClassUtils;
 
 /**
+ * AbstractInjectionFailureAnalyzer–>用来对注入异常进行分析的抽象基类
  * Abstract base class for a {@link FailureAnalyzer} that handles some kind of injection
  * failure.
  *
@@ -40,13 +41,15 @@ public abstract class AbstractInjectionFailureAnalyzer<T extends Throwable>
 	protected final FailureAnalysis analyze(Throwable rootFailure, T cause) {
 		return analyze(rootFailure, cause, getDescription(rootFailure));
 	}
-
+    //
 	private String getDescription(Throwable rootFailure) {
+		// 1. 获得异常堆栈中是UnsatisfiedDependencyException的异常,如果UnsatisfiedDependencyException不等于null,则调用getDescription
 		UnsatisfiedDependencyException unsatisfiedDependency = findMostNestedCause(
 				rootFailure, UnsatisfiedDependencyException.class);
 		if (unsatisfiedDependency != null) {
 			return getDescription(unsatisfiedDependency);
 		}
+	    // 2. 获得异常堆栈中是BeanInstantiationException的异常,如果不等于null,则调用getDescription
 		BeanInstantiationException beanInstantiationException = findMostNestedCause(
 				rootFailure, BeanInstantiationException.class);
 		if (beanInstantiationException != null) {
@@ -54,7 +57,7 @@ public abstract class AbstractInjectionFailureAnalyzer<T extends Throwable>
 		}
 		return null;
 	}
-
+	//findMostNestedCause–>获得root异常堆栈中是给定类型的异常中最深的异常.实现如下:
 	@SuppressWarnings("unchecked")
 	private <C extends Exception> C findMostNestedCause(Throwable root, Class<C> type) {
 		Throwable candidate = root;

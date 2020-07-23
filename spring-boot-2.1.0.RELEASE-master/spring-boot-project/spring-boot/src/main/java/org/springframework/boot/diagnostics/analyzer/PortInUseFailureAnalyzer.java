@@ -21,6 +21,8 @@ import org.springframework.boot.diagnostics.FailureAnalysis;
 import org.springframework.boot.web.server.PortInUseException;
 
 /**
+ * PortInUseFailureAnalyzer–>继承自AbstractFailureAnalyzer,泛型参数为PortInUseException(jetty,undertow 容器启动时端口占用时抛出).analyze代码实现如下:
+ * 
  * A {@code FailureAnalyzer} that performs analysis of failures caused by a
  * {@code PortInUseException}.
  *

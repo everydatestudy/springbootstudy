@@ -278,7 +278,15 @@ class BeanDefinitionLoader {
 		}
 		return Package.getPackage(source.toString());
 	}
-
+//    如果当前类上有@Component 注解的话,则返回true.
+//    如果当前类的类名匹配.*$_.*closure.* ,或者是一个匿名类,或者构造器不存在的话,返回false.
+//    如果以上都不匹配的话,返回true.
+//
+//由于我们在启动类上加了@SpringBootApplication的注解,又由于@SpringBootApplication中存在@SpringBootConfiguration,
+	//而@SpringBootConfiguration中又存在@Configuration,最终在@Configuration中存在@Component,因此匹配1,因此返回true.
+//————————————————
+//版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//原文链接：https://blog.csdn.net/qq_26000415/article/details/78915211
 	private boolean isComponent(Class<?> type) {
 		// This has to be a bit of a guess. The only way to be sure that this type is
 		// eligible is to make a bean definition out of it and try to instantiate it.

@@ -31,6 +31,7 @@ public abstract class AbstractFailureAnalyzer<T extends Throwable>
 
 	@Override
 	public FailureAnalysis analyze(Throwable failure) {
+		 // 1. 获得failure中的异常堆栈中是type类型的异常
 		T cause = findCause(failure, getCauseType());
 		if (cause != null) {
 			return analyze(failure, cause);
