@@ -184,6 +184,8 @@ public class ServletRegistrationBean<T extends Servlet>
 			ServletContext servletContext) {
 		String name = getServletName();
 		logger.info("Servlet " + name + " mapped to " + this.urlMappings);
+		// 将一个Servlet添加到Tomcat的ServletContext对象,在本文中，我们指的这个Servlet实例
+		// 就是Spring MVC核心的前端控制器DispatcherServlet
 		return servletContext.addServlet(name, this.servlet);
 	}
 

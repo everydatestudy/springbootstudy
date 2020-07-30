@@ -35,8 +35,18 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
 /**
- * {@link EnableAutoConfiguration Auto-configuration} for embedded servlet and reactive
- * web servers customizations.
+ * 
+ * 
+ * 通过之前的文章我们知道了在SpringApplication#run方法的第9步会调用AbstractApplicationContext#refresh方法,
+ * 而在该方法的第5步中会调用invokeBeanFactoryPostProcessors方法,
+ * 在该方法会依次调用BeanFactoryPostProcessors的postProcessBeanDefinitionRegistry
+ * 进行处理.其中ConfigurationClassPostProcessor#postProcessBeanDefinitionRegistry
+ * 会依次的扫描配置类,然后进行注册.当我们加入spring-boot-starter-web
+ * 依赖时,就会加入EmbeddedWebServerFactoryCustomizerAutoConfiguration这么一个配置类.代码如下:
+ * 
+ * 
+ * {@link EnableAutoConfiguration Auto-configuration} for embedded servlet and
+ * reactive web servers customizations.
  *
  * @author Phillip Webb
  * @since 2.0.0
@@ -54,8 +64,8 @@ public class EmbeddedWebServerFactoryCustomizerAutoConfiguration {
 	public static class TomcatWebServerFactoryCustomizerConfiguration {
 
 		@Bean
-		public TomcatWebServerFactoryCustomizer tomcatWebServerFactoryCustomizer(
-				Environment environment, ServerProperties serverProperties) {
+		public TomcatWebServerFactoryCustomizer tomcatWebServerFactoryCustomizer(Environment environment,
+				ServerProperties serverProperties) {
 			return new TomcatWebServerFactoryCustomizer(environment, serverProperties);
 		}
 
@@ -69,8 +79,8 @@ public class EmbeddedWebServerFactoryCustomizerAutoConfiguration {
 	public static class JettyWebServerFactoryCustomizerConfiguration {
 
 		@Bean
-		public JettyWebServerFactoryCustomizer jettyWebServerFactoryCustomizer(
-				Environment environment, ServerProperties serverProperties) {
+		public JettyWebServerFactoryCustomizer jettyWebServerFactoryCustomizer(Environment environment,
+				ServerProperties serverProperties) {
 			return new JettyWebServerFactoryCustomizer(environment, serverProperties);
 		}
 
@@ -84,8 +94,8 @@ public class EmbeddedWebServerFactoryCustomizerAutoConfiguration {
 	public static class UndertowWebServerFactoryCustomizerConfiguration {
 
 		@Bean
-		public UndertowWebServerFactoryCustomizer undertowWebServerFactoryCustomizer(
-				Environment environment, ServerProperties serverProperties) {
+		public UndertowWebServerFactoryCustomizer undertowWebServerFactoryCustomizer(Environment environment,
+				ServerProperties serverProperties) {
 			return new UndertowWebServerFactoryCustomizer(environment, serverProperties);
 		}
 
@@ -99,8 +109,8 @@ public class EmbeddedWebServerFactoryCustomizerAutoConfiguration {
 	public static class NettyWebServerFactoryCustomizerConfiguration {
 
 		@Bean
-		public NettyWebServerFactoryCustomizer nettyWebServerFactoryCustomizer(
-				Environment environment, ServerProperties serverProperties) {
+		public NettyWebServerFactoryCustomizer nettyWebServerFactoryCustomizer(Environment environment,
+				ServerProperties serverProperties) {
 			return new NettyWebServerFactoryCustomizer(environment, serverProperties);
 		}
 

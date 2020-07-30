@@ -143,6 +143,16 @@ public class EventPublishingRunListener implements SpringApplicationRunListener,
 	}
 
 	// 》》》》》发射【ApplicationStartedEvent】事件
+	// 可以看出所有Spring容器的父类接口ApplicationContext继承了ApplicationEventPublisher这个接口，因此spring容器一般是具有广播事件的功能。
+	// 该接口封装了发布事件的公共方法，作为ApplicationContext的超级接口，同事也是委托ApplicationEventMulticaster完成事件发布。
+	// 下面再来看下Spring容器实现了ApplicationEventPublisher接口后是如何来发布事件的，
+	// 此时得先来看下spring容器的父类接口ApplicationContext，因为该接口继承了ApplicationEventPublisher接口，因此让spring容器具有了发布事件的功能。
+
+	// 那么spring容器是如何来发布事件的呢？前面已经讲过ApplicationEventMulticaster接口，没错，
+	// spring容器context正是委托其来实现发布事件的功能。
+	// 因为AbstractApplicationContext实现了ConfigurableApplicationContext接口，
+	// 通过该接口最终实现了ApplicationEventPublisher接口，spring容器发布事件的方法封装在AbstractApplicationContext的publishEvent方法中，
+//https://juejin.im/post/5e421bfc6fb9a07cd80f1354#heading-5
 	@Override
 	public void started(ConfigurableApplicationContext context) {
 		context.publishEvent(new ApplicationStartedEvent(this.application, this.args, context));

@@ -66,7 +66,8 @@ public class ErrorPageRegistrarBeanPostProcessor
 			throws BeansException {
 		return bean;
 	}
-
+//	在此处获得类型为ErrorPageRegistrar的bean,然后依次调用ErrorPageRegistry#registerErrorPages进行注册,默认情况下,只有ErrorPageCustomizer一个.
+//	代码如下
 	private void postProcessBeforeInitialization(ErrorPageRegistry registry) {
 		for (ErrorPageRegistrar registrar : getRegistrars()) {
 			registrar.registerErrorPages(registry);

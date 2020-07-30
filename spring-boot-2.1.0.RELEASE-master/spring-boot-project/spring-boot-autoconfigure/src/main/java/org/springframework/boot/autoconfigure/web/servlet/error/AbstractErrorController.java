@@ -96,7 +96,7 @@ public abstract class AbstractErrorController implements ErrorController {
 		}
 	}
 
-	/**
+	/**调用resolveErrorView进行解析.如果解析成功,则返回ModelAndView,否则,返回路径为error的ModelAndView.其resolveErrorView代码如下
 	 * Resolve any specific error views. By default this method delegates to
 	 * {@link ErrorViewResolver ErrorViewResolvers}.
 	 * @param request the request
@@ -110,6 +110,12 @@ public abstract class AbstractErrorController implements ErrorController {
 	protected ModelAndView resolveErrorView(HttpServletRequest request,
 			HttpServletResponse response, HttpStatus status, Map<String, Object> model) {
 		for (ErrorViewResolver resolver : this.errorViewResolvers) {
+//			通过遍历其errorViewResolvers ,依次调用其resolveErrorView 进行处理,如果获得一个ModelAndView 则直接返回.
+//
+//			注意,这里只有一个ErrorViewResolver–>DefaultErrorViewResolver,其resolveErrorView如下:
+//			————————————————
+//			版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//			原文链接：https://blog.csdn.net/qq_26000415/article/details/78947283
 			ModelAndView modelAndView = resolver.resolveErrorView(request, status, model);
 			if (modelAndView != null) {
 				return modelAndView;

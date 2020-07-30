@@ -125,7 +125,57 @@ import org.springframework.web.servlet.view.ContentNegotiatingViewResolver;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 
 /**
- * {@link EnableAutoConfiguration Auto-configuration} for {@link EnableWebMvc Web MVC}.
+ * 下面表格因节省篇幅,就不再列出该前提.
+配置的bean                                  	         声明的类 	                            条件
+OrderedHiddenHttpMethodFilter     						 WebMvcAutoConfiguration 				beanFactory中不存在HiddenHttpMethodFilter类型的bean
+OrderedHttpPutFormContentFilter							 WebMvcAutoConfiguration 				beanFactory中不存在HttpPutFormContentFilter类型的bean并且spring.mvc.formcontent.putfilter.enabled 等于true.(默认是true)时
+ResourceChainResourceHandlerRegistrationCustomizer 		 ResourceChainCustomizerConfiguration 	默认不配置
+RequestMappingHandlerAdapter  							 EnableWebMvcConfiguration 				无
+InternalResourceViewResolver  							 WebMvcAutoConfigurationAdapter 		beanFactory中不存在InternalResourceViewResolver类型的bean
+BeanNameViewResolver 									 WebMvcAutoConfigurationAdapter 		beanFactory中存在View类型的bean并且不存在BeanNameViewResolver类型的bean
+ContentNegotiatingViewResolver 							 WebMvcAutoConfigurationAdapter 		beanFactory中存在ViewResolver的bean并且不存在id为viewResolver,类型为 ContentNegotiatingViewResolver类型的bean
+LocaleResolver  										 WebMvcAutoConfigurationAdapter 		beanFactory中不存在LocaleResolver并且spring.mvc.locale 有值时进行注册
+Formatter  												 WebMvcAutoConfigurationAdapter 		spring.mvc.date-format 有值时注册
+WelcomePageHandlerMapping	 							 WebMvcAutoConfigurationAdapter 		无
+RequestContextFilter	 								 WebMvcAutoConfigurationAdapter 		beanFactory中不存在RequestContextListener,RequestContextFilter类型的bean时
+SimpleUrlHandlerMapping  								 FaviconConfiguration 					当spring.mvc.favicon.enabled等于true时生效(默认生效)
+ResourceHttpRequestHandler  							 FaviconConfiguration 					当spring.mvc.favicon.enabled等于true时生效(默认生效)
+RequestMappingHandlerMapping 							 EnableWebMvcConfiguration 				无
+Validator 												 EnableWebMvcConfiguration 				无
+ContentNegotiationManager  							  	 EnableWebMvcConfiguration 				无
+PathMatcher(id为mvcPathMatcher) 						     WebMvcConfigurationSupport 			无
+UrlPathHelper(id为mvcUrlPathHelper) 				 	 	 WebMvcConfigurationSupport 			无
+UrlPathHelper(id为mvcUrlPathHelper) 						 WebMvcConfigurationSupport 			无
+HandlerMapping(id为viewControllerHandlerMapping) 		 WebMvcConfigurationSupport 			无
+BeanNameUrlHandlerMapping(id为beanNameHandlerMapping) 	 WebMvcConfigurationSupport 			无
+HandlerMapping(id为resourceHandlerMapping) 				 WebMvcConfigurationSupport 			无
+ResourceUrlProvider(id为mvcResourceUrlProvider) 			 WebMvcConfigurationSupport 			无
+HandlerMapping(id为defaultServletHandlerMapping) 		 WebMvcConfigurationSupport 			无
+FormattingConversionService(id为mvcConversionService) 	 WebMvcConfigurationSupport 			无
+CompositeUriComponentsContributor					  	 WebMvcConfigurationSupport 			无
+HttpRequestHandlerAdapter							 	 WebMvcConfigurationSupport 			无
+SimpleControllerHandlerAdapter							 WebMvcConfigurationSupport 			无
+HandlerExceptionResolver(id为handlerExceptionResolver) 	 WebMvcConfigurationSupport 			无
+ViewResolver(id为mvcViewResolver) 						 WebMvcConfigurationSupport 			无
+HandlerMappingIntrospector								 WebMvcConfigurationSupport 			无
+
+ * 
+ * WebMvcAutoConfiguration中有3个内部类
+ * 
+ * WebMvcAutoConfigurationAdapter EnableWebMvcConfiguration
+ * ResourceChainCustomizerConfiguration
+ * 
+ * 这里有必要说明一下,
+ * 
+ * WebMvcAutoConfigurationAdapter声明在WebMvcAutoConfiguration中,是为了确保当该类不在类路径下时不会被读取到.
+ * EnableWebMvcConfiguration 该配置类 相当于@EnableWebMvc的功能.
+ * 
+ * 关于这部分的内容我们在spring boot 源码解析15-spring mvc零配置 中已经解释过了 WebMvcAutoConfiguration
+ * 就是对 spring mvc 进行自动化配置,取代继承WebMvcConfigurerAdapter的方式。
+ * 
+ * 
+ * {@link EnableAutoConfiguration Auto-configuration} for {@link EnableWebMvc
+ * Web MVC}.
  *
  * @author Phillip Webb
  * @author Dave Syer
@@ -142,8 +192,8 @@ import org.springframework.web.servlet.view.InternalResourceViewResolver;
 @ConditionalOnClass({ Servlet.class, DispatcherServlet.class, WebMvcConfigurer.class })
 @ConditionalOnMissingBean(WebMvcConfigurationSupport.class)
 @AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE + 10)
-@AutoConfigureAfter({ DispatcherServletAutoConfiguration.class,
-		TaskExecutionAutoConfiguration.class, ValidationAutoConfiguration.class })
+@AutoConfigureAfter({ DispatcherServletAutoConfiguration.class, TaskExecutionAutoConfiguration.class,
+		ValidationAutoConfiguration.class })
 public class WebMvcAutoConfiguration {
 
 	public static final String DEFAULT_PREFIX = "";
@@ -168,12 +218,18 @@ public class WebMvcAutoConfiguration {
 
 	// Defined as a nested config to ensure WebMvcConfigurer is not read when not
 	// on the classpath
+
+//    @Configuration–>配置类
+//    @Import(EnableWebMvcConfiguration.class)–> 导入 EnableWebMvcConfiguration配置,当加载该类时,会首先加载EnableWebMvcConfiguration
+//    @EnableConfigurationProperties({ WebMvcProperties.class, ResourceProperties.class })–>可通过spring.mvc.xx,spring.resources.xx进行配置 
+//
+//WebMvcAutoConfigurationAdapter中有一个内部类–>FaviconConfiguration,当spring.mvc.favicon.enabled等于true时生效(默认生效).其声明了2个bean.
+
 	@Configuration
 	@Import(EnableWebMvcConfiguration.class)
 	@EnableConfigurationProperties({ WebMvcProperties.class, ResourceProperties.class })
 	@Order(0)
-	public static class WebMvcAutoConfigurationAdapter
-			implements WebMvcConfigurer, ResourceLoaderAware {
+	public static class WebMvcAutoConfigurationAdapter implements WebMvcConfigurer, ResourceLoaderAware {
 
 		private static final Log logger = LogFactory.getLog(WebMvcConfigurer.class);
 
@@ -189,16 +245,14 @@ public class WebMvcAutoConfiguration {
 
 		private ResourceLoader resourceLoader;
 
-		public WebMvcAutoConfigurationAdapter(ResourceProperties resourceProperties,
-				WebMvcProperties mvcProperties, ListableBeanFactory beanFactory,
-				ObjectProvider<HttpMessageConverters> messageConvertersProvider,
+		public WebMvcAutoConfigurationAdapter(ResourceProperties resourceProperties, WebMvcProperties mvcProperties,
+				ListableBeanFactory beanFactory, ObjectProvider<HttpMessageConverters> messageConvertersProvider,
 				ObjectProvider<ResourceHandlerRegistrationCustomizer> resourceHandlerRegistrationCustomizerProvider) {
 			this.resourceProperties = resourceProperties;
 			this.mvcProperties = mvcProperties;
 			this.beanFactory = beanFactory;
 			this.messageConvertersProvider = messageConvertersProvider;
-			this.resourceHandlerRegistrationCustomizer = resourceHandlerRegistrationCustomizerProvider
-					.getIfAvailable();
+			this.resourceHandlerRegistrationCustomizer = resourceHandlerRegistrationCustomizerProvider.getIfAvailable();
 		}
 
 		@Override
@@ -208,16 +262,15 @@ public class WebMvcAutoConfiguration {
 
 		@Override
 		public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-			this.messageConvertersProvider.ifAvailable((customConverters) -> converters
-					.addAll(customConverters.getConverters()));
+			this.messageConvertersProvider
+					.ifAvailable((customConverters) -> converters.addAll(customConverters.getConverters()));
 		}
 
 		@Override
 		public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
-			if (this.beanFactory.containsBean(
-					TaskExecutionAutoConfiguration.APPLICATION_TASK_EXECUTOR_BEAN_NAME)) {
-				Object taskExecutor = this.beanFactory.getBean(
-						TaskExecutionAutoConfiguration.APPLICATION_TASK_EXECUTOR_BEAN_NAME);
+			if (this.beanFactory.containsBean(TaskExecutionAutoConfiguration.APPLICATION_TASK_EXECUTOR_BEAN_NAME)) {
+				Object taskExecutor = this.beanFactory
+						.getBean(TaskExecutionAutoConfiguration.APPLICATION_TASK_EXECUTOR_BEAN_NAME);
 				if (taskExecutor instanceof AsyncTaskExecutor) {
 					configurer.setTaskExecutor(((AsyncTaskExecutor) taskExecutor));
 				}
@@ -230,26 +283,24 @@ public class WebMvcAutoConfiguration {
 
 		@Override
 		public void configurePathMatch(PathMatchConfigurer configurer) {
-			configurer.setUseSuffixPatternMatch(
-					this.mvcProperties.getPathmatch().isUseSuffixPattern());
+			configurer.setUseSuffixPatternMatch(this.mvcProperties.getPathmatch().isUseSuffixPattern());
 			configurer.setUseRegisteredSuffixPatternMatch(
 					this.mvcProperties.getPathmatch().isUseRegisteredSuffixPattern());
 		}
 
 		@Override
 		public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
-			WebMvcProperties.Contentnegotiation contentnegotiation = this.mvcProperties
-					.getContentnegotiation();
+			WebMvcProperties.Contentnegotiation contentnegotiation = this.mvcProperties.getContentnegotiation();
 			configurer.favorPathExtension(contentnegotiation.isFavorPathExtension());
 			configurer.favorParameter(contentnegotiation.isFavorParameter());
 			if (contentnegotiation.getParameterName() != null) {
 				configurer.parameterName(contentnegotiation.getParameterName());
 			}
-			Map<String, MediaType> mediaTypes = this.mvcProperties.getContentnegotiation()
-					.getMediaTypes();
+			Map<String, MediaType> mediaTypes = this.mvcProperties.getContentnegotiation().getMediaTypes();
 			mediaTypes.forEach(configurer::mediaType);
 		}
 
+		// InternalResourceViewResolver,当beanFactory中不存在InternalResourceViewResolver类型的bean是注册,默认前缀,后缀为null代码如下:
 		@Bean
 		@ConditionalOnMissingBean
 		public InternalResourceViewResolver defaultViewResolver() {
@@ -273,8 +324,7 @@ public class WebMvcAutoConfiguration {
 		@ConditionalOnMissingBean(name = "viewResolver", value = ContentNegotiatingViewResolver.class)
 		public ContentNegotiatingViewResolver viewResolver(BeanFactory beanFactory) {
 			ContentNegotiatingViewResolver resolver = new ContentNegotiatingViewResolver();
-			resolver.setContentNegotiationManager(
-					beanFactory.getBean(ContentNegotiationManager.class));
+			resolver.setContentNegotiationManager(beanFactory.getBean(ContentNegotiationManager.class));
 			// ContentNegotiatingViewResolver uses all the other view resolvers to locate
 			// a view so it should have a high precedence
 			resolver.setOrder(Ordered.HIGHEST_PRECEDENCE);
@@ -285,8 +335,7 @@ public class WebMvcAutoConfiguration {
 		@ConditionalOnMissingBean
 		@ConditionalOnProperty(prefix = "spring.mvc", name = "locale")
 		public LocaleResolver localeResolver() {
-			if (this.mvcProperties
-					.getLocaleResolver() == WebMvcProperties.LocaleResolver.FIXED) {
+			if (this.mvcProperties.getLocaleResolver() == WebMvcProperties.LocaleResolver.FIXED) {
 				return new FixedLocaleResolver(this.mvcProperties.getLocale());
 			}
 			AcceptHeaderLocaleResolver localeResolver = new AcceptHeaderLocaleResolver();
@@ -298,8 +347,7 @@ public class WebMvcAutoConfiguration {
 		public MessageCodesResolver getMessageCodesResolver() {
 			if (this.mvcProperties.getMessageCodesResolverFormat() != null) {
 				DefaultMessageCodesResolver resolver = new DefaultMessageCodesResolver();
-				resolver.setMessageCodeFormatter(
-						this.mvcProperties.getMessageCodesResolverFormat());
+				resolver.setMessageCodeFormatter(this.mvcProperties.getMessageCodesResolverFormat());
 				return resolver;
 			}
 			return null;
@@ -324,28 +372,28 @@ public class WebMvcAutoConfiguration {
 
 		@Override
 		public void addResourceHandlers(ResourceHandlerRegistry registry) {
+			//// 如果spring.resources.addMappings 为false,则不进行处理
 			if (!this.resourceProperties.isAddMappings()) {
 				logger.debug("Default resource handling disabled");
 				return;
 			}
 			Duration cachePeriod = this.resourceProperties.getCache().getPeriod();
-			CacheControl cacheControl = this.resourceProperties.getCache()
-					.getCachecontrol().toHttpCacheControl();
+			CacheControl cacheControl = this.resourceProperties.getCache().getCachecontrol().toHttpCacheControl();
 			if (!registry.hasMappingForPattern("/webjars/**")) {
-				customizeResourceHandlerRegistration(registry
-						.addResourceHandler("/webjars/**")
+				 // 如果ResourceHandlerRegistry中不包含/webjars/**的路径映射,
+		        // 则添加 /webjars/** --> classpath:/META-INF/resources/webjars/ 的映射规则
+				customizeResourceHandlerRegistration(registry.addResourceHandler("/webjars/**")
 						.addResourceLocations("classpath:/META-INF/resources/webjars/")
-						.setCachePeriod(getSeconds(cachePeriod))
-						.setCacheControl(cacheControl));
+						.setCachePeriod(getSeconds(cachePeriod)).setCacheControl(cacheControl));
 			}
 			String staticPathPattern = this.mvcProperties.getStaticPathPattern();
+			 // 如果ResourceHandlerRegistry中不包含静态资源的映射路径,
+	        // 则添加 staticPathPattern --> classpath:/META-INF/resources/,classpath:/resources/,classpath:/static/, classpath:/public/ 的映射规则
+	 
 			if (!registry.hasMappingForPattern(staticPathPattern)) {
-				customizeResourceHandlerRegistration(
-						registry.addResourceHandler(staticPathPattern)
-								.addResourceLocations(getResourceLocations(
-										this.resourceProperties.getStaticLocations()))
-								.setCachePeriod(getSeconds(cachePeriod))
-								.setCacheControl(cacheControl));
+				customizeResourceHandlerRegistration(registry.addResourceHandler(staticPathPattern)
+						.addResourceLocations(getResourceLocations(this.resourceProperties.getStaticLocations()))
+						.setCachePeriod(getSeconds(cachePeriod)).setCacheControl(cacheControl));
 			}
 		}
 
@@ -353,29 +401,28 @@ public class WebMvcAutoConfiguration {
 			return (cachePeriod != null) ? (int) cachePeriod.getSeconds() : null;
 		}
 
+//		默认拦截路径为/**, 首页为在如下路径下查找:
+//
+//	    classpath:/META-INF/resources/index.html
+//	    classpath:/resources/index.html
+//	    classpath:/static/index.html
+//	    classpath:/public/index.html
 		@Bean
-		public WelcomePageHandlerMapping welcomePageHandlerMapping(
-				ApplicationContext applicationContext) {
-			return new WelcomePageHandlerMapping(
-					new TemplateAvailabilityProviders(applicationContext),
-					applicationContext, getWelcomePage(),
-					this.mvcProperties.getStaticPathPattern());
+		public WelcomePageHandlerMapping welcomePageHandlerMapping(ApplicationContext applicationContext) {
+			return new WelcomePageHandlerMapping(new TemplateAvailabilityProviders(applicationContext),
+					applicationContext, getWelcomePage(), this.mvcProperties.getStaticPathPattern());
 		}
 
 		static String[] getResourceLocations(String[] staticLocations) {
-			String[] locations = new String[staticLocations.length
-					+ SERVLET_LOCATIONS.length];
+			String[] locations = new String[staticLocations.length + SERVLET_LOCATIONS.length];
 			System.arraycopy(staticLocations, 0, locations, 0, staticLocations.length);
-			System.arraycopy(SERVLET_LOCATIONS, 0, locations, staticLocations.length,
-					SERVLET_LOCATIONS.length);
+			System.arraycopy(SERVLET_LOCATIONS, 0, locations, staticLocations.length, SERVLET_LOCATIONS.length);
 			return locations;
 		}
 
 		private Optional<Resource> getWelcomePage() {
-			String[] locations = getResourceLocations(
-					this.resourceProperties.getStaticLocations());
-			return Arrays.stream(locations).map(this::getIndexHtml)
-					.filter(this::isReadable).findFirst();
+			String[] locations = getResourceLocations(this.resourceProperties.getStaticLocations());
+			return Arrays.stream(locations).map(this::getIndexHtml).filter(this::isReadable).findFirst();
 		}
 
 		private Resource getIndexHtml(String location) {
@@ -385,22 +432,19 @@ public class WebMvcAutoConfiguration {
 		private boolean isReadable(Resource resource) {
 			try {
 				return resource.exists() && (resource.getURL() != null);
-			}
-			catch (Exception ex) {
+			} catch (Exception ex) {
 				return false;
 			}
 		}
 
-		private void customizeResourceHandlerRegistration(
-				ResourceHandlerRegistration registration) {
+		private void customizeResourceHandlerRegistration(ResourceHandlerRegistration registration) {
 			if (this.resourceHandlerRegistrationCustomizer != null) {
 				this.resourceHandlerRegistrationCustomizer.customize(registration);
 			}
 		}
 
 		@Bean
-		@ConditionalOnMissingBean({ RequestContextListener.class,
-				RequestContextFilter.class })
+		@ConditionalOnMissingBean({ RequestContextListener.class, RequestContextFilter.class })
 		public static RequestContextFilter requestContextFilter() {
 			return new OrderedRequestContextFilter();
 		}
@@ -422,15 +466,25 @@ public class WebMvcAutoConfiguration {
 				this.resourceLoader = resourceLoader;
 			}
 
+			// SimpleUrlHandlerMapping的映射规则为:**/favicon.ico–>
+			// handler为faviconRequestHandler声明的bean.
 			@Bean
 			public SimpleUrlHandlerMapping faviconHandlerMapping() {
 				SimpleUrlHandlerMapping mapping = new SimpleUrlHandlerMapping();
 				mapping.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
-				mapping.setUrlMap(Collections.singletonMap("**/favicon.ico",
-						faviconRequestHandler()));
+				mapping.setUrlMap(Collections.singletonMap("**/favicon.ico", faviconRequestHandler()));
 				return mapping;
 			}
 
+//			资源路径如下:
+//
+//			    classpath:/META-INF/resources/
+//			    classpath:/resources/
+//			    classpath:/static/
+//			    classpath:/public/
+//			    /
+//
+//			默认是在spring-boot/src/main/resources/下存在,也就是匹配第5个规则
 			@Bean
 			public ResourceHttpRequestHandler faviconRequestHandler() {
 				ResourceHttpRequestHandler requestHandler = new ResourceHttpRequestHandler();
@@ -439,11 +493,9 @@ public class WebMvcAutoConfiguration {
 			}
 
 			private List<Resource> resolveFaviconLocations() {
-				String[] staticLocations = getResourceLocations(
-						this.resourceProperties.getStaticLocations());
+				String[] staticLocations = getResourceLocations(this.resourceProperties.getStaticLocations());
 				List<Resource> locations = new ArrayList<>(staticLocations.length + 1);
-				Arrays.stream(staticLocations).map(this.resourceLoader::getResource)
-						.forEach(locations::add);
+				Arrays.stream(staticLocations).map(this.resourceLoader::getResource).forEach(locations::add);
 				locations.add(new ClassPathResource("/"));
 				return Collections.unmodifiableList(locations);
 			}
@@ -453,7 +505,8 @@ public class WebMvcAutoConfiguration {
 	}
 
 	/**
-	 * Configuration equivalent to {@code @EnableWebMvc}.
+	 * 通过查看源码可知,真正生效的配置是在WebMvcConfigurationSupport中, Configuration equivalent to
+	 * {@code @EnableWebMvc}.
 	 */
 	@Configuration
 	public static class EnableWebMvcConfiguration extends DelegatingWebMvcConfiguration {
@@ -464,10 +517,8 @@ public class WebMvcAutoConfiguration {
 
 		private final WebMvcRegistrations mvcRegistrations;
 
-		public EnableWebMvcConfiguration(
-				ObjectProvider<WebMvcProperties> mvcPropertiesProvider,
-				ObjectProvider<WebMvcRegistrations> mvcRegistrationsProvider,
-				ListableBeanFactory beanFactory) {
+		public EnableWebMvcConfiguration(ObjectProvider<WebMvcProperties> mvcPropertiesProvider,
+				ObjectProvider<WebMvcRegistrations> mvcRegistrationsProvider, ListableBeanFactory beanFactory) {
 			this.mvcProperties = mvcPropertiesProvider.getIfAvailable();
 			this.mvcRegistrations = mvcRegistrationsProvider.getIfUnique();
 			this.beanFactory = beanFactory;
@@ -477,15 +528,14 @@ public class WebMvcAutoConfiguration {
 		@Override
 		public RequestMappingHandlerAdapter requestMappingHandlerAdapter() {
 			RequestMappingHandlerAdapter adapter = super.requestMappingHandlerAdapter();
-			adapter.setIgnoreDefaultModelOnRedirect(this.mvcProperties == null
-					|| this.mvcProperties.isIgnoreDefaultModelOnRedirect());
+			adapter.setIgnoreDefaultModelOnRedirect(
+					this.mvcProperties == null || this.mvcProperties.isIgnoreDefaultModelOnRedirect());
 			return adapter;
 		}
 
 		@Override
 		protected RequestMappingHandlerAdapter createRequestMappingHandlerAdapter() {
-			if (this.mvcRegistrations != null
-					&& this.mvcRegistrations.getRequestMappingHandlerAdapter() != null) {
+			if (this.mvcRegistrations != null && this.mvcRegistrations.getRequestMappingHandlerAdapter() != null) {
 				return this.mvcRegistrations.getRequestMappingHandlerAdapter();
 			}
 			return super.createRequestMappingHandlerAdapter();
@@ -502,8 +552,7 @@ public class WebMvcAutoConfiguration {
 		@Bean
 		@Override
 		public FormattingConversionService mvcConversionService() {
-			WebConversionService conversionService = new WebConversionService(
-					this.mvcProperties.getDateFormat());
+			WebConversionService conversionService = new WebConversionService(this.mvcProperties.getDateFormat());
 			addFormatters(conversionService);
 			return conversionService;
 		}
@@ -511,8 +560,7 @@ public class WebMvcAutoConfiguration {
 		@Bean
 		@Override
 		public Validator mvcValidator() {
-			if (!ClassUtils.isPresent("javax.validation.Validator",
-					getClass().getClassLoader())) {
+			if (!ClassUtils.isPresent("javax.validation.Validator", getClass().getClassLoader())) {
 				return super.mvcValidator();
 			}
 			return ValidatorAdapter.get(getApplicationContext(), getValidator());
@@ -520,8 +568,7 @@ public class WebMvcAutoConfiguration {
 
 		@Override
 		protected RequestMappingHandlerMapping createRequestMappingHandlerMapping() {
-			if (this.mvcRegistrations != null
-					&& this.mvcRegistrations.getRequestMappingHandlerMapping() != null) {
+			if (this.mvcRegistrations != null && this.mvcRegistrations.getRequestMappingHandlerMapping() != null) {
 				return this.mvcRegistrations.getRequestMappingHandlerMapping();
 			}
 			return super.createRequestMappingHandlerMapping();
@@ -531,24 +578,21 @@ public class WebMvcAutoConfiguration {
 		protected ConfigurableWebBindingInitializer getConfigurableWebBindingInitializer() {
 			try {
 				return this.beanFactory.getBean(ConfigurableWebBindingInitializer.class);
-			}
-			catch (NoSuchBeanDefinitionException ex) {
+			} catch (NoSuchBeanDefinitionException ex) {
 				return super.getConfigurableWebBindingInitializer();
 			}
 		}
 
 		@Override
 		protected ExceptionHandlerExceptionResolver createExceptionHandlerExceptionResolver() {
-			if (this.mvcRegistrations != null && this.mvcRegistrations
-					.getExceptionHandlerExceptionResolver() != null) {
+			if (this.mvcRegistrations != null && this.mvcRegistrations.getExceptionHandlerExceptionResolver() != null) {
 				return this.mvcRegistrations.getExceptionHandlerExceptionResolver();
 			}
 			return super.createExceptionHandlerExceptionResolver();
 		}
 
 		@Override
-		protected void configureHandlerExceptionResolvers(
-				List<HandlerExceptionResolver> exceptionResolvers) {
+		protected void configureHandlerExceptionResolvers(List<HandlerExceptionResolver> exceptionResolvers) {
 			super.configureHandlerExceptionResolvers(exceptionResolvers);
 			if (exceptionResolvers.isEmpty()) {
 				addDefaultHandlerExceptionResolvers(exceptionResolvers);
@@ -556,8 +600,7 @@ public class WebMvcAutoConfiguration {
 			if (this.mvcProperties.isLogResolvedException()) {
 				for (HandlerExceptionResolver resolver : exceptionResolvers) {
 					if (resolver instanceof AbstractHandlerExceptionResolver) {
-						((AbstractHandlerExceptionResolver) resolver)
-								.setWarnLogCategory(resolver.getClass().getName());
+						((AbstractHandlerExceptionResolver) resolver).setWarnLogCategory(resolver.getClass().getName());
 					}
 				}
 			}
@@ -572,8 +615,7 @@ public class WebMvcAutoConfiguration {
 			while (iterator.hasNext()) {
 				ContentNegotiationStrategy strategy = iterator.next();
 				if (strategy instanceof PathExtensionContentNegotiationStrategy) {
-					iterator.set(new OptionalPathExtensionContentNegotiationStrategy(
-							strategy));
+					iterator.set(new OptionalPathExtensionContentNegotiationStrategy(strategy));
 				}
 			}
 			return manager;
@@ -598,8 +640,7 @@ public class WebMvcAutoConfiguration {
 
 	}
 
-	static class ResourceChainResourceHandlerRegistrationCustomizer
-			implements ResourceHandlerRegistrationCustomizer {
+	static class ResourceChainResourceHandlerRegistrationCustomizer implements ResourceHandlerRegistrationCustomizer {
 
 		@Autowired
 		private ResourceProperties resourceProperties = new ResourceProperties();
@@ -607,12 +648,10 @@ public class WebMvcAutoConfiguration {
 		@Override
 		public void customize(ResourceHandlerRegistration registration) {
 			ResourceProperties.Chain properties = this.resourceProperties.getChain();
-			configureResourceChain(properties,
-					registration.resourceChain(properties.isCache()));
+			configureResourceChain(properties, registration.resourceChain(properties.isCache()));
 		}
 
-		private void configureResourceChain(ResourceProperties.Chain properties,
-				ResourceChainRegistration chain) {
+		private void configureResourceChain(ResourceProperties.Chain properties, ResourceChainRegistration chain) {
 			Strategy strategy = properties.getStrategy();
 			if (properties.isCompressed()) {
 				chain.addResolver(new EncodedResourceResolver());
@@ -625,8 +664,7 @@ public class WebMvcAutoConfiguration {
 			}
 		}
 
-		private ResourceResolver getVersionResourceResolver(
-				ResourceProperties.Strategy properties) {
+		private ResourceResolver getVersionResourceResolver(ResourceProperties.Strategy properties) {
 			VersionResourceResolver resolver = new VersionResourceResolver();
 			if (properties.getFixed().isEnabled()) {
 				String version = properties.getFixed().getVersion();
@@ -646,24 +684,20 @@ public class WebMvcAutoConfiguration {
 	 * Decorator to make {@link PathExtensionContentNegotiationStrategy} optional
 	 * depending on a request attribute.
 	 */
-	static class OptionalPathExtensionContentNegotiationStrategy
-			implements ContentNegotiationStrategy {
+	static class OptionalPathExtensionContentNegotiationStrategy implements ContentNegotiationStrategy {
 
-		private static final String SKIP_ATTRIBUTE = PathExtensionContentNegotiationStrategy.class
-				.getName() + ".SKIP";
+		private static final String SKIP_ATTRIBUTE = PathExtensionContentNegotiationStrategy.class.getName() + ".SKIP";
 
 		private final ContentNegotiationStrategy delegate;
 
-		OptionalPathExtensionContentNegotiationStrategy(
-				ContentNegotiationStrategy delegate) {
+		OptionalPathExtensionContentNegotiationStrategy(ContentNegotiationStrategy delegate) {
 			this.delegate = delegate;
 		}
 
 		@Override
 		public List<MediaType> resolveMediaTypes(NativeWebRequest webRequest)
 				throws HttpMediaTypeNotAcceptableException {
-			Object skip = webRequest.getAttribute(SKIP_ATTRIBUTE,
-					RequestAttributes.SCOPE_REQUEST);
+			Object skip = webRequest.getAttribute(SKIP_ATTRIBUTE, RequestAttributes.SCOPE_REQUEST);
 			if (skip != null && Boolean.parseBoolean(skip.toString())) {
 				return MEDIA_TYPE_ALL_LIST;
 			}

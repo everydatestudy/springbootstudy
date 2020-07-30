@@ -157,12 +157,16 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 
 	@Override
 	public WebServer getWebServer(ServletContextInitializer... initializers) {
+		 // 1. 实例化Tomcat
 		Tomcat tomcat = new Tomcat();
+		 // 2. 设置临时目录
 		File baseDir = (this.baseDirectory != null) ? this.baseDirectory
 				: createTempDir("tomcat");
 		tomcat.setBaseDir(baseDir.getAbsolutePath());
+		// 3. 添加Connector
 		Connector connector = new Connector(this.protocol);
 		tomcat.getService().addConnector(connector);
+		  // 4. 个性化设置
 		customizeConnector(connector);
 		tomcat.setConnector(connector);
 		tomcat.getHost().setAutoDeploy(false);

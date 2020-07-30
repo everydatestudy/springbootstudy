@@ -91,7 +91,23 @@ class OnWebApplicationCondition extends FilteringSpringBootCondition {
 		}
 		return null;
 	}
-
+//	其中getMatchOutcome是判断逻辑,做了5件事:
+//
+//	    检查是否被@ConditionalOnWebApplication 注解
+//
+//	    通过调用isWebApplication判断是否是Web环境,
+//	        判断GenericWebApplicationContext是否在类路径中,如果不存在,则返回不匹配
+//	        容器里是否有名为session的scope,如果存在,则返回匹配
+//	        Environment是否为StandardServletEnvironment,如果是的话,则返回匹配
+//	        当前ResourceLoader是否为WebApplicationContext,如果是,则返回匹配
+//	        其他情况,返回不匹配.
+//
+//	    如果有@ConditionalOnWebApplication 注解,但是不是WebApplication环境,则返回不匹配
+//	    如果没有被@ConditionalOnWebApplication 注解,但是是WebApplication环境,则返回不匹配
+//	    如果被@ConditionalOnWebApplication 注解,并且是WebApplication环境,则返回不匹配
+//	————————————————
+//	版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//	原文链接：https://blog.csdn.net/qq_26000415/article/details/78917684
 	@Override
 	public ConditionOutcome getMatchOutcome(ConditionContext context,
 			AnnotatedTypeMetadata metadata) {

@@ -71,6 +71,17 @@ public class WebServerFactoryCustomizerBeanPostProcessor
 
 	@SuppressWarnings("unchecked")
 	private void postProcessBeforeInitialization(WebServerFactory webServerFactory) {
+	    // 在Spring容器中寻找ConfigurableEmbeddedServletContainer类型的bean，
+		//SpringBoot内部的3种内置Servlet容器工厂都实现了这个接口，该接口的作用就是进行Servlet容器的配置
+	    // 比如添加Servlet初始化器addInitializers、添加错误页addErrorPages、设置session超时时间setSessionTimeout、设置端口setPort等等
+//		通过beanFactory 获得EmbeddedServletContainerCustomizer类型的bean,对于当前场景,有5个.如下:
+//
+//			[org.springframework.boot.autoconfigure.websocket.servlet.TomcatWebSocketServletWebServerCustomizer@40147317, 
+//			 org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryCustomizer@210f0cc1, 
+//			 org.springframework.boot.autoconfigure.web.servlet.TomcatServletWebServerFactoryCustomizer@19542407, 
+//			 org.springframework.boot.autoconfigure.web.embedded.TomcatWebServerFactoryCustomizer@6f95cd51, 
+//			 org.springframework.boot.autoconfigure.web.servlet.HttpEncodingAutoConfiguration$LocaleCharsetMappingsCustomizer@c7a977f]
+ 
 		LambdaSafe
 				.callbacks(WebServerFactoryCustomizer.class, getCustomizers(),
 						webServerFactory)

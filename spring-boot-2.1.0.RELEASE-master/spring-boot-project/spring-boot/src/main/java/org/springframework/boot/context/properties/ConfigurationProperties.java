@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
 
 import org.springframework.core.annotation.AliasFor;
 
-/**
+/**ConfigurationPropertiesBindingPostProcessor处理绑定数据
  * Annotation for externalized configuration. Add this to a class definition or a
  * {@code @Bean} method in a {@code @Configuration} class if you want to bind and validate
  * some external Properties (e.g. from a .properties file).

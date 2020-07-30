@@ -2,6 +2,10 @@ package org.spring.boot.yanjiu;
 
 import org.springframework.util.StopWatch;
 
+interface test {
+	void onstartup(StopWatch aa);
+}
+
 public class StopWatchTest {
 
 	public static void main(String[] args) throws InterruptedException {
@@ -23,4 +27,12 @@ public class StopWatchTest {
 
 	}
 
+	public test getshow() {
+		return this.init("aa");
+	
+	}
+
+	public void init(StopWatch aa) {
+		System.out.println("fdsafdsa");
+	}
 }

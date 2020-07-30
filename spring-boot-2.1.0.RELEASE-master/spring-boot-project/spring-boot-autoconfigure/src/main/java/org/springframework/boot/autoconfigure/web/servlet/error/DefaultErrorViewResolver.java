@@ -38,10 +38,10 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.View;
 
 /**
- * Default {@link ErrorViewResolver} implementation that attempts to resolve error views
- * using well known conventions. Will search for templates and static assets under
- * {@code '/error'} using the {@link HttpStatus status code} and the
- * {@link HttpStatus#series() status series}.
+ * Default {@link ErrorViewResolver} implementation that attempts to resolve
+ * error views using well known conventions. Will search for templates and
+ * static assets under {@code '/error'} using the {@link HttpStatus status code}
+ * and the {@link HttpStatus#series() status series}.
  * <p>
  * For example, an {@code HTTP 404} will search (in the specific order):
  * <ul>
@@ -76,21 +76,19 @@ public class DefaultErrorViewResolver implements ErrorViewResolver, Ordered {
 
 	/**
 	 * Create a new {@link DefaultErrorViewResolver} instance.
+	 * 
 	 * @param applicationContext the source application context
 	 * @param resourceProperties resource properties
 	 */
-	public DefaultErrorViewResolver(ApplicationContext applicationContext,
-			ResourceProperties resourceProperties) {
+	public DefaultErrorViewResolver(ApplicationContext applicationContext, ResourceProperties resourceProperties) {
 		Assert.notNull(applicationContext, "ApplicationContext must not be null");
 		Assert.notNull(resourceProperties, "ResourceProperties must not be null");
 		this.applicationContext = applicationContext;
 		this.resourceProperties = resourceProperties;
-		this.templateAvailabilityProviders = new TemplateAvailabilityProviders(
-				applicationContext);
+		this.templateAvailabilityProviders = new TemplateAvailabilityProviders(applicationContext);
 	}
 
-	DefaultErrorViewResolver(ApplicationContext applicationContext,
-			ResourceProperties resourceProperties,
+	DefaultErrorViewResolver(ApplicationContext applicationContext, ResourceProperties resourceProperties,
 			TemplateAvailabilityProviders templateAvailabilityProviders) {
 		Assert.notNull(applicationContext, "ApplicationContext must not be null");
 		Assert.notNull(resourceProperties, "ResourceProperties must not be null");
@@ -100,8 +98,7 @@ public class DefaultErrorViewResolver implements ErrorViewResolver, Ordered {
 	}
 
 	@Override
-	public ModelAndView resolveErrorView(HttpServletRequest request, HttpStatus status,
-			Map<String, Object> model) {
+	public ModelAndView resolveErrorView(HttpServletRequest request, HttpStatus status, Map<String, Object> model) {
 		ModelAndView modelAndView = resolve(String.valueOf(status.value()), model);
 		if (modelAndView == null && SERIES_VIEWS.containsKey(status.series())) {
 			modelAndView = resolve(SERIES_VIEWS.get(status.series()), model);
@@ -111,13 +108,22 @@ public class DefaultErrorViewResolver implements ErrorViewResolver, Ordered {
 
 	private ModelAndView resolve(String viewName, Map<String, Object> model) {
 		String errorViewName = "error/" + viewName;
-		TemplateAvailabilityProvider provider = this.templateAvailabilityProviders
-				.getProvider(errorViewName, this.applicationContext);
+		TemplateAvailabilityProvider provider = this.templateAvailabilityProviders.getProvider(errorViewName,
+				this.applicationContext);
 		if (provider != null) {
 			return new ModelAndView(errorViewName, model);
 		}
 		return resolveResource(errorViewName, model);
 	}
+//	很简单,依次从
+//
+//    classpath:/META-INF/resources/
+//    classpath:/resources/
+//    classpath:/static/
+//    classpath:/public/
+//
+//路径下加载 viewName.html.如果加载到,则返回ModelAndView,否则,返回null.
+//对于当前来说,是在以上路径加载500.html,很明显是加载不到的,因此会进入到第2步进行处理.
 
 	private ModelAndView resolveResource(String viewName, Map<String, Object> model) {
 		for (String location : this.resourceProperties.getStaticLocations()) {
@@ -127,8 +133,7 @@ public class DefaultErrorViewResolver implements ErrorViewResolver, Ordered {
 				if (resource.exists()) {
 					return new ModelAndView(new HtmlResourceView(resource), model);
 				}
-			}
-			catch (Exception ex) {
+			} catch (Exception ex) {
 			}
 		}
 		return null;
@@ -160,11 +165,10 @@ public class DefaultErrorViewResolver implements ErrorViewResolver, Ordered {
 		}
 
 		@Override
-		public void render(Map<String, ?> model, HttpServletRequest request,
-				HttpServletResponse response) throws Exception {
+		public void render(Map<String, ?> model, HttpServletRequest request, HttpServletResponse response)
+				throws Exception {
 			response.setContentType(getContentType());
-			FileCopyUtils.copy(this.resource.getInputStream(),
-					response.getOutputStream());
+			FileCopyUtils.copy(this.resource.getInputStream(), response.getOutputStream());
 		}
 
 	}
