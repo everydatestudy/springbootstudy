@@ -48,7 +48,8 @@ git merge命令用于合并指定分支到当前分支。
 解决冲突就是把Git合并失败的文件手动编辑为我们希望的内容， 再提交。
 用git log --graph命令可以看到分支合并图
 git log --graph --pretty=oneline --abbrev-commit 查看日志
-git stash 可以把当前工作现场“储藏”起来， 等以后恢复现场后继续工作：
+TODO 
+git stash 可以把当前工作现场“储藏”起来， 等以后恢复现场后继续工作：需要详细的了解一下，看能否解决冲突的数据
 
 再用git stash list查看， 就看不到任何stash内容了：
 $ git stash list
@@ -103,3 +104,64 @@ $ git config --global alias.st status
 ${sys:user.home} 指的用户根目录 C盘 Users目录下用户目录下
 
 获取用户HOME目录的占位符是“${sys:user.home}”，而不是之前的“${user.home}”
+
+
+Git fetch:从远程获取最新版本并merge(合并)到本地
+$:git pull origin master  //相当于进行了 git fetch 和 git merge两部操作
+
+再说导致报错:error: You have not concluded your merge (MERGE_HEAD exists).的原因可能是在以前pull下来的代码自动合并失败
+解决办法一:保留本地的更改,中止合并->重新合并->重新拉取
+
+
+解决办法二:舍弃本地代码,远端版本覆盖本地版本(慎重)
+$:git fetch --all
+$:git reset --hard origin/master
+$:git fetch
+
+
+git fetch是将远程主机的最新内容拉到本地，用户在检查了以后决定是否合并到工作本机分支中。
+
+而git pull 则是将远程主机的最新内容拉下来后直接合并，即：git pull = git fetch + git merge，这样可能会产生冲突，需要手动解决。
+
+
+git fetch 命令：
+$ git fetch <远程主机名> //这个命令将某个远程主机的更新全部取回本地
+
+如果只想取回特定分支的更新，可以指定分支名：
+$ git fetch <远程主机名> <分支名> //注意之间有空格
+
+最常见的命令如取回origin 主机的master 分支：
+$ git fetch origin master
+
+取回更新后，会返回一个FETCH_HEAD ，指的是某个branch在服务器上的最新状态，我们可以在本地通过它查看刚取回的更新信息：
+
+$ git log -p FETCH_HEAD
+
+前面提到，git pull 的过程可以理解为：
+
+git fetch origin master //从远程主机的master分支拉取最新内容 
+git merge FETCH_HEAD    //将拉取下来的最新内容合并到当前所在的分支中
+
+即将远程主机的某个分支的更新取回，并与本地指定的分支合并，完整格式可表示为：
+$ git pull <远程主机名> <远程分支名>:<本地分支名>
+
+如果远程分支是与当前分支合并，则冒号后面的部分可以省略：
+
+$ git pull origin next
+
+1. 基本使用
+stash命令可用于临时保存和回复修改，可跨分支。
+
+常用git stash命令：
+git stash: 备份当前的工作区的内容，从最近的一次提交中读取相关内容，让工作区保证和上次提交的内容一致。同时，将当前的工作区内容保存到Git栈中。
+git stash save 'message'：备份工作区内容，同时添加备注信息。
+git stash save -a "messeag" ：没有加 -a 这个option选项，代码开发可能是在原代码上进行修改的。而对于在项目里加入了代码新文件的开发来说，-a选项才会将新加入的代码文件同时放入暂存区。
+git stash apply: 从Git栈中读取最近一次保存的内容，恢复工作区的相关内容。但是不会将该stash记录删除
+git stash drop: 把最近的一条stash记录删除。
+git stash pop: 从Git栈中读取最近一次保存的内容，恢复工作区的相关内容。由于可能存在多个Stash的内容，所以用栈来管理，pop会从最近的一个stash中读取内容并恢复，同时会删除这条stash记录，相当于git stash apply和git stash drop一起执行了。
+git stash list: 显示Git栈内的所有备份，可以利用这个列表来决定从那个地方恢复。
+git stash clear: 清空Git栈，原来存储的所以stash的节点都消失了。
+
+
+
+

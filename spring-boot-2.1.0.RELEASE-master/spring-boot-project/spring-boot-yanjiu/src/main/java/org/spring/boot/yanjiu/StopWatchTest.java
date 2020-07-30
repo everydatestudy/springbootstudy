@@ -28,8 +28,8 @@ public class StopWatchTest {
 	}
 
 	public test getshow() {
-		return this.init("aa");
-	
+		//return this.init("aa");
+		return null;
 	}
 
 	public void init(StopWatch aa) {
