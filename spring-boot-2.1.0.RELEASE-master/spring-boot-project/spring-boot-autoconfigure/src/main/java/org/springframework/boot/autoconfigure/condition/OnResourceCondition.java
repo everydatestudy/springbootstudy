@@ -31,6 +31,12 @@ import org.springframework.util.Assert;
 import org.springframework.util.MultiValueMap;
 
 /**
+ * 现在先来看下一个逻辑及其简单的注解条件类OnResourceCondition，
+ * OnResourceCondition继承了SpringBootCondition父类，
+ * 覆盖了其getMatchOutcome方法，用于@ConditionalOnResource注解指定的资源存在与否。
+ * OnResourceCondition的判断逻辑非常简单，
+ * 主要拿到@ConditionalOnResource注解指定的资源路径后，
+ * 然后用ResourceLoader根据指定路径去加载看资源存不存在。
  * {@link Condition} that checks for specific resources.
  *
  * @author Dave Syer
@@ -42,20 +48,18 @@ class OnResourceCondition extends SpringBootCondition {
 	private final ResourceLoader defaultResourceLoader = new DefaultResourceLoader();
 
 	@Override
-	public ConditionOutcome getMatchOutcome(ConditionContext context,
-			AnnotatedTypeMetadata metadata) {
+	public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
 		// 获得@ConditionalOnResource注解的属性元数据
 		MultiValueMap<String, Object> attributes = metadata
 				.getAllAnnotationAttributes(ConditionalOnResource.class.getName(), true);
 		// 获得资源加载器，若ConditionContext中有ResourceLoader则用ConditionContext中的，没有则用默认的
-		ResourceLoader loader = (context.getResourceLoader() != null)
-				? context.getResourceLoader() : this.defaultResourceLoader;
+		ResourceLoader loader = (context.getResourceLoader() != null) ? context.getResourceLoader()
+				: this.defaultResourceLoader;
 		List<String> locations = new ArrayList<>();
 		// 将@ConditionalOnResource中定义的resources属性值取出来装进locations集合
 		collectValues(locations, attributes.get("resources"));
 		Assert.isTrue(!locations.isEmpty(),
-				"@ConditionalOnResource annotations must specify at "
-						+ "least one resource location");
+				"@ConditionalOnResource annotations must specify at " + "least one resource location");
 		// missing集合是装不存在指定资源的资源路径的
 		List<String> missing = new ArrayList<>();
 		// 遍历所有的资源路径，若指定的路径的资源不存在则将其资源路径存进missing集合中
@@ -68,15 +72,14 @@ class OnResourceCondition extends SpringBootCondition {
 		}
 		// 如果存在某个资源不存在，那么则报错
 		if (!missing.isEmpty()) {
-			return ConditionOutcome.noMatch(ConditionMessage
-					.forCondition(ConditionalOnResource.class)
+			return ConditionOutcome.noMatch(ConditionMessage.forCondition(ConditionalOnResource.class)
 					.didNotFind("resource", "resources").items(Style.QUOTE, missing));
 		}
 		// 所有资源都存在，那么则返回能找到就提的资源
-		return ConditionOutcome
-				.match(ConditionMessage.forCondition(ConditionalOnResource.class)
-						.found("location", "locations").items(locations));
+		return ConditionOutcome.match(ConditionMessage.forCondition(ConditionalOnResource.class)
+				.found("location", "locations").items(locations));
 	}
+
 	// 将@ConditionalOnResource中定义的resources属性值取出来装进locations集合
 	private void collectValues(List<String> names, List<Object> values) {
 		for (Object value : values) {

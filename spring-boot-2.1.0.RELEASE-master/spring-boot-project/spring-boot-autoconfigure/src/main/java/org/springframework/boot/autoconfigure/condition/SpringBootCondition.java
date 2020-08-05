@@ -29,8 +29,12 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 /**
- * Base of all {@link Condition} implementations used with Spring Boot. Provides sensible
- * logging to help the user diagnose what classes are loaded.
+ * 我们知道了SpringBootCondition抽象了所有其具体实现类OnXXXCondition的共有逻辑--condition评估信息打印，
+ * 最重要的是封装了一个模板方法getMatchOutcome(context,
+ * metadata)，留给各个OnXXXCondition具体子类去覆盖实现属于自己的判断逻辑，
+ * 然后再返回相应的匹配结果给SpringBootCondition用于日志打印。
+ * Base of all {@link Condition} implementations used with Spring Boot. Provides
+ * sensible logging to help the user diagnose what classes are loaded.
  *
  * @author Phillip Webb
  * @author Greg Turnquist
@@ -40,8 +44,7 @@ public abstract class SpringBootCondition implements Condition {
 	private final Log logger = LogFactory.getLog(getClass());
 
 	@Override
-	public final boolean matches(ConditionContext context,
-			AnnotatedTypeMetadata metadata) {
+	public final boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
 		// 得到metadata的类名或方法名
 		String classOrMethodName = getClassOrMethodName(metadata);
 		try {
@@ -54,20 +57,14 @@ public abstract class SpringBootCondition implements Condition {
 			recordEvaluation(context, classOrMethodName, outcome);
 			// 最后返回@ConditionalOnXXX是否满足条件
 			return outcome.isMatch();
-		}
-		catch (NoClassDefFoundError ex) {
-			throw new IllegalStateException(
-					"Could not evaluate condition on " + classOrMethodName + " due to "
-							+ ex.getMessage() + " not "
-							+ "found. Make sure your own configuration does not rely on "
-							+ "that class. This can also happen if you are "
-							+ "@ComponentScanning a springframework package (e.g. if you "
-							+ "put a @ComponentScan in the default package by mistake)",
-					ex);
-		}
-		catch (RuntimeException ex) {
-			throw new IllegalStateException(
-					"Error processing condition on " + getName(metadata), ex);
+		} catch (NoClassDefFoundError ex) {
+			throw new IllegalStateException("Could not evaluate condition on " + classOrMethodName + " due to "
+					+ ex.getMessage() + " not " + "found. Make sure your own configuration does not rely on "
+					+ "that class. This can also happen if you are "
+					+ "@ComponentScanning a springframework package (e.g. if you "
+					+ "put a @ComponentScan in the default package by mistake)", ex);
+		} catch (RuntimeException ex) {
+			throw new IllegalStateException("Error processing condition on " + getName(metadata), ex);
 		}
 	}
 
@@ -77,8 +74,7 @@ public abstract class SpringBootCondition implements Condition {
 		}
 		if (metadata instanceof MethodMetadata) {
 			MethodMetadata methodMetadata = (MethodMetadata) metadata;
-			return methodMetadata.getDeclaringClassName() + "."
-					+ methodMetadata.getMethodName();
+			return methodMetadata.getDeclaringClassName() + "." + methodMetadata.getMethodName();
 		}
 		return metadata.toString();
 	}
@@ -91,8 +87,7 @@ public abstract class SpringBootCondition implements Condition {
 		}
 		// 如果metadata是方法，则返回方法名，形式为"类名#方法名"
 		MethodMetadata methodMetadata = (MethodMetadata) metadata;
-		return methodMetadata.getDeclaringClassName() + "#"
-				+ methodMetadata.getMethodName();
+		return methodMetadata.getDeclaringClassName() + "#" + methodMetadata.getMethodName();
 	}
 
 	protected final void logOutcome(String classOrMethodName, ConditionOutcome outcome) {
@@ -101,8 +96,7 @@ public abstract class SpringBootCondition implements Condition {
 		}
 	}
 
-	private StringBuilder getLogMessage(String classOrMethodName,
-			ConditionOutcome outcome) {
+	private StringBuilder getLogMessage(String classOrMethodName, ConditionOutcome outcome) {
 		StringBuilder message = new StringBuilder();
 		message.append("Condition ");
 		message.append(ClassUtils.getShortName(getClass()));
@@ -116,32 +110,32 @@ public abstract class SpringBootCondition implements Condition {
 		return message;
 	}
 
-	private void recordEvaluation(ConditionContext context, String classOrMethodName,
-			ConditionOutcome outcome) {
+	private void recordEvaluation(ConditionContext context, String classOrMethodName, ConditionOutcome outcome) {
 		if (context.getBeanFactory() != null) {
-			ConditionEvaluationReport.get(context.getBeanFactory())
-					.recordConditionEvaluation(classOrMethodName, this, outcome);
+			ConditionEvaluationReport.get(context.getBeanFactory()).recordConditionEvaluation(classOrMethodName, this,
+					outcome);
 		}
 	}
 
 	/**
 	 * Determine the outcome of the match along with suitable log output.
-	 * @param context the condition context
+	 * 
+	 * @param context  the condition context
 	 * @param metadata the annotation metadata
 	 * @return the condition outcome
 	 */
-	public abstract ConditionOutcome getMatchOutcome(ConditionContext context,
-			AnnotatedTypeMetadata metadata);
+	public abstract ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata);
 
 	/**
 	 * Return true if any of the specified conditions match.
-	 * @param context the context
-	 * @param metadata the annotation meta-data
+	 * 
+	 * @param context    the context
+	 * @param metadata   the annotation meta-data
 	 * @param conditions conditions to test
 	 * @return {@code true} if any condition matches.
 	 */
-	protected final boolean anyMatches(ConditionContext context,
-			AnnotatedTypeMetadata metadata, Condition... conditions) {
+	protected final boolean anyMatches(ConditionContext context, AnnotatedTypeMetadata metadata,
+			Condition... conditions) {
 		for (Condition condition : conditions) {
 			if (matches(context, metadata, condition)) {
 				return true;
@@ -152,16 +146,15 @@ public abstract class SpringBootCondition implements Condition {
 
 	/**
 	 * Return true if any of the specified condition matches.
-	 * @param context the context
-	 * @param metadata the annotation meta-data
+	 * 
+	 * @param context   the context
+	 * @param metadata  the annotation meta-data
 	 * @param condition condition to test
 	 * @return {@code true} if the condition matches.
 	 */
-	protected final boolean matches(ConditionContext context,
-			AnnotatedTypeMetadata metadata, Condition condition) {
+	protected final boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata, Condition condition) {
 		if (condition instanceof SpringBootCondition) {
-			return ((SpringBootCondition) condition).getMatchOutcome(context, metadata)
-					.isMatch();
+			return ((SpringBootCondition) condition).getMatchOutcome(context, metadata).isMatch();
 		}
 		return condition.matches(context, metadata);
 	}

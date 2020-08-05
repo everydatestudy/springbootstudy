@@ -9,9 +9,9 @@
 		<artifactId>spring-boot-project</artifactId>
 		<version>${revision}</version>
 	</parent>
-	<groupId>org.springframework.boot</groupId>
+
 	<artifactId>spring-boot-yanjiu</artifactId>
-	<version>${revision}</version>
+
 	<name>spring-boot-yanjiu</name>
 	<url>http://maven.apache.org</url>
 	<properties>
@@ -30,4 +30,26 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<!-- spring-boot:run 中文乱码解决 -->
+				<configuration>
+					<fork>true</fork>
+					<!--增加jvm参数 -->
+					<jvmArguments>-Dfile.encoding=UTF-8</jvmArguments>
+				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>org.springframework</groupId>
+						<artifactId>springloaded</artifactId>
+						<version>2.1.0.RELEASE</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+		</plugins>
+	</build>
 </project>

@@ -33,6 +33,12 @@ import org.springframework.web.context.ConfigurableWebEnvironment;
 import org.springframework.web.context.WebApplicationContext;
 
 /**
+ * OnWebApplicationCondition同样继承了FilteringSpringBootCondition父类，
+ * 覆盖了父类FilteringSpringBootCondition的getOutcomes方法。
+ * 而FilteringSpringBootCondition又是SpringBootCondition的子类，
+ * FilteringSpringBootCondition跟自动配置类过滤有关，这里先不分析。
+ * 值得注意的是OnWebApplicationCondition同样重写了SpringBootCondition的getMatchOutcome方法，
+ * 用来判断当前应用是否web应用。同时是OnWebApplicationCondition是@ConditionalOnWebApplication的条件类。
  * {@link Condition} that checks for the presence or absence of
  * {@link WebApplicationContext}.
  *
@@ -55,8 +61,8 @@ class OnWebApplicationCondition extends FilteringSpringBootCondition {
 		for (int i = 0; i < outcomes.length; i++) {
 			String autoConfigurationClass = autoConfigurationClasses[i];
 			if (autoConfigurationClass != null) {
-				outcomes[i] = getOutcome(autoConfigurationMetadata
-						.get(autoConfigurationClass, "ConditionalOnWebApplication"));
+				outcomes[i] = getOutcome(
+						autoConfigurationMetadata.get(autoConfigurationClass, "ConditionalOnWebApplication"));
 			}
 		}
 		return outcomes;
@@ -66,31 +72,24 @@ class OnWebApplicationCondition extends FilteringSpringBootCondition {
 		if (type == null) {
 			return null;
 		}
-		ConditionMessage.Builder message = ConditionMessage
-				.forCondition(ConditionalOnWebApplication.class);
+		ConditionMessage.Builder message = ConditionMessage.forCondition(ConditionalOnWebApplication.class);
 		if (ConditionalOnWebApplication.Type.SERVLET.name().equals(type)) {
-			if (!ClassNameFilter.isPresent(SERVLET_WEB_APPLICATION_CLASS,
-					getBeanClassLoader())) {
-				return ConditionOutcome.noMatch(
-						message.didNotFind("servlet web application classes").atAll());
+			if (!ClassNameFilter.isPresent(SERVLET_WEB_APPLICATION_CLASS, getBeanClassLoader())) {
+				return ConditionOutcome.noMatch(message.didNotFind("servlet web application classes").atAll());
 			}
 		}
 		if (ConditionalOnWebApplication.Type.REACTIVE.name().equals(type)) {
-			if (!ClassNameFilter.isPresent(REACTIVE_WEB_APPLICATION_CLASS,
-					getBeanClassLoader())) {
-				return ConditionOutcome.noMatch(
-						message.didNotFind("reactive web application classes").atAll());
+			if (!ClassNameFilter.isPresent(REACTIVE_WEB_APPLICATION_CLASS, getBeanClassLoader())) {
+				return ConditionOutcome.noMatch(message.didNotFind("reactive web application classes").atAll());
 			}
 		}
-		if (!ClassNameFilter.isPresent(SERVLET_WEB_APPLICATION_CLASS,
-				getBeanClassLoader())
-				&& !ClassUtils.isPresent(REACTIVE_WEB_APPLICATION_CLASS,
-						getBeanClassLoader())) {
-			return ConditionOutcome.noMatch(message
-					.didNotFind("reactive or servlet web application classes").atAll());
+		if (!ClassNameFilter.isPresent(SERVLET_WEB_APPLICATION_CLASS, getBeanClassLoader())
+				&& !ClassUtils.isPresent(REACTIVE_WEB_APPLICATION_CLASS, getBeanClassLoader())) {
+			return ConditionOutcome.noMatch(message.didNotFind("reactive or servlet web application classes").atAll());
 		}
 		return null;
 	}
+
 //	其中getMatchOutcome是判断逻辑,做了5件事:
 //
 //	    检查是否被@ConditionalOnWebApplication 注解
@@ -109,11 +108,9 @@ class OnWebApplicationCondition extends FilteringSpringBootCondition {
 //	版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
 //	原文链接：https://blog.csdn.net/qq_26000415/article/details/78917684
 	@Override
-	public ConditionOutcome getMatchOutcome(ConditionContext context,
-			AnnotatedTypeMetadata metadata) {
+	public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
 		// 配置类是否标注有@ConditionalOnWebApplication注解
-		boolean required = metadata
-				.isAnnotated(ConditionalOnWebApplication.class.getName());
+		boolean required = metadata.isAnnotated(ConditionalOnWebApplication.class.getName());
 		// 调用isWebApplication方法返回匹配结果
 		ConditionOutcome outcome = isWebApplication(context, metadata, required);
 		// 若有标注@ConditionalOnWebApplication但不符合条件，则返回不匹配
@@ -124,12 +121,13 @@ class OnWebApplicationCondition extends FilteringSpringBootCondition {
 		if (!required && outcome.isMatch()) {
 			return ConditionOutcome.noMatch(outcome.getConditionMessage());
 		}
-		// 这里返回匹配的情况，TODO 不过有个疑问：如果没有标注@ConditionalOnWebApplication注解，又不符合条件的话，也会执行到这里，返回匹配？
+		// 这里返回匹配的情况，TODO
+		// 不过有个疑问：如果没有标注@ConditionalOnWebApplication注解，又不符合条件的话，也会执行到这里，返回匹配？
 		return ConditionOutcome.match(outcome.getConditionMessage());
 	}
 
-	private ConditionOutcome isWebApplication(ConditionContext context,
-			AnnotatedTypeMetadata metadata, boolean required) {
+	private ConditionOutcome isWebApplication(ConditionContext context, AnnotatedTypeMetadata metadata,
+			boolean required) {
 		// 调用deduceType方法判断是哪种类型，其中有SERVLET，REACTIVE和ANY类型，其中ANY表示了SERVLET或REACTIVE类型
 		switch (deduceType(metadata)) {
 		// SERVLET类型
@@ -143,32 +141,26 @@ class OnWebApplicationCondition extends FilteringSpringBootCondition {
 		}
 	}
 
-	private ConditionOutcome isAnyWebApplication(ConditionContext context,
-			boolean required) {
-		ConditionMessage.Builder message = ConditionMessage.forCondition(
-				ConditionalOnWebApplication.class, required ? "(required)" : "");
+	private ConditionOutcome isAnyWebApplication(ConditionContext context, boolean required) {
+		ConditionMessage.Builder message = ConditionMessage.forCondition(ConditionalOnWebApplication.class,
+				required ? "(required)" : "");
 		ConditionOutcome servletOutcome = isServletWebApplication(context);
 		if (servletOutcome.isMatch() && required) {
-			return new ConditionOutcome(servletOutcome.isMatch(),
-					message.because(servletOutcome.getMessage()));
+			return new ConditionOutcome(servletOutcome.isMatch(), message.because(servletOutcome.getMessage()));
 		}
 		ConditionOutcome reactiveOutcome = isReactiveWebApplication(context);
 		if (reactiveOutcome.isMatch() && required) {
-			return new ConditionOutcome(reactiveOutcome.isMatch(),
-					message.because(reactiveOutcome.getMessage()));
+			return new ConditionOutcome(reactiveOutcome.isMatch(), message.because(reactiveOutcome.getMessage()));
 		}
 		return new ConditionOutcome(servletOutcome.isMatch() || reactiveOutcome.isMatch(),
-				message.because(servletOutcome.getMessage()).append("and")
-						.append(reactiveOutcome.getMessage()));
+				message.because(servletOutcome.getMessage()).append("and").append(reactiveOutcome.getMessage()));
 	}
 
 	private ConditionOutcome isServletWebApplication(ConditionContext context) {
 		ConditionMessage.Builder message = ConditionMessage.forCondition("");
 		// 若classpath中不存在org.springframework.web.context.support.GenericWebApplicationContext.class，则返回不匹配
-		if (!ClassNameFilter.isPresent(SERVLET_WEB_APPLICATION_CLASS,
-				context.getClassLoader())) {
-			return ConditionOutcome.noMatch(
-					message.didNotFind("servlet web application classes").atAll());
+		if (!ClassNameFilter.isPresent(SERVLET_WEB_APPLICATION_CLASS, context.getClassLoader())) {
+			return ConditionOutcome.noMatch(message.didNotFind("servlet web application classes").atAll());
 		}
 		// 若classpath中存在org.springframework.web.context.support.GenericWebApplicationContext.class，那么又分为以下几种匹配的情况
 		// session
@@ -180,8 +172,7 @@ class OnWebApplicationCondition extends FilteringSpringBootCondition {
 		}
 		// ConfigurableWebEnvironment
 		if (context.getEnvironment() instanceof ConfigurableWebEnvironment) {
-			return ConditionOutcome
-					.match(message.foundExactly("ConfigurableWebEnvironment"));
+			return ConditionOutcome.match(message.foundExactly("ConfigurableWebEnvironment"));
 		}
 		// WebApplicationContext
 		if (context.getResourceLoader() instanceof WebApplicationContext) {
@@ -194,26 +185,20 @@ class OnWebApplicationCondition extends FilteringSpringBootCondition {
 	private ConditionOutcome isReactiveWebApplication(ConditionContext context) {
 		ConditionMessage.Builder message = ConditionMessage.forCondition("");
 		// 若classpath中不存在org.springframework.web.reactive.HandlerResult.class
-		if (!ClassNameFilter.isPresent(REACTIVE_WEB_APPLICATION_CLASS,
-				context.getClassLoader())) {
-			return ConditionOutcome.noMatch(
-					message.didNotFind("reactive web application classes").atAll());
+		if (!ClassNameFilter.isPresent(REACTIVE_WEB_APPLICATION_CLASS, context.getClassLoader())) {
+			return ConditionOutcome.noMatch(message.didNotFind("reactive web application classes").atAll());
 		}
 		if (context.getEnvironment() instanceof ConfigurableReactiveWebEnvironment) {
-			return ConditionOutcome
-					.match(message.foundExactly("ConfigurableReactiveWebEnvironment"));
+			return ConditionOutcome.match(message.foundExactly("ConfigurableReactiveWebEnvironment"));
 		}
 		if (context.getResourceLoader() instanceof ReactiveWebApplicationContext) {
-			return ConditionOutcome
-					.match(message.foundExactly("ReactiveWebApplicationContext"));
+			return ConditionOutcome.match(message.foundExactly("ReactiveWebApplicationContext"));
 		}
-		return ConditionOutcome
-				.noMatch(message.because("not a reactive web application"));
+		return ConditionOutcome.noMatch(message.because("not a reactive web application"));
 	}
 
 	private Type deduceType(AnnotatedTypeMetadata metadata) {
-		Map<String, Object> attributes = metadata
-				.getAnnotationAttributes(ConditionalOnWebApplication.class.getName());
+		Map<String, Object> attributes = metadata.getAnnotationAttributes(ConditionalOnWebApplication.class.getName());
 		if (attributes != null) {
 			return (Type) attributes.get("type");
 		}

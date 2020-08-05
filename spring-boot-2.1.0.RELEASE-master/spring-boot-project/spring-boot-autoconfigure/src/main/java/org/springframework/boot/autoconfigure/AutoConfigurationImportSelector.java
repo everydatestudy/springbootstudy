@@ -79,7 +79,7 @@ import org.springframework.util.StringUtils;
  * 
  * 因此,我们就从EnableAutoConfigurationImportSelector#selectImports 讲起.
  *  
- * 
+ * ------------------------------------
  * {@link DeferredImportSelector} to handle {@link EnableAutoConfiguration
  * auto-configuration}. This class can also be subclassed if a custom variant of
  * {@link EnableAutoConfiguration @EnableAutoConfiguration} is needed.
@@ -109,6 +109,8 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 	private ClassLoader beanClassLoader;
 
 	private ResourceLoader resourceLoader;
+	//通过图1我们可以看到，跟自动配置逻辑相关的入口方法在DeferredImportSelectorGrouping类的getImports方法处，
+	//因此我们就从DeferredImportSelectorGrouping类的getImports方法来开始分析SpringBoot的自动配置源码好了。
 	//springboot2.0之后不走这里了
 	@Override
 	public String[] selectImports(AnnotationMetadata annotationMetadata) {

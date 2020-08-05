@@ -38,9 +38,13 @@ public class AnsiOutputApplicationListener
 
 	@Override
 	public void onApplicationEvent(ApplicationEnvironmentPreparedEvent event) {
+		
+	
+		
 		ConfigurableEnvironment environment = event.getEnvironment();
 		// 由于存在spring.output.ansi.enabled的系统属性，因此可以通过这条语句可以禁止彩色输出
-		// environment.getSystemProperties().put("spring.output.ansi.enabled", "never");
+		  environment.getSystemProperties().put("spring.output.ansi.enabled", "NEVER");
+			System.out.println(environment.getProperty("spring.output.ansi.enabled"));
 		Binder.get(environment)
 				.bind("spring.output.ansi.enabled", AnsiOutput.Enabled.class)
 				.ifBound(AnsiOutput::setEnabled);
