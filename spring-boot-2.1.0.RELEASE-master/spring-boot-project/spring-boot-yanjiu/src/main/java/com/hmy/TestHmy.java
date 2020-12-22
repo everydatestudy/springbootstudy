@@ -3,6 +3,7 @@ package com.hmy;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
@@ -17,6 +18,7 @@ import com.hmy.test.service.TestBeanDefinitionRegistryPostProcessors;
 //https://www.cnblogs.com/binarylei/category/1159500.html
 @EnableAspectJAutoProxy
 @ComponentScan("com.hmy")
+@Configuration
 public class TestHmy {
 	
 	//AbstractBeanDefinition是BeanDefinition的一个抽象实现，他包含了很多熟悉，定时一个Bean的属性的类，

@@ -300,6 +300,10 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		 */
 		for (String beanName : candidateNames) {
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
+			//这里写一个判断是为了dubug方便
+			if(beanName.toLowerCase().equals("testmain")) {
+				System.out.println("定义自己的类，扫描componentScan");
+			}
 			if (ConfigurationClassUtils.isFullConfigurationClass(beanDef) ||
 					ConfigurationClassUtils.isLiteConfigurationClass(beanDef)) {
 				//果BeanDefinition中的configurationClass属性为full或者lite,则意味着已经处理过了,直接跳过

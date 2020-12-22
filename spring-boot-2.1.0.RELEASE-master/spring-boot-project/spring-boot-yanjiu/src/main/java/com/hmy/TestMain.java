@@ -1,5 +1,6 @@
 package com.hmy;
 
+import org.springframework.cglib.core.DebuggingClassWriter;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
@@ -17,7 +18,7 @@ import com.hmy.test.service.TestImport;
 public class TestMain {
 
 	public static void main(String[] args) {
-	 
+		System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY, "D:\\home\\cglib");
 		// ClassPathXmlApplicationContext默认是加载src目录下的xml文件
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 		context.addBeanFactoryPostProcessor(new TestBeanDefinitionRegistryPostProcessors());
