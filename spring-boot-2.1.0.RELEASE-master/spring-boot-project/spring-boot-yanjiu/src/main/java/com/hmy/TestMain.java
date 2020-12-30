@@ -6,6 +6,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Scope;
 import org.springframework.context.support.AbstractApplicationContext;
 
 import com.hmy.aaa.AspectDao;
@@ -15,13 +16,14 @@ import com.hmy.test.service.TestImport;
 
 //@EnableAspectJAutoProxy
 @ComponentScan("com.hmy")
+
 public class TestMain {
 
 	public static void main(String[] args) {
 		System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY, "D:\\home\\cglib");
 		// ClassPathXmlApplicationContext默认是加载src目录下的xml文件
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		context.addBeanFactoryPostProcessor(new TestBeanDefinitionRegistryPostProcessors());
+//		context.addBeanFactoryPostProcessor(new TestBeanDefinitionRegistryPostProcessors());
 		context.register(TestMain.class);
 		context.refresh();
 		AspectService aservice = context.getBean(AspectService.class);
