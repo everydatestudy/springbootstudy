@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import com.hmy.test.service.TestImport;
 
 @Service
-@Scope(value = "prototype")
+@Scope(value = "prototype") 
 public class AService {
 	@Autowired
 	BService b;

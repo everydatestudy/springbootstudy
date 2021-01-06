@@ -123,12 +123,14 @@ class ConstructorResolver {
 		//argsToUse可以有两种办法设置
 		//第一种通过beanDefinition设置
 		//第二种通过xml设置
+		 //如果构造参数不为空就直接使用
 		if (explicitArgs != null) {
 			argsToUse = explicitArgs;
 		}
 		else {
 			Object[] argsToResolve = null;
 			synchronized (mbd.constructorArgumentLock) {
+				//获取已缓存解析的构造函数或工厂方法
 				//获取已解析的构造方法
 				//一般不会有，因为构造方法一般会提供一个
 				//除非有多个。那么才会存在已经解析完成的构造方法
@@ -141,6 +143,8 @@ class ConstructorResolver {
 					}
 				}
 			}
+	           //如果缓存的参数不是空，就进行解析，解析时会对
+            //argsToResolve中的每个的类型进行转化，也是一个复杂的逻辑
 			if (argsToResolve != null) {
 				argsToUse = resolvePreparedArguments(beanName, mbd, bw, constructorToUse, argsToResolve);
 			}
@@ -152,6 +156,11 @@ class ConstructorResolver {
 			// Need to resolve the constructor.
 			//判断构造方法是否为空，判断是否根据构造方法自动注入
 			boolean autowiring = (chosenCtors != null ||
+					   //getResolvedAutowireMode方法逻辑是，
+                    //如果是自适应注入方法就看有没有无参构造器，
+                    //如果存在就按照type类型注入，
+                    //如果不存在就按照构造器方式注入，
+                    //如果没有设置注入方式就不注入
 					mbd.getResolvedAutowireMode() == AutowireCapableBeanFactory.AUTOWIRE_CONSTRUCTOR);
 			ConstructorArgumentValues resolvedValues = null;
 
@@ -166,7 +175,8 @@ class ConstructorResolver {
 			else {
 				//实例一个对象，用来存放构造方法的参数值
 				//当中主要存放了参数值和参数值所对应的下表
-				//
+				   //如果传的构造参数是空的，则从RootBeanDefinition中获取构造器参数，
+                //并解析对应的构造参数然后添加到ConstructorArgumentValues中
 				ConstructorArgumentValues cargs = mbd.getConstructorArgumentValues();
 				resolvedValues = new ConstructorArgumentValues();
 				/**
@@ -186,6 +196,8 @@ class ConstructorResolver {
 
 			// Take specified constructors, if any.
 			Constructor<?>[] candidates = chosenCtors;
+			 //如果传入的构造器为空，则获取bean的Class对象，
+            //然后根据bean是不是public修饰的来按照不同的方式获取所有的构造器
 			if (candidates == null) {
 				Class<?> beanClass = mbd.getBeanClass();
 				try {
@@ -210,6 +222,8 @@ class ConstructorResolver {
 			 * 5. protected Luban(Integer i, Object o1, Object o2)
 			 * 6. protected Luban(Integer i, Object o1)
 			 */
+			  //按照访问方式和数量对构造器进行排序；
+            //public>protect>private，在同为public时构造器多的排在前面
 			AutowireUtils.sortConstructors(candidates);
 			//定义了一个差异变量，这个变量很有分量，后面有注释
 			int minTypeDiffWeight = Integer.MAX_VALUE;
@@ -231,7 +245,7 @@ class ConstructorResolver {
 				 * 那么回去匹配到上面的构造方法的1和5
 				 * 由于构造方法1有更高的访问权限，所有选择1，尽管5看起来更加匹配
 				 * 但是我们看2,直接参数个数就不对所以直接忽略
-				 *
+				 *   //按照参数个数和构造器的参数类型个数进行比较，如果相等就用这个构造器
 				 *
 				 */
 				if (constructorToUse != null && argsToUse.length > paramTypes.length) {
@@ -249,6 +263,10 @@ class ConstructorResolver {
 						//判断是否加了ConstructorProperties注解如果加了则把值取出来
 						//可以写个代码测试一下
 						//@ConstructorProperties(value = {"xxx", "111"})
+	                     //检查给定的“java.beans.ConstructorProperties”类型的参数能否被加载，
+                        //“java.beans.ConstructorProperties”是ConstructorResolver的一个静态常量，是一个Java标签的路径
+						 //获取有ConstructorProperties标签的参数，因为上面有判断是否可以被加载，所这里直接能够拿到贴了标签的构造参数名称
+                        //ConstructorProperties标签的作用=======》构造函数上的注释，显示该构造函数的参数如何与构造对象的getter方法相对应
 						String[] paramNames = ConstructorPropertiesChecker.evaluate(candidate, paramTypes.length);
 						if (paramNames == null) {
 							ParameterNameDiscoverer pnd = this.beanFactory.getParameterNameDiscoverer();
@@ -268,6 +286,8 @@ class ConstructorResolver {
 						 * 因为spring只能提供字符串的参数值
 						 * 故而需要进行转换
 						 * argsHolder所包含的值就是转换之后的
+						 * //根据获取到的参数名和已经查到的构造参数和构造参数类型来创建用户创建构造器用的构造参数数组，
+                         * 这个数组中包含了原始的参数列表和构造后的参数列表，用来对比用
 						 */
 						argsHolder = createArgumentArray(beanName, mbd, resolvedValues, bw, paramTypes, paramNames,
 								getUserDeclaredConstructor(candidate), autowiring);
@@ -314,6 +334,8 @@ class ConstructorResolver {
 				 * 这也解释了为什么他找到两个符合要求的方法不直接抛异常的原因
 				 * 如果这个ambiguousConstructors一直存在，spring会在循环外面去exception
 				 * 很牛逼呀！！！！
+				 *  //如果是宽松的构造策略，则对比spring构造的参数数组的类型和获取到的构造器参数的参数类型进行对比，返回不同的个数
+                //如果是严格的构造策略，则检查能否将构造的参数数组赋值到构造器参数的参数列表中
 				 */
 				int typeDiffWeight = (mbd.isLenientConstructorResolution() ?
 						argsHolder.getTypeDifferenceWeight(paramTypes) : argsHolder.getAssignabilityWeight(paramTypes));
@@ -467,7 +489,7 @@ class ConstructorResolver {
 	 */
 	public BeanWrapper instantiateUsingFactoryMethod(
 			String beanName, RootBeanDefinition mbd, @Nullable Object[] explicitArgs) {
-
+		//初始化这个bean包装器，内部给这个包装器设置了类型转化器和自定的转化器
 		BeanWrapperImpl bw = new BeanWrapperImpl();
 		this.beanFactory.initBeanWrapper(bw);
 
@@ -476,6 +498,7 @@ class ConstructorResolver {
 		boolean isStatic;
 
 		String factoryBeanName = mbd.getFactoryBeanName();
+		//如果存在factoryBeanName   比如<bean id="helloWorld" factory-bean="helloWorld" factory-method="getSayHi"></bean>
 		if (factoryBeanName != null) {
 			if (factoryBeanName.equals(beanName)) {
 				throw new BeanDefinitionStoreException(mbd.getResourceDescription(), beanName,
@@ -502,30 +525,37 @@ class ConstructorResolver {
 		Method factoryMethodToUse = null;
 		ArgumentsHolder argsHolderToUse = null;
 		Object[] argsToUse = null;
-
+		//如果用户已经指定了构造参数，那么直接使用用户指定的构造参数
 		if (explicitArgs != null) {
 			argsToUse = explicitArgs;
 		}
 		else {
 			Object[] argsToResolve = null;
 			synchronized (mbd.constructorArgumentLock) {
+				//获取已经解析后的构造器或者工厂方法
 				factoryMethodToUse = (Method) mbd.resolvedConstructorOrFactoryMethod;
+				//如果已经解析好了，那么尝试从缓存中获取参数
 				if (factoryMethodToUse != null && mbd.constructorArgumentsResolved) {
 					// Found a cached factory method...
 					argsToUse = mbd.resolvedConstructorArguments;
+					//如果缓存中没有，那么就从准备的（也就是解析配置文件时，BeanDefinition存储的参数）构造参数中获取，
+					//这个时候的参数还是原始（配置文件中）的，没有进行类型转换的参数
 					if (argsToUse == null) {
+						//解析准备的配置参数
 						argsToResolve = mbd.preparedConstructorArguments;
 					}
 				}
 			}
 			if (argsToResolve != null) {
+				//解析准备的配置参数
 				argsToUse = resolvePreparedArguments(beanName, mbd, bw, factoryMethodToUse, argsToResolve);
 			}
 		}
-
+		//如果没有缓存，那么说明这是第一次访问，需要从头开始解析
 		if (factoryMethodToUse == null || argsToUse == null) {
 			// Need to determine the factory method...
 			// Try all methods with this name to see if they match the given arguments.
+			//判断是否被cglib代理过的，如果代理过，那么就返回其父类
 			factoryClass = ClassUtils.getUserClass(factoryClass);
 
 			Method[] rawCandidates = getCandidateMethods(factoryClass, mbd);
@@ -553,6 +583,7 @@ class ConstructorResolver {
 				if (mbd.hasConstructorArgumentValues()) {
 					ConstructorArgumentValues cargs = mbd.getConstructorArgumentValues();
 					resolvedValues = new ConstructorArgumentValues();
+					//解析构造参数，通过BeanDefinitionValueResolver进行解析，解析好后放置到resolvedValues中，这里主要是将beanref的解析好和以下表达式什么的，没有进行参数类型的转换。
 					minNrOfArgs = resolveConstructorArguments(beanName, mbd, bw, cargs, resolvedValues);
 				}
 				else {
@@ -577,12 +608,14 @@ class ConstructorResolver {
 					}
 					else {
 						// Resolved constructor arguments: type conversion and/or autowiring necessary.
+						//如果配置里面没有参数，那么就使用用户设置的参数
 						try {
 							String[] paramNames = null;
 							ParameterNameDiscoverer pnd = this.beanFactory.getParameterNameDiscoverer();
 							if (pnd != null) {
 								paramNames = pnd.getParameterNames(candidate);
 							}
+							//由于实际方法的参数和配置的参数之间存在位置，类型需要转化的问题，所以需要尝试换成符合对应方法的参数
 							argsHolder = createArgumentArray(
 									beanName, mbd, resolvedValues, bw, paramTypes, paramNames, candidate, autowiring);
 						}
@@ -863,8 +896,9 @@ class ConstructorResolver {
 	 */
 	private Object[] resolvePreparedArguments(
 			String beanName, RootBeanDefinition mbd, BeanWrapper bw, Executable executable, Object[] argsToResolve) {
-
+		//获取构造方法或者工厂方法的参数类型
 		TypeConverter customConverter = this.beanFactory.getCustomTypeConverter();
+		//获取自定义的类型转化器，如果没有就是用bean包装器·，这个包装器在上面已经注册了默认的转化器和自定的转化器。
 		TypeConverter converter = (customConverter != null ? customConverter : bw);
 		BeanDefinitionValueResolver valueResolver =
 				new BeanDefinitionValueResolver(this.beanFactory, beanName, mbd, converter);
@@ -875,12 +909,18 @@ class ConstructorResolver {
 			Object argValue = argsToResolve[argIndex];
 			MethodParameter methodParam = MethodParameter.forExecutable(executable, argIndex);
 			GenericTypeResolver.resolveParameterType(methodParam, executable.getDeclaringClass());
+			////参数是AutowiredArgumentMarker只只是个标记类，标记为自动装配的参数，这里会解析@Value注解的参数，
+			//还有会根据字段的类型去包装成某些延迟获取数据的对象，比如DependencyObjectFactory（依赖工厂bean，这种类型字段可以通过getObject获取数据），
+			//这里是方法参数的获取所以不用去管field的。最后内部会通过DefaultListableBeanFactory.doResolveDependency方法根据参数类型去获取bean
 			if (argValue instanceof AutowiredArgumentMarker) {
 				argValue = resolveAutowiredArgument(methodParam, beanName, null, converter);
 			}
+			//这种类型数据一般是在解析xml配置的时候生成的，比如xml中的ref指定的bean会包装成RuntimeBeanReference，当spring看到这种类型的时候就知道，我要去BeanFactory中寻找叫这个名字的bean
 			else if (argValue instanceof BeanMetadataElement) {
+				//使用上面new出来的BeanDefinitionValueResolver进行解析
 				argValue = valueResolver.resolveValueIfNecessary("constructor argument", argValue);
 			}
+			//如果只是普通的字符串，那么经过表达式解析器之后直接返回
 			else if (argValue instanceof String) {
 				argValue = this.beanFactory.evaluateBeanDefinitionString((String) argValue, mbd);
 			}

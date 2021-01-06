@@ -1186,6 +1186,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 */
 	protected void initBeanWrapper(BeanWrapper bw) {
 		bw.setConversionService(getConversionService());
+		//将用户自定义的PropertyEditorRegistrar和PropertyEditor保存BeanWrapper中
 		registerCustomEditors(bw);
 	}
 
@@ -1200,9 +1201,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	protected void registerCustomEditors(PropertyEditorRegistry registry) {
 		PropertyEditorRegistrySupport registrySupport =
 				(registry instanceof PropertyEditorRegistrySupport ? (PropertyEditorRegistrySupport) registry : null);
+        //如果registrySupport不为空，设置于配置目的的配置值编辑器（例如StringArrayPropertyEditor）为可用，默认情况下，这些编辑器不会被注册，因为它们通常不适合数据绑定
 		if (registrySupport != null) {
 			registrySupport.useConfigValueEditors();
 		}
+		//  //如果自定义的PropertyEditorRegistrar不为空，则需要将这些用户自定义的注册编辑器进行注册
 		if (!this.propertyEditorRegistrars.isEmpty()) {
 			for (PropertyEditorRegistrar registrar : this.propertyEditorRegistrars) {
 				try {
@@ -1227,6 +1230,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				}
 			}
 		}
+		// //获取用户注册的注册器列表，如果不为空，则取出这些注册器并实例化，然后放到PropertyEditorRegistry类的用于存放用户自定义注册器的map中customEditors
 		if (!this.customEditors.isEmpty()) {
 			this.customEditors.forEach((requiredType, editorClass) ->
 					registry.registerCustomEditor(requiredType, BeanUtils.instantiateClass(editorClass)));
@@ -1280,6 +1284,8 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			throws BeanDefinitionStoreException {
 
 		synchronized (this.mergedBeanDefinitions) {
+			// 准备一个RootBeanDefinition变量引用，用于记录要构建和最终要返回的BeanDefinition，
+			// 这里根据上下文不难猜测 mbd 应该就是 mergedBeanDefinition 的缩写。
 			RootBeanDefinition mbd = null;
 
 			// Check with full lock now in order to enforce the same merged instance.
@@ -1291,6 +1297,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				// //bd.getParentName() == null，表明无父配置，这时直接将当前的BeanDefinition升级为RootBeanDefinition
 				if (bd.getParentName() == null) {
 					// Use copy of given root bean definition.
+					// bd不是一个ChildBeanDefinition的情况,换句话讲，这 bd应该是 :
+					// 1. 一个独立的 GenericBeanDefinition 实例，parentName 属性为null
+					// 2. 或者是一个 RootBeanDefinition 实例，parentName 属性为null
+					// 此时mbd直接使用一个bd的复制品
+					// Use copy of given root bean definition.
 					if (bd instanceof RootBeanDefinition) {
 						mbd = ((RootBeanDefinition) bd).cloneBeanDefinition();
 					}
@@ -1299,6 +1310,13 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					}
 				}
 				else {
+					// bd是一个ChildBeanDefinition的情况,
+					// 这种情况下，需要将bd和其parent bean definition 合并到一起，
+					// 形成最终的 mbd
+					// 下面是获取bd的 parent bean definition 的过程，最终结果记录到 pbd，
+					// 并且可以看到该过程中递归使用了getMergedBeanDefinition(), 为什么呢?
+					// 因为 bd 的 parent bd 可能也是个ChildBeanDefinition，所以该过程
+					// 需要递归处理
 					// Child bean definition: needs to be merged with parent.
 					BeanDefinition pbd;
 					try {
@@ -1334,7 +1352,12 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 								"Could not resolve parent bean definition '" + bd.getParentName() + "'", ex);
 					}
 					// Deep copy with overridden values.
-					//以父BeanDefinition的配置信息为基本创建RootBeanDefinition
+					// 现在已经获取 bd 的parent bd到pbd，从上面的过程可以看出，这个pbd
+					// 也是已经"合并"过的。
+					// 这里根据pbd创建最终的mbd，然后再使用bd覆盖一次，
+					// 这样就相当于mbd来自两个BeanDefinition:
+					// 当前 BeanDefinition 及其合并的("Merged")双亲 BeanDefinition,
+					// 然后mbd就是针对当前bd的一个MergedBeanDefinition(合并的BeanDefinition)了。
 					mbd = new RootBeanDefinition(pbd);
 					// //用子BeanDefinition中的属性覆盖父BeanDefinition中的属性
 					mbd.overrideFrom(bd);
@@ -1438,7 +1461,15 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			throw new CannotLoadBeanClassException(mbd.getResourceDescription(), beanName, mbd.getBeanClassName(), err);
 		}
 	}
-
+	/**
+	 * <p>获取mbd配置的bean类名，将bean类名解析为Class对象,并将解析后的Class对象缓存在mdb中以备将来使用</p>
+	 * @param mbd -- 合并的bean定义来确定其类
+	 * @param typesToMatch -- 要匹配的类型，用于当该工厂有临时类加载器且该类加载器属于DecoratingClassLoader实例时，
+	 *                        对这些要匹配的类型进行在临时类加载器中的排除，以交由父ClassLoader以常规方式处理
+	 *                        【默认情况下父classLoader是线程上下文类加载器】。
+	 * @return -- 解析的Bean类(如果没有，则为null)
+	 * @throws ClassNotFoundException -- 如果我们无法加载类
+	 */
 	@Nullable
 	private Class<?> doResolveBeanClass(RootBeanDefinition mbd, Class<?>... typesToMatch)
 			throws ClassNotFoundException {
@@ -1480,6 +1511,10 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				return ClassUtils.forName(className, classLoaderToUse);
 			}
 		}
+		// Resolve regularly, caching the result in the BeanDefinition...
+		// 定期解析，将结果缓存在BeanDefinition中...
+		// 使用classLoader加载当前BeanDefinitiond对象所配置的Bean类名的Class对象（每次调用都会重新加载,可通过
+		// AbstractBeanDefinition#getBeanClass 获取缓存）：
 		return mbd.resolveBeanClass(beanClassLoader);
 	}
 

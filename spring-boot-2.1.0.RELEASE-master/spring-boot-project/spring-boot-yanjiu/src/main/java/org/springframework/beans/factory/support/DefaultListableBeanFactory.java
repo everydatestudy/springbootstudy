@@ -442,8 +442,10 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		for (String beanName : this.beanDefinitionNames) {
 			// Only consider bean as eligible if the bean name
 			// is not defined as alias for some other bean.
+			//// 只有当bean名称没有定义为其他bean的别名时，才认为bean是合格的,注解没有别名，只有xml有定义别名的
 			if (!isAlias(beanName)) {
 				try {
+	                // 返回合并的RootBeanDefinition，如果指定的bean符合子bean定义，则遍历父bean定义。 
 					RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
 					// Only check bean definition if it is complete.
 					if (!mbd.isAbstract() && (allowEagerInit
@@ -1027,9 +1029,12 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		/**
 		 * 得到对象的名字，因为对象可能有别名故而需要处理别名
 		 */
+		// 如果bean名称不止一个（比如你定义了多个同类型但是名称不一样的Bean）
 		if (candidateNames.length > 1) {
+			 // 自动装配候选者列表
 			List<String> autowireCandidates = new ArrayList<>(candidateNames.length);
 			for (String beanName : candidateNames) {
+				  // 判断：如果beanDefinitionMap不包含key为beanName的键值对或者该bean可以被自动装配到其他bean中。则添加到候选列表中
 				if (!containsBeanDefinition(beanName) || getBeanDefinition(beanName).isAutowireCandidate()) {
 					autowireCandidates.add(beanName);
 				}
@@ -1042,6 +1047,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		if (candidateNames.length == 1) {
 			String beanName = candidateNames[0];
 			// 这的getBean才是真正获取对象的方法
+			// 返回一个持有bean名称和bean实例的容器【getBean方法：绕了一圈，依然回到了AbstractBeanFactory#getBean，准确来说是doGetBean方法】---②
 			return new NamedBeanHolder<>(beanName, getBean(beanName, requiredType, args));
 		} else if (candidateNames.length > 1) {
 			Map<String, Object> candidates = new LinkedHashMap<>(candidateNames.length);
@@ -1053,8 +1059,11 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 					candidates.put(beanName, getType(beanName));
 				}
 			}
+			 // 因为这个方法只能返回一个实例，而这种情况我们获取了多个，到底返回哪一个？
+	        // 这一步：确定给定bean集合中的主要候选对象。---③
 			String candidateName = determinePrimaryCandidate(candidates, requiredType);
 			if (candidateName == null) {
+				  // 这一步：确定给定bean集合中具有最高优先级的对象。---④
 				candidateName = determineHighestPriorityCandidate(candidates, requiredType);
 			}
 			if (candidateName != null) {
@@ -1074,7 +1083,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	@Nullable
 	public Object resolveDependency(DependencyDescriptor descriptor, @Nullable String requestingBeanName,
 			@Nullable Set<String> autowiredBeanNames, @Nullable TypeConverter typeConverter) throws BeansException {
-
+		//获取参数名
 		descriptor.initParameterNameDiscovery(getParameterNameDiscoverer());
 		if (Optional.class == descriptor.getDependencyType()) {
 			return createOptionalDependency(descriptor, requestingBeanName);
@@ -1399,7 +1408,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		for (Map.Entry<String, Object> entry : candidates.entrySet()) {
 			String candidateBeanName = entry.getKey();
 			Object beanInstance = entry.getValue();
+			 // 如果是主要候选对象。这里返回bean定义里的primary对象的值，具体来说就是如果你定义bean的时候用@Primary注解标注的，则是true
 			if (isPrimary(candidateBeanName, beanInstance)) {
+				  // 因为是循环所有的候选名称，第一次primaryBeanName肯定是null，所以在else语句给它赋值。如果出现了多个Primary注解的bean，那就会抛出异常
 				if (primaryBeanName != null) {
 					boolean candidateLocal = containsBeanDefinition(candidateBeanName);
 					boolean primaryLocal = containsBeanDefinition(primaryBeanName);
@@ -1440,6 +1451,14 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			String candidateBeanName = entry.getKey();
 			Object beanInstance = entry.getValue();
 			if (beanInstance != null) {
+				 // 获取优先级，通过Primary的例子，这个也可以猜出是标记了@Priority注解，数字越小优先级越高。
+	            // @Priority注解需要单独引入依赖：
+
+	            // <dependency>
+	            //     <groupId>javax.annotation</groupId>
+	            //     <artifactId>javax.annotation-api</artifactId>
+	            //     <version>1.3.2</version>
+	            // </dependency>
 				Integer candidatePriority = getPriority(beanInstance);
 				if (candidatePriority != null) {
 					if (highestPriorityBeanName != null) {

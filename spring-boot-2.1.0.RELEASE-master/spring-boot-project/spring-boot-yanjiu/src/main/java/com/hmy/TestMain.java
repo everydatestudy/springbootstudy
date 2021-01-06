@@ -1,22 +1,15 @@
 package com.hmy;
 
 import org.springframework.cglib.core.DebuggingClassWriter;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Scope;
 import org.springframework.context.support.AbstractApplicationContext;
 
-import com.hmy.aaa.AspectDao;
-import com.hmy.test.service.AspectService;
-import com.hmy.test.service.TestBeanDefinitionRegistryPostProcessors;
-import com.hmy.test.service.TestImport;
+import com.hmy.recycle.AService;
 
 //@EnableAspectJAutoProxy
-@ComponentScan("com.hmy")
-
+@ComponentScan("com.hmy.recycle")
+//https://www.cnblogs.com/developer_chan/p/10740664.html 新的spring知识讲解了创建实例化
 public class TestMain {
 
 	public static void main(String[] args) {
@@ -26,10 +19,10 @@ public class TestMain {
 //		context.addBeanFactoryPostProcessor(new TestBeanDefinitionRegistryPostProcessors());
 		context.register(TestMain.class);
 		context.refresh();
-		AspectService aservice = context.getBean(AspectService.class);
+		AService aservice = context.getBean(AService.class);
 //		System.out.println("\n===========普通调用=============\n");
 //
-		aservice.sayHi("hd");
+		 System.out.println(aservice);
 //
 //		System.out.println("\n===========异常调用=============\n");
 //

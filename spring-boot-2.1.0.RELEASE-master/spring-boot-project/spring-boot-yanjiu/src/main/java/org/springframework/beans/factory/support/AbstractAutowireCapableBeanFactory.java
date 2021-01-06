@@ -1138,7 +1138,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		 *
 		 * 如果工厂方法不为空，则通过工厂方法构建 bean 对象
 		 * 这种构建 bean 的方式可以自己写个demo去试试
-		 * 源码就不做深入分析了，有兴趣的同学可以和我私下讨论
+		 * 源码就不做深入分析了，有兴趣的同学可以和我私下讨论,
+		 * 这里是解析工厂方法，类似于构造函数解析,非常复杂
 		 */
 		if (mbd.getFactoryMethodName() != null)  {
 			return instantiateUsingFactoryMethod(beanName, mbd, args);
@@ -1156,8 +1157,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		boolean resolved = false;
 		boolean autowireNecessary = false;
 	      /**
-                         * 通过getBean传入进来的构造函数是否来指定需要推断构造函数
-                         * 若传递进来的args不为空，那么就可以直接选出对应的构造函数
+            * 通过getBean传入进来的构造函数是否来指定需要推断构造函数
+            * 若传递进来的args不为空，那么就可以直接选出对应的构造函数
            */
 		if (args == null) {
 			synchronized (mbd.constructorArgumentLock) {
@@ -1394,7 +1395,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		//获取bean定义的属性
 		PropertyValues pvs = (mbd.hasPropertyValues() ? mbd.getPropertyValues() : null);
 	      /**
-               * 判断我们的bean的属性注入模型
+         * 判断我们的bean的属性注入模型
          * AUTOWIRE_BY_NAME 根据名称注入
          * AUTOWIRE_BY_TYPE 根据类型注入
          */

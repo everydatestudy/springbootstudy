@@ -251,8 +251,9 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 				 * 将beanName添加到singletonsCurrentlyInCreation这样一个set集合中
 				 * 表示beanName对应的bean正在创建中
 				 */
+				
 				/**
-                             * 标记当前的bean马上就要被创建了
+                 * 标记当前的bean马上就要被创建了
                  * singletonsCurrentlyInCreation 在这里会把beanName加入进来，若第二次循环依赖（构造器注入会抛出异常）
                  */
 				beforeSingletonCreation(beanName);
