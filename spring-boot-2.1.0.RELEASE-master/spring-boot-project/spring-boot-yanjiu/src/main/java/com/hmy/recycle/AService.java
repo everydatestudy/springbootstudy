@@ -10,13 +10,13 @@ import org.springframework.stereotype.Service;
 import com.hmy.test.service.TestImport;
 
 @Service
-@Scope(value = "prototype") 
+//@Scope(value = "prototype") 
 public class AService {
-	@Autowired
-	BService b;
+//	@Autowired
+	Cservice b;
 
-	@PostConstruct
-	public void init() {
-		System.out.println("AService" + b);
+	public AService(Cservice str) {
+		this.b = str;
 	}
+
 }

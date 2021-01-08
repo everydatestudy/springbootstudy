@@ -114,8 +114,9 @@ class ConstructorResolver {
 		//前面外部返回的BeanWrapper 其实就是这个BeanWrapperImpl
 		//因为BeanWrapper是个接口
 		BeanWrapperImpl bw = new BeanWrapperImpl();
+		//类型转换。文本编辑
 		this.beanFactory.initBeanWrapper(bw);
-
+		//定义一个用于要适用的构造函数对象的Constructor对象
 		Constructor<?> constructorToUse = null;
 		ArgumentsHolder argsHolderToUse = null;
 		Object[] argsToUse = null;
@@ -128,6 +129,7 @@ class ConstructorResolver {
 			argsToUse = explicitArgs;
 		}
 		else {
+			//声明一个要解析的参数值数组，默认为null
 			Object[] argsToResolve = null;
 			synchronized (mbd.constructorArgumentLock) {
 				//获取已缓存解析的构造函数或工厂方法
@@ -135,10 +137,12 @@ class ConstructorResolver {
 				//一般不会有，因为构造方法一般会提供一个
 				//除非有多个。那么才会存在已经解析完成的构造方法
 				constructorToUse = (Constructor<?>) mbd.resolvedConstructorOrFactoryMethod;
+				//如果constructorToUse不为null且 mbd已解析构造函数参数
 				if (constructorToUse != null && mbd.constructorArgumentsResolved) {
 					// Found a cached constructor...
 					argsToUse = mbd.resolvedConstructorArguments;
 					if (argsToUse == null) {
+						//指定argsToResolve引用mbd部分准备好的构造函数参数值
 						argsToResolve = mbd.preparedConstructorArguments;
 					}
 				}
@@ -146,6 +150,7 @@ class ConstructorResolver {
 	           //如果缓存的参数不是空，就进行解析，解析时会对
             //argsToResolve中的每个的类型进行转化，也是一个复杂的逻辑
 			if (argsToResolve != null) {
+				//解析缓存在mbd中准备好的参数值,允许在没有此类BeanDefintion的时候回退
 				argsToUse = resolvePreparedArguments(beanName, mbd, bw, constructorToUse, argsToResolve);
 			}
 		}
@@ -175,7 +180,7 @@ class ConstructorResolver {
 			else {
 				//实例一个对象，用来存放构造方法的参数值
 				//当中主要存放了参数值和参数值所对应的下表
-				   //如果传的构造参数是空的，则从RootBeanDefinition中获取构造器参数，
+				 //如果传的构造参数是空的，则从RootBeanDefinition中获取构造器参数，
                 //并解析对应的构造参数然后添加到ConstructorArgumentValues中
 				ConstructorArgumentValues cargs = mbd.getConstructorArgumentValues();
 				resolvedValues = new ConstructorArgumentValues();
@@ -246,13 +251,15 @@ class ConstructorResolver {
 				 * 由于构造方法1有更高的访问权限，所有选择1，尽管5看起来更加匹配
 				 * 但是我们看2,直接参数个数就不对所以直接忽略
 				 *   //按照参数个数和构造器的参数类型个数进行比较，如果相等就用这个构造器
-				 *
+				 *如果已经找到要使用的构造函数和要使用的构造函数参数值且要使用的构造函数参数值比要匹配的参数长度要多，即意味着找到
+				// 最匹配的构造函数
+				//如果constructorToUse不为null且argsToUse不为null且argsToUse的数组长度大于paramTypes的数组长度
 				 */
 				if (constructorToUse != null && argsToUse.length > paramTypes.length) {
 					// Already found greedy constructor that can be satisfied ->
 					// do not look any further, there are only less greedy constructors left.
 					break;
-				}
+				}//如果paramTypes的数组长度小于minNrOfArgs
 				if (paramTypes.length < minNrOfArgs) {
 					continue;
 				}
@@ -287,7 +294,9 @@ class ConstructorResolver {
 						 * 故而需要进行转换
 						 * argsHolder所包含的值就是转换之后的
 						 * //根据获取到的参数名和已经查到的构造参数和构造参数类型来创建用户创建构造器用的构造参数数组，
-                         * 这个数组中包含了原始的参数列表和构造后的参数列表，用来对比用
+						  * 这个数组中包含了原始的参数列表和构造后的参数列表，用来对比用
+						  * //将resolvedValues转换成一个封装着参数数组ArgumentsHolder实例，当candidate只有一个时，支持可在抛
+						// 出没有此类BeanDefintion的异常返回null，而不抛出异常
 						 */
 						argsHolder = createArgumentArray(beanName, mbd, resolvedValues, bw, paramTypes, paramNames,
 								getUserDeclaredConstructor(candidate), autowiring);
@@ -337,9 +346,15 @@ class ConstructorResolver {
 				 *  //如果是宽松的构造策略，则对比spring构造的参数数组的类型和获取到的构造器参数的参数类型进行对比，返回不同的个数
                 //如果是严格的构造策略，则检查能否将构造的参数数组赋值到构造器参数的参数列表中
 				 */
+				//mbd支持的构造函数解析模式,默认使用宽松模式:
+				// 1. 严格模式如果摸棱两可的构造函数在转换参数时都匹配，则抛出异常
+				// 2. 宽松模式将使用"最接近类型匹配"的构造函数
+				//如果bd支持的构造函数解析模式时宽松模式,引用获取类型差异权重值，否则引用获取Assignabliity权重值
 				int typeDiffWeight = (mbd.isLenientConstructorResolution() ?
 						argsHolder.getTypeDifferenceWeight(paramTypes) : argsHolder.getAssignabilityWeight(paramTypes));
 				// Choose this constructor if it represents the closest match.
+				// 如果它表示最接近的匹配项，则选择此构造函数
+				// 如果typeDiffWeight小于minTypeDiffWeight
 				if (typeDiffWeight < minTypeDiffWeight) {
 					constructorToUse = candidate;
 					argsHolderToUse = argsHolder;
@@ -741,17 +756,31 @@ class ConstructorResolver {
 	 * Resolve the constructor arguments for this bean into the resolvedValues object.
 	 * This may involve looking up other beans.
 	 * <p>This method is also used for handling invocations of static factory methods.
+	 * 	
+	 * @param beanName bean名
+	 * @param mbd beanName对于的合并后RootBeanDefinition
+	 * @param bw Bean实例的包装对象
+	 * @param cargs mbd的构造函数参数值Holder
+	 * @param resolvedValues 解析后的构造函数参数值Holder
+	 * @return 最小(索引参数值数+泛型参数值数)
 	 */
+	  
 	private int resolveConstructorArguments(String beanName, RootBeanDefinition mbd, BeanWrapper bw,
 			ConstructorArgumentValues cargs, ConstructorArgumentValues resolvedValues) {
-
+		//获取Bean工厂的类型转换器
 		TypeConverter customConverter = this.beanFactory.getCustomTypeConverter();
+		//定义一个TypeConverter对象，如果有customConverter，就引用customConverter;否则引用bw
 		TypeConverter converter = (customConverter != null ? customConverter : bw);
+		//BeanDefinitionValueResolver:在bean工厂实现中使用Helper类，它将beanDefinition对象中包含的值解析为应用于
+		// 目标bean实例的实际值
+		//新建一个BeanDefinitionValueResolver对象
 		BeanDefinitionValueResolver valueResolver =
 				new BeanDefinitionValueResolver(this.beanFactory, beanName, mbd, converter);
-
+		//ConstructorArgumentValues.getArgumentCount():返回此实例中保存的参数值的数量，同时计算索引参数值和泛型参数值
+		//获取cargs的参数值数量和泛型参数值数量作为 最小(索引参数值数+泛型参数值数)
 		int minNrOfArgs = cargs.getArgumentCount();
-
+		//ConstructorArgumentValues.ValueHolder：构造函数参数值的Holder,带有可选的type属性，指示实际构造函数参数的目标类型
+		//遍历cargs所封装的索引参数值的Map，元素为entry(key=参数值的参数索引,value=ConstructorArgumentValues.ValueHolder对象)
 		for (Map.Entry<Integer, ConstructorArgumentValues.ValueHolder> entry : cargs.getIndexedArgumentValues().entrySet()) {
 			int index = entry.getKey();
 			if (index < 0) {
@@ -805,6 +834,7 @@ class ConstructorResolver {
 		TypeConverter converter = (customConverter != null ? customConverter : bw);
 
 		ArgumentsHolder args = new ArgumentsHolder(paramTypes.length);
+		//定义一个用于存储构造函数参数值Holder，以查找下一个任意泛型参数值时，忽略该集合的元素的HashSet,初始化长度为paramTypes的数组长度
 		Set<ConstructorArgumentValues.ValueHolder> usedValueHolders = new HashSet<>(paramTypes.length);
 		Set<String> autowiredBeanNames = new LinkedHashSet<>(4);
 
@@ -814,11 +844,13 @@ class ConstructorResolver {
 			// Try to find matching constructor argument value, either indexed or generic.
 			ConstructorArgumentValues.ValueHolder valueHolder = null;
 			if (resolvedValues != null) {
+				//在resolvedValues中查找与paramIndex对应的参数值，或者按paramType一般匹配
 				valueHolder = resolvedValues.getArgumentValue(paramIndex, paramType, paramName, usedValueHolders);
 				// If we couldn't find a direct match and are not supposed to autowire,
 				// let's try the next generic, untyped argument value as fallback:
 				// it could match after type conversion (for example, String -> int).
 				if (valueHolder == null && (!autowiring || paramTypes.length == resolvedValues.getArgumentCount())) {
+					//在resovledValues中查找任意，不按名称匹配参数值的下一个泛型参数值，而忽略usedValueHolders参数值
 					valueHolder = resolvedValues.getGenericArgumentValue(null, null, usedValueHolders);
 				}
 			}
@@ -833,6 +865,7 @@ class ConstructorResolver {
 					args.preparedArguments[paramIndex] = convertedValue;
 				}
 				else {
+					//将executable中paramIndex对应的参数封装成MethodParameter对象
 					MethodParameter methodParam = MethodParameter.forExecutable(executable, paramIndex);
 					try {
 						convertedValue = converter.convertIfNecessary(originalValue, paramType, methodParam);
@@ -865,11 +898,13 @@ class ConstructorResolver {
 							"] - did you specify the correct bean references as arguments?");
 				}
 				try {
+					//解析应该自动装配的methodParam的Bean对象,使用autowiredBeanNames保存所找到的所有候选Bean对象
 					Object autowiredArgument =
 							resolveAutowiredArgument(methodParam, beanName, autowiredBeanNames, converter);
 					args.rawArguments[paramIndex] = autowiredArgument;
 					args.arguments[paramIndex] = autowiredArgument;
 					args.preparedArguments[paramIndex] = new AutowiredArgumentMarker();
+					//将args的resolveNecessary该为true，表示args.preparedArguments需要解析
 					args.resolveNecessary = true;
 				}
 				catch (BeansException ex) {
@@ -878,8 +913,9 @@ class ConstructorResolver {
 				}
 			}
 		}
-
+		//遍历 autowiredBeanNames，元素为autowiredBeanName
 		for (String autowiredBeanName : autowiredBeanNames) {
+			//注册beanName与dependentBeanNamed的依赖关系到beanFactory中
 			this.beanFactory.registerDependentBean(autowiredBeanName, beanName);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Autowiring by type from bean name '" + beanName +
@@ -893,20 +929,35 @@ class ConstructorResolver {
 
 	/**
 	 * Resolve the prepared arguments stored in the given bean definition.
+	 * Resolve the prepared arguments stored in the given bean definition.
+	 * <p>解析缓存在给定bean定义中的准备好的参数</p>
+	 * @param beanName bean名
+	 * @param mbd beanName对于的合并后RootBeanDefinition
+	 * @param bw bean的包装类，此时bw还没有拿到bean
+	 * @param executable mbd已解析的构造函数或工厂方法对象
+	 * @param argsToResolve mbd部分准备好的构造函数参数值
+	 * @param fallback 是否可在抛出NoSuchBeanDefinitionException返回null，而不抛出异常
 	 */
 	private Object[] resolvePreparedArguments(
 			String beanName, RootBeanDefinition mbd, BeanWrapper bw, Executable executable, Object[] argsToResolve) {
 		//获取构造方法或者工厂方法的参数类型
+		//获取bean工厂的自定义的TypeConverter
 		TypeConverter customConverter = this.beanFactory.getCustomTypeConverter();
 		//获取自定义的类型转化器，如果没有就是用bean包装器·，这个包装器在上面已经注册了默认的转化器和自定的转化器。
+		//org.springframework.beans.BeanWrapperImpl.convertIfNecessary
 		TypeConverter converter = (customConverter != null ? customConverter : bw);
+		//BeanDefinitionValueResolver主要是用于将bean定义对象中包含的值解析为应用于目标bean实例的实际值
+		//新建一个BeanDefinitionValue解析器对象
 		BeanDefinitionValueResolver valueResolver =
 				new BeanDefinitionValueResolver(this.beanFactory, beanName, mbd, converter);
+		//从executable中获取其参数类型
 		Class<?>[] paramTypes = executable.getParameterTypes();
 
 		Object[] resolvedArgs = new Object[argsToResolve.length];
 		for (int argIndex = 0; argIndex < argsToResolve.length; argIndex++) {
+			
 			Object argValue = argsToResolve[argIndex];
+			//为executable的argIndex位置参数创建一个新的MethodParameter对象
 			MethodParameter methodParam = MethodParameter.forExecutable(executable, argIndex);
 			GenericTypeResolver.resolveParameterType(methodParam, executable.getDeclaringClass());
 			////参数是AutowiredArgumentMarker只只是个标记类，标记为自动装配的参数，这里会解析@Value注解的参数，
@@ -921,6 +972,7 @@ class ConstructorResolver {
 				argValue = valueResolver.resolveValueIfNecessary("constructor argument", argValue);
 			}
 			//如果只是普通的字符串，那么经过表达式解析器之后直接返回
+			////评估benaDefinition中包含的argValue,如果argValue是可解析表达式，会对其进行解析，否则得到的还是argValue
 			else if (argValue instanceof String) {
 				argValue = this.beanFactory.evaluateBeanDefinitionString((String) argValue, mbd);
 			}
@@ -953,20 +1005,34 @@ class ConstructorResolver {
 		return constructor;
 	}
 
-	/**
+	/**解析应该自动装配的methodParam的Bean对象,使用autowiredBeanNames保存所找到的所有候选Bean对象
 	 * Template method for resolving the specified argument which is supposed to be autowired.
+	   Template method for resolving the specified argument which is supposed to be autowired.
+	 * <p>用于解析应该自动装配的指定参数的模板方法</p>
+	 * @param param 方法参数封装对象
+	 * @param beanName bean名
+	 * @param autowiredBeanNames 一个集合，所有自动装配的bean名(用于解决给定依赖关系)都应添加.即自动注入匹配成功的候选Bean名集合。
+	 *                              【当autowiredBeanNames不为null，会将所找到的所有候选Bean对象添加到该集合中,以供调用方使用
+	 * @param typeConverter 类型装换器
+	 * @param fallback 是否可在抛出NoSuchBeanDefinitionException返回null，而不抛出异常
 	 */
 	@Nullable
 	protected Object resolveAutowiredArgument(MethodParameter param, String beanName,
 			@Nullable Set<String> autowiredBeanNames, TypeConverter typeConverter) {
-
+		//InjectionPoint用于描述一个AOP注入点
+		//如果paramType属于InjectionPoint
 		if (InjectionPoint.class.isAssignableFrom(param.getParameterType())) {
+			//从线程本地中获取当前切入点对象，该对象一般在Bean工厂解析出与descriptor所包装的对象匹配的候选Bean对象的时候设置
 			InjectionPoint injectionPoint = currentInjectionPoint.get();
 			if (injectionPoint == null) {
 				throw new IllegalStateException("No current InjectionPoint available for " + param);
 			}
 			return injectionPoint;
 		}
+		//DependencyDescriptor：即将注入的特定依赖项描述符。包装构造函数，方法参数或字段，以允许对其元数据 的统一访问
+		//该DependencyDescriptor对象的依赖类型就是指param的类型
+		//将param封装成DependencyDescriptor对象，让当前Bean工厂根据该DependencyDescriptor对象的依赖类型解析出与
+		// 	该DependencyDescriptor对象所包装的对象匹配的候选Bean对象，然后返回出去
 		return this.beanFactory.resolveDependency(
 				new DependencyDescriptor(param, true), beanName, autowiredBeanNames, typeConverter);
 	}

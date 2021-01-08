@@ -10,6 +10,7 @@ import com.hmy.recycle.AService;
 //@EnableAspectJAutoProxy
 @ComponentScan("com.hmy.recycle")
 //https://www.cnblogs.com/developer_chan/p/10740664.html 新的spring知识讲解了创建实例化
+//https://blog.csdn.net/qq_30321211/article/details/108365617 BeanDefinitionValueResolver 类型转换
 public class TestMain {
 
 	public static void main(String[] args) {

@@ -138,7 +138,7 @@ public class CglibSubclassingInstantiationStrategy extends SimpleInstantiationSt
 			return instance;
 		}
 
-		/**
+		/**  // cglib生成子类
 		 * Create an enhanced subclass of the bean class for the provided bean
 		 * definition, using CGLIB.
 		 */
