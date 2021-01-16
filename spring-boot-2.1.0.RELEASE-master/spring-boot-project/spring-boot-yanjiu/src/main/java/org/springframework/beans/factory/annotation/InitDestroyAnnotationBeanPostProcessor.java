@@ -78,10 +78,10 @@ public class InitDestroyAnnotationBeanPostProcessor
 		implements DestructionAwareBeanPostProcessor, MergedBeanDefinitionPostProcessor, PriorityOrdered, Serializable {
 
 	protected transient Log logger = LogFactory.getLog(getClass());
-
+	//CommonAnnotationBeanPostProcessor在初始化时向里面放置了@PostConstruct注解
 	@Nullable
 	private Class<? extends Annotation> initAnnotationType;
-
+	//CommonAnnotationBeanPostProcessor在初始化时向里面放置了@PreDestroy注解
 	@Nullable
 	private Class<? extends Annotation> destroyAnnotationType;
 

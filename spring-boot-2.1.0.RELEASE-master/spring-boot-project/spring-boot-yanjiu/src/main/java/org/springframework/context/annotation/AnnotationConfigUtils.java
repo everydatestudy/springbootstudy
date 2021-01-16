@@ -191,6 +191,7 @@ public class AnnotationConfigUtils {
 		}
 
 		// Check for JSR-250 support, and if present add the CommonAnnotationBeanPostProcessor.
+		
 		if (jsr250Present && !registry.containsBeanDefinition(COMMON_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(CommonAnnotationBeanPostProcessor.class);
 			def.setSource(source);
@@ -221,8 +222,7 @@ public class AnnotationConfigUtils {
 		if (!registry.containsBeanDefinition(EVENT_LISTENER_FACTORY_BEAN_NAME)) {
 			//从 Spring 后置处理器源码 可知，Spring 初始化时会注册 EventListenerMethodProcessor
 			//和 DefaultEventListenerFactory。
-			//EventListenerMethodProcessor 实现了 EventListenerMethodProcessor，所以执行 BeanFactory 后置处理器时，会调用 postProcessBeanFactory()，将 DefaultEventListenerFactory 添加到缓存中。
-
+	 
 			//EventListenerMethodProcessor 实现了 SmartInitializingSingleton，
 			//所以在初始化剩余的单例 Bean 之后，会调用 afterSingletonsInstantiated()，获取所有的 BeanFactory，
 			//找到其中标注了 @EventListener 的方法，利用反射和 DefaultEventListenerFactory

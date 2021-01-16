@@ -3,27 +3,39 @@ package com.hmy;
 import org.springframework.cglib.core.DebuggingClassWriter;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.support.AbstractApplicationContext;
 
 import com.hmy.recycle.AService;
 
+import event.TestEvent;
+
 //@EnableAspectJAutoProxy
-@ComponentScan("com.hmy.recycle")
+@ComponentScan({"com.hmy.recycle","event"})
 //https://www.cnblogs.com/developer_chan/p/10740664.html 新的spring知识讲解了创建实例化
 //https://blog.csdn.net/qq_30321211/article/details/108365617 BeanDefinitionValueResolver 类型转换
+
+//上面的说明其实也就指出了aspectJ的几种标准的使用方法(参考文档)：
+//https://blog.csdn.net/aizhupo1314/article/details/84989894
+//编译时织入，利用ajc编译器替代javac编译器，直接将源文件(java或者aspect文件)编译成class文件并将切面织入进代码。
+//编译后织入，利用ajc编译器向javac编译期编译后的class文件或jar文件织入切面代码。
+//加载时织入，不使用ajc编译器，利用aspectjweaver.jar工具，使用java agent代理在类加载期将切面织入进代码
+@EnableAspectJAutoProxy
 public class TestMain {
 
 	public static void main(String[] args) {
 		System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY, "D:\\home\\cglib");
 		// ClassPathXmlApplicationContext默认是加载src目录下的xml文件
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-//		context.addBeanFactoryPostProcessor(new TestBeanDefinitionRegistryPostProcessors());
+// 		context.addBeanFactoryPostProcessor(new TestBeanDefinitionRegistryPostProcessors());
 		context.register(TestMain.class);
 		context.refresh();
 		AService aservice = context.getBean(AService.class);
+		TestEvent event = new TestEvent(new Object(), "事件1");
+		context.publishEvent(event);
 //		System.out.println("\n===========普通调用=============\n");
 //
-		 System.out.println(aservice);
+		System.out.println(aservice.show());
 //
 //		System.out.println("\n===========异常调用=============\n");
 //

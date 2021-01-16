@@ -327,6 +327,7 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 	// 后再postProcessProperties()方法中完成对象的注入。
 	@Override
 	public void postProcessMergedBeanDefinition(RootBeanDefinition beanDefinition, Class<?> beanType, String beanName) {
+		  //这个时处理@PostConstruct`和`@PreDestroy的
 		super.postProcessMergedBeanDefinition(beanDefinition, beanType, beanName);
 		// 找出beanType所有被@Resource标记的字段和方法封装到InjectionMetadata中
 		InjectionMetadata metadata = findResourceMetadata(beanName, beanType, null);
@@ -414,7 +415,9 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 						throw new IllegalStateException("@EJB annotation is not supported on static fields");
 					}
 					currElements.add(new EjbRefElement(field, field, null));
+					
 				} else if (field.isAnnotationPresent(Resource.class)) {
+					 //注意静态字段不支持
 					if (Modifier.isStatic(field.getModifiers())) {
 						throw new IllegalStateException("@Resource annotation is not supported on static fields");
 					}
@@ -427,6 +430,7 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 			});
 
 			ReflectionUtils.doWithLocalMethods(targetClass, method -> {
+				//找出我们在代码中定义的方法而非编译器为我们生成的方法
 				Method bridgedMethod = BridgeMethodResolver.findBridgedMethod(method);
 				if (!BridgeMethodResolver.isVisibilityBridgeMethodPair(method, bridgedMethod)) {
 					return;
@@ -461,6 +465,7 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 							throw new IllegalStateException(
 									"@Resource annotation requires a single-arg method: " + method);
 						}
+						//如果不想注入某一类型对象 可以将其加入ignoredResourceTypes中
 						if (!this.ignoredResourceTypes.contains(paramTypes[0].getName())) {
 							PropertyDescriptor pd = BeanUtils.findPropertyForMethod(bridgedMethod, clazz);
 							currElements.add(new ResourceElement(method, bridgedMethod, pd));
@@ -568,6 +573,7 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 			//则会使用resolveDependency()方法将符合bean type的bean definetion
 			//调用一次getBean()从这些bean选出符合requestingBeanName的bean
 			autowiredBeanNames = new LinkedHashSet<>();
+			 //如果容器中还没有此bean，则会使用resolveDependency()方法将符合bean type的bean definetion调用一次getBean()从这些bean选出符合requestingBeanName的bean
 			resource = ((AutowireCapableBeanFactory) factory).resolveDependency(element.getDependencyDescriptor(),
 					requestingBeanName, autowiredBeanNames, null);
 			if (resource == null) {

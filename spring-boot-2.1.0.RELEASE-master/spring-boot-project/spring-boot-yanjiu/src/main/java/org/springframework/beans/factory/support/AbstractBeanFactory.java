@@ -326,17 +326,19 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
 			if (!typeCheckOnly) {
 				//添加到alreadyCreated set集合当中，表示他已经创建过一场
+				//如果不是仅仅做类型检测，而是创建bean实例，这里要将beanName放到alreadyCreated缓存
 				markBeanAsCreated(beanName);
 			}
 
 			try {
 				final RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
 				checkMergedBeanDefinition(mbd, beanName, args);
-
+				  // 8.拿到当前bean依赖的bean名称集合，在实例化自己之前，需要先实例化自己依赖的bean
 				// Guarantee initialization of beans that the current bean depends on.
 				String[] dependsOn = mbd.getDependsOn();
 				if (dependsOn != null) {
 					for (String dep : dependsOn) {
+						   // 8.2 检查dep是否依赖于beanName，即检查是否存在循环依赖
 						if (isDependent(beanName, dep)) {
 							throw new BeanCreationException(mbd.getResourceDescription(), beanName,
 									"Circular depends-on relationship between '" + beanName + "' and '" + dep + "'");
@@ -381,7 +383,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					}
 					bean = getObjectForBeanInstance(prototypeInstance, name, beanName, mbd);
 				}
-
+				   // 9.3.2 其他scope的bean创建（新建了一个ObjectFactory，并且重写了getObject方法
 				else {
 					String scopeName = mbd.getScope();
 					final Scope scope = this.scopes.get(scopeName);
@@ -1634,10 +1636,14 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	protected void markBeanAsCreated(String beanName) {
 		if (!this.alreadyCreated.contains(beanName)) {
 			synchronized (this.mergedBeanDefinitions) {
+			    // 1.如果alreadyCreated缓存中不包含beanName
 				if (!this.alreadyCreated.contains(beanName)) {
 					// Let the bean definition get re-merged now that we're actually creating
 					// the bean... just in case some of its metadata changed in the meantime.
+				     // 2.将beanName的MergedBeanDefinition从mergedBeanDefinitions缓存中移除，
+	                // 在之后重新获取MergedBeanDefinition，避免BeanDefinition在创建过程中发生变化
 					clearMergedBeanDefinition(beanName);
+					  // 3.将beanName添加到alreadyCreated缓存中，代表该beanName的bean实例已经创建（或即将创建）
 					this.alreadyCreated.add(beanName);
 				}
 			}
@@ -1702,7 +1708,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 */
 	protected Object getObjectForBeanInstance(
 			Object beanInstance, String name, String beanName, @Nullable RootBeanDefinition mbd) {
-
+		// 1.如果name以“&”为前缀，但是beanInstance不是FactoryBean，则抛异常
 		// Don't let calling code try to dereference the factory if the bean isn't a factory.
 		if (BeanFactoryUtils.isFactoryDereference(name)) {
 			if (beanInstance instanceof NullBean) {
@@ -1718,10 +1724,13 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		// If it's a FactoryBean, we use it to create a bean instance, unless the
 		// caller actually wants a reference to the factory.
 		/**
-               * 如果上面的判断通过了，表明 beanInstance 可能是一个普通的 bean，也可能是一个
+        * 如果上面的判断通过了，表明 beanInstance 可能是一个普通的 bean，也可能是一个
          * FactoryBean。如果是一个普通的 bean，这里直接返回 beanInstance 即可。如果是
           * FactoryBean，则要调用工厂方法生成一个 bean 实例。
           */
+		   // 2.1 如果beanInstance不是FactoryBean（也就是普通bean），则直接返回beanInstance
+	    // 2.2 如果beanInstance是FactoryBean，并且name以“&”为前缀，则直接返回beanInstance（以“&”为前缀代表想获取的是FactoryBean本身）
+	 
 		if (!(beanInstance instanceof FactoryBean) || BeanFactoryUtils.isFactoryDereference(name)) {
 			return beanInstance;
 		}
@@ -1765,15 +1774,22 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
 	/**
 	 * Determine whether the given bean requires destruction on shutdown.
+	 * <p>确定给定Bean在关闭时是否需要销毁</p>
 	 * <p>The default implementation checks the DisposableBean interface as well as
 	 * a specified destroy method and registered DestructionAwareBeanPostProcessors.
+	 * <p>默认实现会检查一次性Bean接口以及指定的销毁方法和注册的 DestructionAwareBeanPostProcessors </p>
 	 * @param bean the bean instance to check
+	 *             	-- 要检查的Bean实例
 	 * @param mbd the corresponding bean definition
+	 *            -- 对应的BeanDefinition
 	 * @see org.springframework.beans.factory.DisposableBean
 	 * @see AbstractBeanDefinition#getDestroyMethodName()
 	 * @see org.springframework.beans.factory.config.DestructionAwareBeanPostProcessor
 	 */
 	protected boolean requiresDestruction(Object bean, RootBeanDefinition mbd) {
+		//DestructionAwareBeanPostProcessor ：该处理器将在关闭时应用于单例Bean
+		// 如果 bean类不是 NullBean && (如果bean有desctory方法 || (该工厂持有一个 DestructionAwareBeanPostProcessor) &&
+		// 	Bean有应用于它的可识别销毁的后处理器)) 就为true;否则返回false
 		return (bean.getClass() != NullBean.class &&
 				(DisposableBeanAdapter.hasDestroyMethod(bean, mbd) || (hasDestructionAwareBeanPostProcessors() &&
 						DisposableBeanAdapter.hasApplicableProcessors(bean, getBeanPostProcessors()))));
@@ -1798,6 +1814,10 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				// Register a DisposableBean implementation that performs all destruction
 				// work for the given bean: DestructionAwareBeanPostProcessors,
 				// DisposableBean interface, custom destroy method.
+				// 注册一个一次性Bean实现来执行给定Bean的销毁工作：DestructionAwareBeanPostProcessors 一次性Bean接口，
+				// 自定义销毁方法。
+				// DisposableBeanAdapter：实际一次性Bean和可运行接口适配器，对给定Bean实例执行各种销毁步骤
+				// 构建Bean对应的DisposableBeanAdapter对象，与beanName绑定到 注册中心的一次性Bean列表中
 				registerDisposableBean(beanName,
 						new DisposableBeanAdapter(bean, beanName, mbd, getBeanPostProcessors(), acc));
 			}
@@ -1807,6 +1827,8 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				if (scope == null) {
 					throw new IllegalStateException("No Scope registered for scope name '" + mbd.getScope() + "'");
 				}
+				//注册一个回调，在销毁作用域中将构建Bean对应的DisposableBeanAdapter对象指定(或者在销毁整个作用域时执行，
+				// 如果作用域没有销毁单个对象，而是全部终止)
 				scope.registerDestructionCallback(beanName,
 						new DisposableBeanAdapter(bean, beanName, mbd, getBeanPostProcessors(), acc));
 			}

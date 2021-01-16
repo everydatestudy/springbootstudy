@@ -579,6 +579,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				registerBeanPostProcessors(beanFactory);
 
 				// Initialize message source for this context.
+				// 初始化国际化资源处理器：
 				initMessageSource();
 
 				// Initialize event multicaster for this context.
@@ -857,18 +858,24 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	/**
 	 * Initialize the ApplicationEventMulticaster. Uses
 	 * SimpleApplicationEventMulticaster if none defined in the context.
+	 * 从bean工厂中获取或者直接显示的new一个事件多播器赋值给applicatoinContext对象的applicationEventMulticaster属性
+	 * 事件多播器采用典型的设计模式就是观察者模式 多播器作为的是一个被观察者
 	 * 
 	 * @see org.springframework.context.event.SimpleApplicationEventMulticaster
 	 */
 	protected void initApplicationEventMulticaster() {
+		// 获取我们的bean工厂对象
 		ConfigurableListableBeanFactory beanFactory = getBeanFactory();
+		// 判断容器中是否包含了applicationEventMulticaster事件多播器组件
 		if (beanFactory.containsLocalBean(APPLICATION_EVENT_MULTICASTER_BEAN_NAME)) {
+			// 直接显示的调用我们的getBean获取出来赋值给我们的applicationContext对象
 			this.applicationEventMulticaster = beanFactory.getBean(APPLICATION_EVENT_MULTICASTER_BEAN_NAME,
 					ApplicationEventMulticaster.class);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Using ApplicationEventMulticaster [" + this.applicationEventMulticaster + "]");
 			}
 		} else {
+			// 直接new一个
 			this.applicationEventMulticaster = new SimpleApplicationEventMulticaster(beanFactory);
 			beanFactory.registerSingleton(APPLICATION_EVENT_MULTICASTER_BEAN_NAME, this.applicationEventMulticaster);
 			if (logger.isDebugEnabled()) {
@@ -909,7 +916,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * Called on initialization of special beans, before instantiation of
 	 * singletons.
 	 * <p>
-	 * This implementation is empty.
+	 * This implementation is empty. 这个方法很重要同样也是留个子类实现,其中Spring
+	 * Boot就是从这个方法进行tomcat的启动（后续讲Spring
+	 * Boot的源码分析的时候会涉及到这块，比如：Spring容器的启动如何带动web容器tomcat的启动以及web容器tomcat的启动如何带动Spring容器的启动）
 	 * 
 	 * @throws BeansException in case of errors
 	 * @see #refresh()
@@ -919,6 +928,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	}
 
 	/**
+	 * 把我们的事件监听器注册到事件多播器上：
 	 * Add beans that implement ApplicationListener as listeners. Doesn't affect
 	 * other listeners, which can be added without being beans.
 	 */
@@ -932,6 +942,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 		// Do not initialize FactoryBeans here: We need to leave all regular beans
 		// uninitialized to let post-processors apply to them!
+		//获取bean定义中的监听器对象
 		String[] listenerBeanNames = getBeanNamesForType(ApplicationListener.class, true, false);
 		// 把监听器的名称注册到我们的事件多播器上
 		for (String listenerBeanName : listenerBeanNames) {

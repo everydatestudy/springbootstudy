@@ -59,12 +59,12 @@ import org.springframework.util.CollectionUtils;
 public class EventListenerMethodProcessor implements SmartInitializingSingleton, ApplicationContextAware {
 
 	protected final Log logger = LogFactory.getLog(getClass());
-
+	 // 用于记录检测发现`@EventListener`注解方法，生成和注册`ApplicationListener`实例的应用上下文
 	@Nullable
 	private ConfigurableApplicationContext applicationContext;
 
 	private final EventExpressionEvaluator evaluator = new EventExpressionEvaluator();
-
+    // 缓存机制，记住那些根本任何方法上没有使用注解 @EventListener 的类，避免处理过程中二次处理 
 	private final Set<Class<?>> nonAnnotatedClasses = Collections.newSetFromMap(new ConcurrentHashMap<>(64));
 
 
@@ -142,7 +142,8 @@ public class EventListenerMethodProcessor implements SmartInitializingSingleton,
 		AnnotationAwareOrderComparator.sort(factories);
 		return factories;
 	}
-
+	// 该方法拿到某个bean的名称和它的目标类，在这个范围上检测`@EventListener`注解方法，
+	   // 生成和注册`ApplicationListener`实例
 	protected void processBean(
 			final List<EventListenerFactory> factories, final String beanName, final Class<?> targetType) {
 
@@ -150,6 +151,7 @@ public class EventListenerMethodProcessor implements SmartInitializingSingleton,
 			Map<Method, EventListener> annotatedMethods = null;
 			try {
 				// 拿到使用了@EventListener注解的方法
+				   // *** 注意这里, 这里检测当前类targetType上使用了注解 @EventListener 的方法
 				annotatedMethods = MethodIntrospector.selectMethods(targetType,
 						(MethodIntrospector.MetadataLookup<EventListener>) method ->
 								AnnotatedElementUtils.findMergedAnnotation(method, EventListener.class));
@@ -161,15 +163,21 @@ public class EventListenerMethodProcessor implements SmartInitializingSingleton,
 				}
 			}
 			if (CollectionUtils.isEmpty(annotatedMethods)) {
+			    // 如果当前类 targetType 中没有任何使用了 注解 @EventListener 的方法，则将该类保存到
+	              // 缓存 nonAnnotatedClasses, 从而避免当前处理方法重入该类，其目的应该是为了提高效率，
 				this.nonAnnotatedClasses.add(targetType);
 				if (logger.isTraceEnabled()) {
 					logger.trace("No @EventListener annotations found on bean class: " + targetType.getName());
 				}
 			}
 			else {
+				// 发现当前类 targetType 中有些方法使用了注解 @EventListener,现在根据这些方法上的信息
+	              // 对应地创建和注册ApplicationListener实例
 				// Non-empty set of methods 获取配置上下文对象
 				ConfigurableApplicationContext context = getApplicationContext();
 				for (Method method : annotatedMethods.keySet()) {
+					  // 注意，这里使用到了  this.eventListenerFactories, 这些 EventListenerFactory 是在 
+		              // 该类 postProcessBeanFactory 方法调用时被记录的
 					for (EventListenerFactory factory : factories) {
 						if (factory.supportsMethod(method)) {
 							Method methodToUse = AopUtils.selectInvocableMethod(method, context.getType(beanName));

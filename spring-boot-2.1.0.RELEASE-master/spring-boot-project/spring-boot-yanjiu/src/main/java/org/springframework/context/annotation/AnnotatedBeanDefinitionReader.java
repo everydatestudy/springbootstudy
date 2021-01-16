@@ -48,7 +48,9 @@ import org.springframework.util.Assert;
 public class AnnotatedBeanDefinitionReader {
 
 	private final BeanDefinitionRegistry registry;
-
+	//BeanNameGenerator有两个实现版本，DefaultBeanNameGenerator和AnnotationBeanNameGenerator。
+	//其中DefaultBeanNameGenerator是给资源文件加载bean时使用（BeanDefinitionReader中使用）；
+	//AnnotationBeanNameGenerator是为了处理注解生成bean name的情况。
 	private BeanNameGenerator beanNameGenerator = new AnnotationBeanNameGenerator();
 
 	private ScopeMetadataResolver scopeMetadataResolver = new AnnotationScopeMetadataResolver();
@@ -326,6 +328,7 @@ public class AnnotatedBeanDefinitionReader {
 	private static Environment getOrCreateEnvironment(BeanDefinitionRegistry registry) {
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null");
 		if (registry instanceof EnvironmentCapable) {
+			//这里是不存在就创建，子类会重写这个方法，如果是springmvc会返回webEnvironment
 			return ((EnvironmentCapable) registry).getEnvironment();
 		}
 		return new StandardEnvironment();

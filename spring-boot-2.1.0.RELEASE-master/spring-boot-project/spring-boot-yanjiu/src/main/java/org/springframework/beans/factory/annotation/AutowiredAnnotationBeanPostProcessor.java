@@ -47,9 +47,11 @@ import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InjectionPoint;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.UnsatisfiedDependencyException;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.DependencyDescriptor;
 import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessorAdapter;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.LookupOverride;
 import org.springframework.beans.factory.support.MergedBeanDefinitionPostProcessor;
 import org.springframework.beans.factory.support.RootBeanDefinition;
@@ -64,6 +66,8 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
+
+import com.hmy.recycle.TestCandidateConstructors;
 
 /**
  * {@link org.springframework.beans.factory.config.BeanPostProcessor}
@@ -332,6 +336,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 
 		// Let's check for lookup methods here..
 		// 判断是否已经解析过 。lookupMethodsChecked 作为一个缓存集合，保存已经处理过的bean
+		
 		if (!this.lookupMethodsChecked.contains(beanName)) {
 			try {
 				//处理一个对象是否增加了lookup注解，如果增加了会在对象实例化之前产生代理对象，
@@ -362,6 +367,8 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 		}
 
 		// Quick check on the concurrent map first, with minimal locking.
+		// 这里开始处理构造函数
+		// 获取bean的所有候选构造函数
 		Constructor<?>[] candidateConstructors = this.candidateConstructorsCache.get(beanClass);
 		if (candidateConstructors == null) {
 			// Fully synchronized resolution now...
@@ -384,12 +391,20 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 					// 存放依赖注入的required=true的构造器
 					// @Autowired(required = true) 的构造函数,有且只能有一个
 					Constructor<?> requiredConstructor = null;
-					// 存放默认构造器
+					// 默认的无参构造函数
 					Constructor<?> defaultConstructor = null;
 					// 这个是Kotlin编程语言提供的构造函数，是混合开发，
 					//对于kotlin类返回与Kotlin主构造函数对应的Java构造函数(在Kotlin规范中定义)。
 					//除此之外，特别是对于非kotlin类(java)，这只是返回null。所以对于java程序恒返回null
 					Constructor<?> primaryConstructor = BeanUtils.findPrimaryConstructor(beanClass);
+					//--这里是为了测试，修改了源码
+					if(beanName.equals("testCandidateConstructors")) {
+//						BeanDefinition bd = beanFactory.getBeanDefinition(beanName);
+//						((AbstractBeanDefinition)bd).setAutowireMode(3);
+					//	primaryConstructor=TestCandidateConstructors.class.getConstructors()[0];
+						System.out.println("testCandidateConstructors");
+					}
+					//--结束
 					int nonSyntheticConstructors = 0;
 					for (Constructor<?> candidate : rawCandidates) {
 				    	// 构造函数是否是非合成，一般我们自己创建的都是非合成的。Java在编译过程中可能会出现一些合成的构造函数
@@ -476,7 +491,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 						// //就使用此构造器来初始化
 						candidateConstructors = new Constructor<?>[] { rawCandidates[0] };
 					}
-					// 如果构造器有两个，且默认构造器不为空 使用默认构造器返回
+					// 如果构造器有两个，且默认构造器不为空 使用默认构造器返回,这里永远不会执行，因为primaryConstructor这个不是java语言的编写
 					else if (nonSyntheticConstructors == 2 && primaryConstructor != null && defaultConstructor != null
 							&& !primaryConstructor.equals(defaultConstructor)) {
 						candidateConstructors = new Constructor<?>[] { primaryConstructor, defaultConstructor };
@@ -543,6 +558,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 					if (metadata != null) {
 						metadata.clear(pvs);
 					}
+					//搜索每个Bean内@Autowired注解的信息
 					metadata = buildAutowiringMetadata(clazz);
 					this.injectionMetadataCache.put(cacheKey, metadata);
 				}
@@ -703,6 +719,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 			Field field = (Field) this.member;
 			Object value;
 			if (this.cached) {
+				// 判断 如果  cachedFieldValue instanceof DependencyDescriptor。则调用 resolveDependency 方法重新加载。
 				value = resolvedCachedArgument(beanName, this.cachedFieldValue);
 			} else {
 				DependencyDescriptor desc = new DependencyDescriptor(field, this.required);

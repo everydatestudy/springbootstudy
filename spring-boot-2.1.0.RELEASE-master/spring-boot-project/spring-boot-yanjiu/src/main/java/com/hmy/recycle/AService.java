@@ -15,8 +15,8 @@ public class AService {
 //	@Autowired
 	Cservice b;
 
-	public AService(Cservice str) {
-		this.b = str;
+	public String show() {
+		System.out.println("bbbbbbbbbbb");
+		return "fsdafd";
 	}
-
 }
