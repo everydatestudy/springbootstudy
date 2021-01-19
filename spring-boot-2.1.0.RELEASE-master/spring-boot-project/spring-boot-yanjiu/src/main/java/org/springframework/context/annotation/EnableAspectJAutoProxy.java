@@ -123,12 +123,16 @@ import java.lang.annotation.Target;
 public @interface EnableAspectJAutoProxy {
 
 	/**
+	 *             // 如果节点设置了proxy-target-class=true，则给beanName为org.springframework.aop.config.internalAutoProxyCreator
+            // 的BeanDefinition添加proxyTargetClass=true的属性，之后创建代理的时候将强制使用Cglib代理
 	 * Indicate whether subclass-based (CGLIB) proxies are to be created as opposed
 	 * to standard Java interface-based proxies. The default is {@code false}.
 	 */
 	boolean proxyTargetClass() default false;
 
 	/**
+	// 如果节点设置了expose-proxy=true，则给beanName为org.springframework.aop.config.internalAutoProxyCreator
+                的BeanDefinition添加exposeProxy=true的属性，之后创建拦截器时会根据该属性选择是否暴露代理类
 	 * Indicate that the proxy should be exposed by the AOP framework as a {@code ThreadLocal}
 	 * for retrieval via the {@link org.springframework.aop.framework.AopContext} class.
 	 * Off by default, i.e. no guarantees that {@code AopContext} access will work.

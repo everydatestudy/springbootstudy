@@ -568,6 +568,8 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 		int numBound = 0;
 
 		if (this.joinPointArgumentIndex != -1) {
+	        // 1.如果存在连接点参数，则将jp添加到调用参数
+	        // 当使用@Around时就有参数；使用@Before、@After时就没有参数
 			adviceInvocationArgs[this.joinPointArgumentIndex] = jp;
 			numBound++;
 		}
@@ -577,7 +579,10 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 		}
 
 		if (!CollectionUtils.isEmpty(this.argumentBindings)) {
+	        // binding from pointcut match
+	        // 2.使用pointcut匹配绑定
 			// binding from pointcut match
+	        // 3.用于绑定@AfterReturing中的returning参数
 			if (jpMatch != null) {
 				PointcutParameter[] parameterBindings = jpMatch.getParameterBindings();
 				for (PointcutParameter parameter : parameterBindings) {
@@ -594,6 +599,8 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 				numBound++;
 			}
 			// binding from thrown exception
+	        // binding from thrown exception
+	        // 4.用于绑定@AfterThrowing中的throwing参数
 			if (this.throwingName != null) {
 				Integer index = this.argumentBindings.get(this.throwingName);
 				adviceInvocationArgs[index] = ex;
@@ -629,18 +636,21 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	// As above, but in this case we are given the join point.
 	protected Object invokeAdviceMethod(JoinPoint jp, @Nullable JoinPointMatch jpMatch,
 			@Nullable Object returnValue, @Nullable Throwable t) throws Throwable {
-
+	    // 1.argBinding：获取方法执行连接点处的参数
+	    // 2.invokeAdviceMethodWithGivenArgs：使用给定的参数调用增强方法
 		return invokeAdviceMethodWithGivenArgs(argBinding(jp, jpMatch, returnValue, t));
 	}
 
 	protected Object invokeAdviceMethodWithGivenArgs(Object[] args) throws Throwable {
 		Object[] actualArgs = args;
+	    // 1.如果增强方法没有参数，则将actualArgs赋值为null
 		if (this.aspectJAdviceMethod.getParameterCount() == 0) {
 			actualArgs = null;
 		}
 		try {
 			ReflectionUtils.makeAccessible(this.aspectJAdviceMethod);
 			// TODO AopUtils.invokeJoinpointUsingReflection
+	        // 2.反射执行增强方法
 			return this.aspectJAdviceMethod.invoke(this.aspectInstanceFactory.getAspectInstance(), actualArgs);
 		}
 		catch (IllegalArgumentException ex) {

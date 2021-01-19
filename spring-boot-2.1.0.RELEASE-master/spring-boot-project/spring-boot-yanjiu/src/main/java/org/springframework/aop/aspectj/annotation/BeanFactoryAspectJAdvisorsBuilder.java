@@ -74,6 +74,9 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 
 
 	/**
+	 * 
+     * 去容器中获取到所有的切面信息保存到缓存中
+      
 	 * Look for AspectJ-annotated aspect beans in the current bean factory,
 	 * and return to a list of Spring AOP Advisors representing them.
 	 * <p>Creates a Spring Advisor for each AspectJ advice method.
@@ -82,31 +85,46 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 	 */
 	public List<Advisor> buildAspectJAdvisors() {
 		List<String> aspectNames = this.aspectBeanNames;
-
+		 //缓存字段aspectNames没有值 注意实例化第一个单实例bean的时候就会触发解析切面
 		if (aspectNames == null) {
 			synchronized (this) {
 				aspectNames = this.aspectBeanNames;
 				if (aspectNames == null) {
+					  //用于保存所有解析出来的Advisors集合对象
 					List<Advisor> advisors = new ArrayList<>();
+					 //用于保存切面的名称的集合
 					aspectNames = new ArrayList<>();
+					 /**
+                     * AOP功能中在这里传入的是Object对象，代表去容器中获取到所有的组件的名称，然后再
+                     * 进行遍历，这个过程是十分的消耗性能的，所以说Spring会再这里加入了保存切面信息的缓存。
+                     * 但是事务功能不一样，事务模块的功能是直接去容器中获取Advisor类型的，选择范围小，且不消耗性能。
+                     * 所以Spring在事务模块中没有加入缓存来保存我们的事务相关的advisor
+                     */
 					String[] beanNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
 							this.beanFactory, Object.class, true, false);
+					 //遍历我们从IOC容器中获取处的所有Bean的名称
 					for (String beanName : beanNames) {
 						if (!isEligibleBean(beanName)) {
 							continue;
 						}
 						// We must be careful not to instantiate beans eagerly as in this case they
 						// would be cached by the Spring container but would not have been weaved.
+						//通过beanName去容器中获取到对应class对象
 						Class<?> beanType = this.beanFactory.getType(beanName);
 						if (beanType == null) {
 							continue;
 						}
+						 //根据class对象判断是不是切面 @Aspect
 						if (this.advisorFactory.isAspect(beanType)) {
+							//是切面类
+                            //加入到缓存中
 							aspectNames.add(beanName);
+							//把beanName和class对象构建成为一个AspectMetadata
 							AspectMetadata amd = new AspectMetadata(beanType, beanName);
 							if (amd.getAjType().getPerClause().getKind() == PerClauseKind.SINGLETON) {
-								MetadataAwareAspectInstanceFactory factory =
-										new BeanFactoryAspectInstanceFactory(this.beanFactory, beanName);
+								// 使用BeanFactory和beanName创建一个BeanFactoryAspectInstanceFactory，主要用来创建切面对象实例
+								MetadataAwareAspectInstanceFactory factory =new BeanFactoryAspectInstanceFactory(this.beanFactory, beanName);
+								//真正的去获取我们的Advisor
 								List<Advisor> classAdvisors = this.advisorFactory.getAdvisors(factory);
 								if (this.beanFactory.isSingleton(beanName)) {
 									this.advisorsCache.put(beanName, classAdvisors);
@@ -134,7 +152,8 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 				}
 			}
 		}
-
+	    // 2.如果aspectNames不为null，则代表已经解析过了，则无需再次解析
+	    // 2.1 如果aspectNames是空列表，则返回一个空列表。空列表也是解析过的，只要不是null都是解析过的。
 		if (aspectNames.isEmpty()) {
 			return Collections.emptyList();
 		}
@@ -142,9 +161,12 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 		for (String aspectName : aspectNames) {
 			List<Advisor> cachedAdvisors = this.advisorsCache.get(aspectName);
 			if (cachedAdvisors != null) {
+	            // 根据上面的解析，可以知道advisorsCache存的是已经解析好的增强器，直接添加到结果即可
 				advisors.addAll(cachedAdvisors);
 			}
 			else {
+	            // 如果不存在于advisorsCache缓存，则代表存在于aspectFactoryCache中，
+	            // 从aspectFactoryCache中拿到缓存的factory，然后解析出增强器，添加到结果中
 				MetadataAwareAspectInstanceFactory factory = this.aspectFactoryCache.get(aspectName);
 				advisors.addAll(this.advisorFactory.getAdvisors(factory));
 			}

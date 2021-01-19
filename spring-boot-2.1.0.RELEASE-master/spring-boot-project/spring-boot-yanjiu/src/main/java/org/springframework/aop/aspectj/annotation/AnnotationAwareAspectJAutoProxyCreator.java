@@ -41,6 +41,17 @@ import org.springframework.util.Assert;
  * <p>Processing of Spring Advisors follows the rules established in
  * {@link org.springframework.aop.framework.autoproxy.AbstractAdvisorAutoProxyCreator}.
  *
+ *AnnotationAwareAspectJAutoProxyCreator 实现了几个重要的扩展接口（可能是在父类中实现）：
+
+1）实现了 BeanPostProcessor 接口：实现了 postProcessAfterInitialization 方法。
+
+2）实现了 InstantiationAwareBeanPostProcessor 接口：实现了 postProcessBeforeInstantiation 方法。
+
+3）实现了 SmartInstantiationAwareBeanPostProcessor 接口：实现了 predictBeanType 方法、getEarlyBeanReference 方法。
+
+4）实现了 BeanFactoryAware 接口，实现了 setBeanFactory 方法。
+  {@ AbstractAutoProxyCreator}父类的方法postProcessAfterInitialization
+
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @since 2.0
@@ -89,6 +100,7 @@ public class AnnotationAwareAspectJAutoProxyCreator extends AspectJAwareAdvisorA
 	@Override
 	protected List<Advisor> findCandidateAdvisors() {
 		// Add all the Spring advisors found according to superclass rules.
+		 //找出事务相关的advisor
 		List<Advisor> advisors = super.findCandidateAdvisors();
 		// Build Advisors for all AspectJ aspects in the bean factory.
 		if (this.aspectJAdvisorsBuilder != null) {

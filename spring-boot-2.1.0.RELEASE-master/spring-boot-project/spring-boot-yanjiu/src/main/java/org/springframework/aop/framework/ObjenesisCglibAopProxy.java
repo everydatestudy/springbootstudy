@@ -30,7 +30,14 @@ import org.springframework.util.ReflectionUtils;
 /**
  * Objenesis-based extension of {@link CglibAopProxy} to create proxy instances
  * without invoking the constructor of the class.
- *
+ *Objenesis：另一种实例化对象的方式
+ 它专门用来创建对象，即使你没有空的构造函数，都木有问题~~  可谓非常的强大
+ 它不使用构造方法创建Java对象，所以即使你有空的构造方法，也是不会执行的。
+ 
+
+Objenesis是一个Java的库，主要用来创建特定的对象。
+
+由于不是所有的类都有无参构造器又或者类构造器是private，在这样的情况下，如果我们还想实例化对象，class.newInstance是无法满足的。
  * @author Oliver Gierke
  * @author Juergen Hoeller
  * @since 4.0
@@ -39,7 +46,7 @@ import org.springframework.util.ReflectionUtils;
 class ObjenesisCglibAopProxy extends CglibAopProxy {
 
 	private static final Log logger = LogFactory.getLog(ObjenesisCglibAopProxy.class);
-
+	// 下面有解释，另外一种创建实例的方式（可议不用空的构造函数哟）
 	private static final SpringObjenesis objenesis = new SpringObjenesis();
 
 
@@ -53,11 +60,14 @@ class ObjenesisCglibAopProxy extends CglibAopProxy {
 
 
 	@Override
-	@SuppressWarnings("unchecked")
+	// 创建一个代理得实例
 	protected Object createProxyClassAndInstance(Enhancer enhancer, Callback[] callbacks) {
 		Class<?> proxyClass = enhancer.createClass();
 		Object proxyInstance = null;
-
+		// 如果为true，那我们就采用objenesis去new一个实例~~~
+		// 是否需要尝试：也就是说，它是否还没有被使用过，或者已知是否有效。方法返回true，表示值得尝试
+		// 如果配置的Objenesis Instantiator策略被确定为不处理当前JVM。或者系统属性"spring.objenesis.ignore"值设置为true，表示不尝试了
+		// 这个在ObjenesisCglibAopProxy创建代理实例的时候用到了。若不尝试使用Objenesis，那就还是用老的方式用空构造函数吧
 		if (objenesis.isWorthTrying()) {
 			try {
 				proxyInstance = objenesis.newInstance(proxyClass, enhancer.getUseCache());
@@ -67,13 +77,14 @@ class ObjenesisCglibAopProxy extends CglibAopProxy {
 						"falling back to regular proxy construction", ex);
 			}
 		}
-
+		// 若果还为null，就再去拿到构造函数（指定参数的）
 		if (proxyInstance == null) {
 			// Regular instantiation via default constructor...
 			try {
 				Constructor<?> ctor = (this.constructorArgs != null ?
 						proxyClass.getDeclaredConstructor(this.constructorArgTypes) :
 						proxyClass.getDeclaredConstructor());
+				// 通过此构造函数  去new一个实例
 				ReflectionUtils.makeAccessible(ctor);
 				proxyInstance = (this.constructorArgs != null ?
 						ctor.newInstance(this.constructorArgs) : ctor.newInstance());
