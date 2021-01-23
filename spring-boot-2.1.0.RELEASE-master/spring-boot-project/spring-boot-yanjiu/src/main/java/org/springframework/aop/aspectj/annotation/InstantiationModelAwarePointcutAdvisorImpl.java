@@ -36,7 +36,7 @@ import org.springframework.lang.Nullable;
 /**
  * Internal implementation of AspectJPointcutAdvisor.
  * Note that there will be one instance of this advisor for each target method.
- *
+ * 默认的访问权限，显然是Spring内部自己用的
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @since 2.0
@@ -47,7 +47,7 @@ class InstantiationModelAwarePointcutAdvisorImpl
 
 	private static final Advice EMPTY_ADVICE = new Advice() {};
 
-
+	// 和AspectJExpression
 	private final AspectJExpressionPointcut declaredPointcut;
 
 	private final Class<?> declaringClass;
@@ -55,7 +55,7 @@ class InstantiationModelAwarePointcutAdvisorImpl
 	private final String methodName;
 
 	private final Class<?>[] parameterTypes;
-
+	// 通知方法
 	private transient Method aspectJAdviceMethod;
 
 	private final AspectJAdvisorFactory aspectJAdvisorFactory;
@@ -154,6 +154,7 @@ class InstantiationModelAwarePointcutAdvisorImpl
 		return this.instantiatedAdvice;
 	}
 	//将切面中的通知构造为advice通知对象
+	//// advice 由aspectJAdvisorFactory去生产  懒加载的效果
 	private Advice instantiateAdvice(AspectJExpressionPointcut pointcut) {
 		Advice advice = this.aspectJAdvisorFactory.getAdvice(this.aspectJAdviceMethod, pointcut,
 				this.aspectInstanceFactory, this.declarationOrder, this.aspectName);
@@ -220,6 +221,7 @@ class InstantiationModelAwarePointcutAdvisorImpl
 	 * Duplicates some logic from getAdvice, but importantly does not force
 	 * creation of the advice.
 	 */
+	// 这里解释根据@Aspect方法上标注的注解，来区分这两个字段的值的
 	private void determineAdviceType() {
 		AspectJAnnotation<?> aspectJAnnotation =
 				AbstractAspectJAdvisorFactory.findAspectJAnnotationOnMethod(this.aspectJAdviceMethod);

@@ -52,7 +52,7 @@ import org.springframework.util.StringUtils;
 /**
  * Base class for AOP Alliance {@link org.aopalliance.aop.Advice} classes
  * wrapping an AspectJ aspect or an AspectJ-annotated advice method.
- *
+ * AbstractAspectJAdvice的实现类如下：这5个实现类完完整整的对应着我们AspectJ的那5个注解。
  * @author Rod Johnson
  * @author Adrian Colyer
  * @author Juergen Hoeller

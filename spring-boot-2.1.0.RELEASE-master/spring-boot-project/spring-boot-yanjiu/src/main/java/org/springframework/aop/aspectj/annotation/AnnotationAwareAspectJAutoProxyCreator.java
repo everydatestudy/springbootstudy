@@ -52,6 +52,12 @@ import org.springframework.util.Assert;
 4）实现了 BeanFactoryAware 接口，实现了 setBeanFactory 方法。
   {@ AbstractAutoProxyCreator}父类的方法postProcessAfterInitialization
 
+
+
+自动代理创建器：AnnotationAwareAspectJAutoProxyCreator.findCandidateAdvisors() ->
+Bean工厂相关的Advisor构建器：BeanFactoryAspectJAdvisorsBuilder.buildAspectJAdvisors() ->
+ReflectiveAspectJAdvisorFactory.getAdvisors() ->
+ReflectiveAspectJAdvisorFactory.getAdvisor() 最终生成了InstantiationModelAwarePointcutAdvisorImpl(当然包括里面的 Pointcut与 advice 也都是由 ReflectiveAspectJAdvisorFactory 解析生成的)
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @since 2.0

@@ -241,7 +241,9 @@ public class AdvisedSupport extends ProxyConfig implements Advised {
 		return false;
 	}
 
-
+	//这个是通过createProxy(bean.getClass(), beanName, specificInterceptors,
+	//new SingletonTargetSource(bean))-->proxyFactory.addAdvisors(advisors)-->addAdvisors-->updateAdvisorArray();
+	//最终通过这个方法来调用
 	@Override
 	public final Advisor[] getAdvisors() {
 		return this.advisorArray;
@@ -372,6 +374,8 @@ public class AdvisedSupport extends ProxyConfig implements Advised {
 	 * Bring the array up to date with the list.
 	 */
 	protected final void updateAdvisorArray() {
+		//最终把所有符合advisor都放在数据里面了
+		
 		this.advisorArray = this.advisors.toArray(new Advisor[0]);
 	}
 

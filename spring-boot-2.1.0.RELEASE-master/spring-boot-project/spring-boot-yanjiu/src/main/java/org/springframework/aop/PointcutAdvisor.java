@@ -20,7 +20,8 @@ package org.springframework.aop;
  * Superinterface for all Advisors that are driven by a pointcut.
  * This covers nearly all advisors except introduction advisors,
  * for which method-level matching doesn't apply.
- *
+ *IntroductionAdvisor与PointcutAdvisor最本质上的区别就是，IntroductionAdvisor只能应用于类级别的拦截，只能使用Introduction型的Advice。
+而不能像PointcutAdvisor那样，可以使用任何类型的Pointcut，以及几乎任何类型的Advice。
  * @author Rod Johnson
  */
 public interface PointcutAdvisor extends Advisor {

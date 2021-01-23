@@ -1,4 +1,4 @@
-package com.hmy.recycle;
+package com.hmy.recycle.aop;
 
 import javax.annotation.PostConstruct;
 
@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
+import com.hmy.recycle.Cservice;
 import com.hmy.test.service.TestImport;
 
 @Service

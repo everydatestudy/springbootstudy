@@ -20,13 +20,18 @@ public class ObjenesisTest {
 		System.out.println(myDemo.code); // null 特别注意：这里是null，而不是10
 
 		// 若直接这样创建 就报错 java.lang.InstantiationException: com.fsx.maintest.MyDemo
-		//System.out.println(MyDemo.class.newInstance());
+		// System.out.println(MyDemo.class.newInstance());
 	}
 }
-class MyDemo {
-    public String code = "10";
 
-    public MyDemo(String code) {
-        this.code = code;
-    }
+class MyDemo {
+	public String code = "10";
+
+	public MyDemo(String code) {
+		this.code = code;
+	}
+
+	public void show(String str) {
+		System.out.println(str);
+	}
 }

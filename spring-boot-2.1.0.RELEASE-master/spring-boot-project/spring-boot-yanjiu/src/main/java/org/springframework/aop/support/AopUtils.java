@@ -255,9 +255,8 @@ public abstract class AopUtils {
 			for (Method method : methods) {
 				  //通过methodMatcher.matches来匹配我们的方法
 				if (introductionAwareMethodMatcher != null ?
-						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions) :
-							  //通过方法匹配器进行匹配
-							methodMatcher.matches(method, targetClass)) {
+						 //通过方法匹配器进行匹配
+						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions) :	 	methodMatcher.matches(method, targetClass)) {
 					return true;
 				}
 			}

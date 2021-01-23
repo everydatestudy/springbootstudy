@@ -6,7 +6,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.support.AbstractApplicationContext;
 
-import com.hmy.recycle.AService;
+import com.hmy.recycle.aop.AService;
 
 import event.TestEvent;
 
@@ -20,6 +20,7 @@ import event.TestEvent;
 //编译时织入，利用ajc编译器替代javac编译器，直接将源文件(java或者aspect文件)编译成class文件并将切面织入进代码。
 //编译后织入，利用ajc编译器向javac编译期编译后的class文件或jar文件织入切面代码。
 //加载时织入，不使用ajc编译器，利用aspectjweaver.jar工具，使用java agent代理在类加载期将切面织入进代码
+//https://blog.csdn.net/m0_46125280/article/details/103854904 spring aop
 @EnableAspectJAutoProxy
 public class TestMain {
 

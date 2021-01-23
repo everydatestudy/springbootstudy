@@ -40,6 +40,7 @@ public interface ClassFilter {
 
 	/**
 	 * Canonical instance of a ClassFilter that matches all classes.
+	 * 	常量 会匹配所有的类   TrueClassFilter不是public得class，所以只是Spring内部自己使用的
 	 */
 	ClassFilter TRUE = TrueClassFilter.INSTANCE;
 

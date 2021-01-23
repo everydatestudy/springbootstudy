@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
-public class SimpleAspect {
+public class AuthorityAspect {
 
     /**
      * 切点表达式:
@@ -49,7 +49,7 @@ public class SimpleAspect {
      */
     @Before(value="pointCut()")
     public void doBefore(JoinPoint joinPoint){
-        System.out.println("@Before：切点方法之前执行.....");
+        System.out.println("@Before：这里是拦截权限的处理.");
     }
 
     
@@ -59,7 +59,7 @@ public class SimpleAspect {
      */
     @After(value="pointCut()")
     public void doAfter(JoinPoint joinPoint){
-        System.out.println("@After：切点方法之后执行.....");
+    	  System.out.println("@doAfter：这里是拦截权限的处理.");
     }
 
     

@@ -57,6 +57,7 @@ public class DelegatingIntroductionInterceptor extends IntroductionInfoSupport
 	 * Object that actually implements the interfaces.
 	 * May be "this" if a subclass implements the introduced interfaces.
 	 */
+	// 需要被代理的那个对象。因为这个类需要子类继承使用，所以一般都是thid
 	@Nullable
 	private Object delegate;
 
@@ -101,9 +102,11 @@ public class DelegatingIntroductionInterceptor extends IntroductionInfoSupport
 	 * behaviour in around advice. However, subclasses should invoke this
 	 * method, which handles introduced interfaces and forwarding to the target.
 	 */
+	// 如果你要自定义一些行为：比如环绕通知之类的，子类需要复写此方法（否则没有必要了）
 	@Override
 	@Nullable
 	public Object invoke(MethodInvocation mi) throws Throwable {
+		// 判断是否是引介增强
 		if (isMethodOnIntroducedInterface(mi)) {
 			// Using the following method rather than direct reflection, we
 			// get correct handling of InvocationTargetException

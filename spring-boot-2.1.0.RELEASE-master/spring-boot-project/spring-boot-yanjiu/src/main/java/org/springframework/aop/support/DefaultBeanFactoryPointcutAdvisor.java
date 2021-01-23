@@ -44,6 +44,7 @@ public class DefaultBeanFactoryPointcutAdvisor extends AbstractBeanFactoryPointc
 	 * <p>Default is {@code Pointcut.TRUE}.
 	 * @see #setAdviceBeanName
 	 */
+	// 若传进来为null，还是选择 Pointcut.TRUE 匹配所有
 	public void setPointcut(@Nullable Pointcut pointcut) {
 		this.pointcut = (pointcut != null ? pointcut : Pointcut.TRUE);
 	}

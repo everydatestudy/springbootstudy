@@ -27,15 +27,22 @@ import org.springframework.util.Assert;
 /**
  * AspectJPointcutAdvisor that adapts an {@link AbstractAspectJAdvice}
  * to the {@link org.springframework.aop.PointcutAdvisor} interface.
- *
+    *显然是和AspectJ相关的，使用得很是广泛。
+    注意它和AspectJExpressionPointcutAdvisor的区别。
+    有名字也能看出来，AspectJExpressionPointcutAdvisor和表达式语言的切点相关的，
+    而AspectJPointcutAdvisor是无关的。它哥俩都位于包org.springframework.aop.aspectj里。
  * @author Adrian Colyer
  * @author Juergen Hoeller
  * @since 2.0
  */
+//而这个 Advisor中的 Pointcut与Advice都是由
+//ReflectiveAspectJAdvisorFactory 来解析生成的
+//(与之对应的 Advice 是 AspectJMethodBeforeAdvice,
+//AspectJAfterAdvice, AspectJAfterReturningAdvice, AspectJAfterThrowingAdvice, AspectJAroundAdvice,
 public class AspectJPointcutAdvisor implements PointcutAdvisor, Ordered {
-
+	// AbstractAspectJAdvice通知：它的子类看下面截图，就非常清楚了
 	private final AbstractAspectJAdvice advice;
-
+	// 可以接受任意的Pointcut，可谓非常的通用（当然也包含切点表达式啦）
 	private final Pointcut pointcut;
 
 	@Nullable
@@ -46,9 +53,11 @@ public class AspectJPointcutAdvisor implements PointcutAdvisor, Ordered {
 	 * Create a new AspectJPointcutAdvisor for the given advice
 	 * @param advice the AbstractAspectJAdvice to wrap
 	 */
+	// 只有这一个构造函数，包装一个advice
 	public AspectJPointcutAdvisor(AbstractAspectJAdvice advice) {
 		Assert.notNull(advice, "Advice must not be null");
 		this.advice = advice;
+		// 然后pointcut根据advice直接给生成了一个。这是AbstractAspectJAdvice#buildSafePointcut的方法
 		this.pointcut = advice.buildSafePointcut();
 	}
 

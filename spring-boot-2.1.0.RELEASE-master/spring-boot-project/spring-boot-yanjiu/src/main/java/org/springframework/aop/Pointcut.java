@@ -22,7 +22,9 @@ package org.springframework.aop;
  * <p>A pointcut is composed of a {@link ClassFilter} and a {@link MethodMatcher}.
  * Both these basic terms and a Pointcut itself can be combined to build up combinations
  * (e.g. through {@link org.springframework.aop.support.ComposablePointcut}).
- *
+ *ClassFilter限定在类级别上，MethodMatcher限定在方法级别上
+
+SpringAop主要支持在方法级别上的匹配，所以对类级别的匹配支持相对简单一些
  * @author Rod Johnson
  * @see ClassFilter
  * @see MethodMatcher
@@ -47,7 +49,11 @@ public interface Pointcut {
 
 	/**
 	 * Canonical Pointcut instance that always matches.
+	 * 
+	 * Canonical Pointcut instance that always matches.
+	 * 意思是：用于匹配上的一个实例（意思是永远返回true嘛）
 	 */
+	 
 	Pointcut TRUE = TruePointcut.INSTANCE;
 
 }

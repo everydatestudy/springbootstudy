@@ -17,14 +17,19 @@
 package org.springframework.aop;
 
 /**
- * Superinterface for advisors that perform one or more AOP <b>introductions</b>.
+ * Superinterface for advisors that perform one or more AOP
+ * <b>introductions</b>.
  *
- * <p>This interface cannot be implemented directly; subinterfaces must
- * provide the advice type implementing the introduction.
+ * <p>
+ * This interface cannot be implemented directly; subinterfaces must provide the
+ * advice type implementing the introduction.
  *
- * <p>Introduction is the implementation of additional interfaces
- * (not implemented by a target) via AOP advice.
- *
+ * <p>
+ * Introduction is the implementation of additional interfaces (not implemented
+ * by a target) via AOP advice.
+ * IntroductionAdvisor与PointcutAdvisor最本质上的区别就是，IntroductionAdvisor只能应用于类级别的拦截，只能使用Introduction型的Advice。
+ * 而不能像PointcutAdvisor那样，可以使用任何类型的Pointcut，以及几乎任何类型的Advice。
+ * 
  * @author Rod Johnson
  * @since 04.04.2003
  * @see IntroductionInterceptor
@@ -32,19 +37,23 @@ package org.springframework.aop;
 public interface IntroductionAdvisor extends Advisor, IntroductionInfo {
 
 	/**
-	 * Return the filter determining which target classes this introduction
-	 * should apply to.
-	 * <p>This represents the class part of a pointcut. Note that method
-	 * matching doesn't make sense to introductions.
+	 * Return the filter determining which target classes this introduction should
+	 * apply to.
+	 * <p>
+	 * This represents the class part of a pointcut. Note that method matching
+	 * doesn't make sense to introductions.
+	 * 
 	 * @return the class filter
 	 */
+	// 它只有ClassFilter，因为它只能作用在类层面上
 	ClassFilter getClassFilter();
 
 	/**
-	 * Can the advised interfaces be implemented by the introduction advice?
-	 * Invoked before adding an IntroductionAdvisor.
+	 * Can the advised interfaces be implemented by the introduction advice? Invoked
+	 * before adding an IntroductionAdvisor.
+	 * // 判断这些接口，是否真的能够增强。  DynamicIntroductionAdvice#implementsInterface()方法
 	 * @throws IllegalArgumentException if the advised interfaces can't be
-	 * implemented by the introduction advice
+	 *                                  implemented by the introduction advice
 	 */
 	void validateInterfaces() throws IllegalArgumentException;
 

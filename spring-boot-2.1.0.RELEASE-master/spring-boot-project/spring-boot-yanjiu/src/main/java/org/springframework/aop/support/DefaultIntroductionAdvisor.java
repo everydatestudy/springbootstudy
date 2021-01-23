@@ -39,6 +39,7 @@ import org.springframework.util.ClassUtils;
  * @author Juergen Hoeller
  * @since 11.11.2003
  */
+//它直接事IntroductionAdvisor的实现类。同时也是一个ClassFilter
 @SuppressWarnings({"serial" })
 public class DefaultIntroductionAdvisor implements IntroductionAdvisor, ClassFilter, Ordered, Serializable {
 
@@ -54,7 +55,7 @@ public class DefaultIntroductionAdvisor implements IntroductionAdvisor, ClassFil
 	 * @param advice the Advice to apply (may implement the
 	 * {@link org.springframework.aop.IntroductionInfo} interface)
 	 * @see #addInterface
-	 */
+	 */// 构造函数们
 	public DefaultIntroductionAdvisor(Advice advice) {
 		this(advice, (advice instanceof IntroductionInfo ? (IntroductionInfo) advice : null));
 	}
@@ -65,6 +66,8 @@ public class DefaultIntroductionAdvisor implements IntroductionAdvisor, ClassFil
 	 * @param introductionInfo the IntroductionInfo that describes
 	 * the interface to introduce (may be {@code null})
 	 */
+	// 如果IntroductionInfo 不等于null，就会把接口都add进去/
+		// IntroductionInfo 的实现类有常用的：DelegatingIntroductionInterceptor和DelegatePerTargetObjectIntroductionInterceptor
 	public DefaultIntroductionAdvisor(Advice advice, @Nullable IntroductionInfo introductionInfo) {
 		Assert.notNull(advice, "Advice must not be null");
 		this.advice = advice;
@@ -84,6 +87,7 @@ public class DefaultIntroductionAdvisor implements IntroductionAdvisor, ClassFil
 	 * @param advice the Advice to apply
 	 * @param intf the interface to introduce
 	 */
+	//当然你也可以不使用IntroductionInfo，而自己手动指定了这个接口
 	public DefaultIntroductionAdvisor(DynamicIntroductionAdvice advice, Class<?> intf) {
 		Assert.notNull(advice, "Advice must not be null");
 		this.advice = advice;
