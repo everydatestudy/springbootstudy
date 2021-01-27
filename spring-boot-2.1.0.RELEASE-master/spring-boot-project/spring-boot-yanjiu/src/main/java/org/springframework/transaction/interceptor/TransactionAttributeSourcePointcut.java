@@ -26,7 +26,7 @@ import org.springframework.util.ObjectUtils;
 /**
  * Inner class that implements a Pointcut that matches if the underlying
  * {@link TransactionAttributeSource} has an attribute for a given method.
- *
+ *用于判断哪些bean需要织入当前的事务逻辑。这里可想而知，其判断的基本逻辑就是判断其方法或类声明上有没有使用@Transactional注解，如果使用了就是需要织入事务逻辑的bean;
  * @author Juergen Hoeller
  * @since 2.5.5
  */

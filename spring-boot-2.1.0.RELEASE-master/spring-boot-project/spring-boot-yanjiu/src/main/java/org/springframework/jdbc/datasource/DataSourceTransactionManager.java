@@ -262,6 +262,8 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 	 */
 	@Override
 	protected void doBegin(Object transaction, TransactionDefinition definition) {
+		 // 对于DataSourceTransactionManager，其transaction对象就是DataSourceTransactionObject类型
+	    // 的，因而这里可以直接对其进行强转
 		DataSourceTransactionObject txObject = (DataSourceTransactionObject) transaction;
 		Connection con = null;
 
@@ -280,7 +282,9 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 			 //标记当前的连接是一个同步事务
 			txObject.getConnectionHolder().setSynchronizedWithTransaction(true);
 			con = txObject.getConnectionHolder().getConnection();
-			 //为当前的事务设置隔离级别
+			 // 这里prepareConnectionForTransaction()方法的主要工作是读取definition中的readOnly和
+	        // isolation属性，并将其设置到ConnectionHolder中，如果ConnectionHolder中之前已经存在了
+	        // isolation数值，并且不和definition中的相同，则将其设置到previousIsolationLevel中
 			Integer previousIsolationLevel = DataSourceUtils.prepareConnectionForTransaction(con, definition);
 			txObject.setPreviousIsolationLevel(previousIsolationLevel);
 

@@ -52,6 +52,7 @@ public @interface TransactionalEventListener {
 	 * <p>If no transaction is in progress, the event is not processed at
 	 * all unless {@link #fallbackExecution} has been enabled explicitly.
 	 */
+	// 指定当前标注方法处理事务的类型
 	TransactionPhase phase() default TransactionPhase.AFTER_COMMIT;
 
 	/**

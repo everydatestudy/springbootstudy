@@ -283,7 +283,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 		TransactionAttributeSource tas = getTransactionAttributeSource();
 		 //通过事务属性源对象获取到我们的事务属性信息
 		final TransactionAttribute txAttr = (tas != null ? tas.getTransactionAttribute(method, targetClass) : null);
-		   //获取我们配置的事务管理器对象
+		// 获取当前TransactionManager的配置，这个bean一般在配置文件中会进行配置
 		final PlatformTransactionManager tm = determineTransactionManager(txAttr);
 		 //从tx属性对象中获取出标注了@Transactionl的方法描述符
 		final String joinpointIdentification = methodIdentification(method, targetClass, txAttr);
@@ -318,7 +318,12 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 
 			// It's a CallbackPreferringPlatformTransactionManager: pass a TransactionCallback in.
 			try {
+				 // 如果当前TransactionManager实现了CallbackPreferringPlatformTransactionManager，
+	            // 则通过其execute()方法进行事务处理。这里CallbackPreferringPlatform-
+	            // TransactionManager的作用在于其提供了一个execute()方法，用于供给实现了自定义
+	            // 的TransactionManager的类实现事务的相关处理逻辑
 				Object result = ((CallbackPreferringPlatformTransactionManager) tm).execute(txAttr, status -> {
+					  // 获取Transaction配置
 					TransactionInfo txInfo = prepareTransactionInfo(tm, txAttr, joinpointIdentification, status);
 					try {
 						return invocation.proceedWithInvocation();
@@ -551,13 +556,18 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 	 * @param ex throwable encountered
 	 */
 	protected void completeTransactionAfterThrowing(@Nullable TransactionInfo txInfo, Throwable ex) {
+		 // 如果当前存在事务信息，并且事务状态不为空，则进行处理
 		if (txInfo != null && txInfo.getTransactionStatus() != null) {
+			
 			if (logger.isTraceEnabled()) {
 				logger.trace("Completing transaction for [" + txInfo.getJoinpointIdentification() +
 						"] after exception: " + ex);
 			}
+			  // 如果当前事务配置了需要在当前异常类型进行回滚，则进行回滚。
 			if (txInfo.transactionAttribute != null && txInfo.transactionAttribute.rollbackOn(ex)) {
 				try {
+				    // 这里在进行回滚的时候主要是借助于Connection对象进行回滚的，
+	                // 另外，在进行回滚的时候也会调用事务事件函数
 					txInfo.getTransactionManager().rollback(txInfo.getTransactionStatus());
 				}
 				catch (TransactionSystemException ex2) {

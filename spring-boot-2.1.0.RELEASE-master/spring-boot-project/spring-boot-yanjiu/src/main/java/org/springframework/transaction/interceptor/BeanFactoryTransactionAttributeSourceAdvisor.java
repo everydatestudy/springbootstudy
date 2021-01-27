@@ -24,7 +24,7 @@ import org.springframework.lang.Nullable;
 /**
  * Advisor driven by a {@link TransactionAttributeSource}, used to include
  * a transaction advice bean for methods that are transactional.
- *
+ *封装了实现事务所需的所有属性，包括Pointcut，Advice，TransactionManager以及一些其他的在Transactional注解中声明的属性；
  * @author Juergen Hoeller
  * @since 2.5.5
  * @see #setAdviceBeanName
