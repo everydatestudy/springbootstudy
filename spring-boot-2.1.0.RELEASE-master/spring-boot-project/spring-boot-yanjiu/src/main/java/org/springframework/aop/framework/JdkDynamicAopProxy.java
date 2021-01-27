@@ -175,6 +175,14 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 	 //proxy:指的是我们所代理的那个真实的对象；method:指的是我们所代理的那个真实对象的某个方法的Method对象args:指的是调用那个真实对象方法的参数。
 	// 此处重点分析一下此方法，这样在CGLIB的时候，就可以一带而过了~~~因为大致逻辑是一样的
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+		
+		
+		// 可以看到，在进行代理逻辑的织入的时候，首先会进行如下判断：
+		//①当前方法是否为equals()或hashCode()方法，如果是，并且接口中并未要求子类实现这些方法，那么就会调用自动生成的方法；
+		//②当前方法是否为Spring织入的DecoratingProxy接口中的方法，如果是，则将目标对象的Class类型返回；
+		//③判断目标方法是否为Spring织入的Advised中的方法，如果是，则调用当前advised对象中相应的方法。
+		//然后就会获取当前方法需要织入的代理逻辑的调用链。接着就会将目标对象和调用链逻辑封装为ReflectiveMethodInvocation，并进行调用。最后对调用的返回值进行一些基本判断，并且返回。
+		
 		// 它是org.aopalliance.intercept这个包下的  AOP联盟得标准接口
 		MethodInvocation invocation;
 		Object oldProxy = null;
@@ -210,6 +218,8 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 			}
 			else if (!this.advised.opaque && method.getDeclaringClass().isInterface() &&
 					method.getDeclaringClass().isAssignableFrom(Advised.class)) {
+				 // 如果当前方法是Spring织入的Advised接口中的方法，
+	            // 则使用反射调用当前advised对象中的相关方法
 				// Service invocations on ProxyConfig with the proxy config...
 				return AopUtils.invokeJoinpointUsingReflection(this.advised, method, args);
 			}
@@ -278,7 +288,9 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 				// Special case: it returned "this" and the return type of the method
 				// is type-compatible. Note that we can't help if the target sets
 				// a reference to itself in another returned object.
-				 // 一些列的判断条件，如果返回值不为空，且为目标对象的话，就直接将目标对象赋值给retVal
+				 // 判断返回值如果为目标对象，并且当前方法的返回值类型是当前代理对象的类型，那么就将
+	            // 当前代理对象返回。这里的逻辑的实际意思简单的说就是，如果返回值是目标对象，那么
+	            // 就将当前代理对象返回
 				retVal = proxy;
 			}// 返回null，并且还不是Void类型。。。抛错
 			else if (retVal == null && returnType != Void.TYPE && returnType.isPrimitive()) {

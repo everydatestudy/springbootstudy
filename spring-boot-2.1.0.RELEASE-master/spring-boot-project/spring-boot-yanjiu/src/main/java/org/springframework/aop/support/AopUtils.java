@@ -222,18 +222,25 @@ public abstract class AopUtils {
 	 */
 	public static boolean canApply(Pointcut pc, Class<?> targetClass, boolean hasIntroductions) {
 		Assert.notNull(pc, "Pointcut must not be null");
+		 // 获取当前Advisor的CalssFilter，并且调用其matches()方法判断当前切点表达式是否与目标bean匹配，
+	    // 这里ClassFilter指代的切点表达式主要是当前切面类上使用的@Aspect注解中所指代的切点表达式
 		if (!pc.getClassFilter().matches(targetClass)) {
 			return false;
 		}
 		 /**
          * 通过切点获取到一个方法匹配器对象
          */
+		 // 判断如果当前Advisor所指代的方法的切点表达式如果是对任意方法都放行，则直接返回
 		MethodMatcher methodMatcher = pc.getMethodMatcher();
 		if (methodMatcher == MethodMatcher.TRUE) {
 			// No need to iterate the methods if we're matching any method anyway...
 			return true;
 		}
-		//判断匹配器是不是IntroductionAwareMethodMatcher
+		//// 这里将MethodMatcher强转为IntroductionAwareMethodMatcher类型的原因在于，
+	    // 如果目标类不包含Introduction类型的Advisor，那么使用
+	    // IntroductionAwareMethodMatcher.matches()方法进行匹配判断时可以提升匹配的效率，
+	    // 其会判断目标bean中没有使用Introduction织入新的方法，则可以使用该方法进行静态匹配，从而提升效率
+	    // 因为Introduction类型的Advisor可以往目标类中织入新的方法，新的方法也可能是被AOP环绕的方法
 		IntroductionAwareMethodMatcher introductionAwareMethodMatcher = null;
 		if (methodMatcher instanceof IntroductionAwareMethodMatcher) {
 			introductionAwareMethodMatcher = (IntroductionAwareMethodMatcher) methodMatcher;
@@ -254,9 +261,16 @@ public abstract class AopUtils {
 		    //循环我们的方法
 			for (Method method : methods) {
 				  //通过methodMatcher.matches来匹配我们的方法
+				 // 如果当前MethodMatcher也是IntroductionAwareMethodMatcher类型，则使用该类型
+	            // 的方法进行匹配，从而达到提升效率的目的；否则使用MethodMatcher.matches()方法进行匹配
+				//在canApply()方法中，逻辑主要分为两个部分：通过ClassFilter对类进行过滤和通过MethodMatcher对方法进行过滤。
+				//这里的ClassFilter其实主要指的是@Aspect注解中使用的切点表达式，
+				//而MethodMatcher主要指的是@Before，@After等注解中使用的切点表达式。
+				//Spring Aop对切点表达式进行解析的过程都是通过递归来实现的，两种解析方式是类似的，
+				//这里我们主要讲解Spring Aop是如何对方法上的切点表达式进行解析的，并且是如何匹配目标方法的。
 				if (introductionAwareMethodMatcher != null ?
-						 //通过方法匹配器进行匹配
-						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions) :	 	methodMatcher.matches(method, targetClass)) {
+						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions)
+						:methodMatcher.matches(method, targetClass)) {
 					return true;
 				}
 			}

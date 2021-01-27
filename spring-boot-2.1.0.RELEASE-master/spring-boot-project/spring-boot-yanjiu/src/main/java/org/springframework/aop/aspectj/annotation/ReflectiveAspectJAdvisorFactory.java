@@ -131,7 +131,7 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 		 //获取到切面类中的所有方法，但是该方法不会解析到标注了@PointCut注解的方法 很重要的方法
 		//获取切面类中的方法（也就是我们用来进行逻辑增强的方法，被@Around、@After等注解修饰的方法，使用@Pointcut的方法不处理）
 		for (Method method : getAdvisorMethods(aspectClass)) {
-			  //循环解析我们切面中的方法
+			  //TODO 循环解析我们切面中的方法
 			Advisor advisor = getAdvisor(method, lazySingletonAspectInstanceFactory, advisors.size(), aspectName);
 			if (advisor != null) {
 				advisors.add(advisor);
@@ -139,13 +139,19 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 		}
 
 		// If it's a per target aspect, emit the dummy instantiating aspect.
+		// 这里的isLazilyInstantiated()方法判断的是当前bean是否应该被延迟初始化，其主要是判断当前
+	    // 切面类是否为perthis，pertarget或pertypewithiin等声明的切面。因为这些类型所环绕的目标bean
+	    // 都是多例的，因而需要在运行时动态判断目标bean是否需要环绕当前的切面逻辑
 		if (!advisors.isEmpty() && lazySingletonAspectInstanceFactory.getAspectMetadata().isLazilyInstantiated()) {
 	        // 8.如果寻找的增强器不为空而且又配置了增强延迟初始化，那么需要在首位加入同步实例化增强器（用以保证增强使用之前的实例化）
+			  // 如果Advisor不为空，并且是需要延迟初始化的bean，则在第0位位置添加一个同步增强器，
+	        // 该同步增强器实际上就是一个BeforeAspect的Advisor
 			Advisor instantiationAdvisor = new SyntheticInstantiationAdvisor(lazySingletonAspectInstanceFactory);
 			advisors.add(0, instantiationAdvisor);
 		}
 
 		// Find introduction fields.
+		 // 判断属性上是否包含有@DeclareParents注解标注的需要新添加的属性，如果有，则将其封装为一个Advisor
 		for (Field field : aspectClass.getDeclaredFields()) {
 		    // 9.获取DeclareParents注解
 			Advisor advisor = getDeclareParentsAdvisor(field);

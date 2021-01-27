@@ -52,6 +52,9 @@ public interface TargetSource extends TargetClassAware {
 	 * @return {@code true} if the target is immutable
 	 * @see #getTarget
 	 */
+	// 这个方法用户返回当前bean是否为静态的，比如常见的单例bean就是静态的，而prototype就是动态的，
+    // 这里这个方法的主要作用是，对于静态的bean，spring是会对其进行缓存的，在多次使用TargetSource
+    // 获取目标bean对象的时候，其获取的总是同一个对象，通过这种方式提高效率
 	boolean isStatic();
 
 	/**
@@ -70,6 +73,8 @@ public interface TargetSource extends TargetClassAware {
 	 * @param target object obtained from a call to {@link #getTarget()}
 	 * @throws Exception if the object can't be released
 	 */
+	// Spring在完目标bean之后会调用这个方法释放目标bean对象，对于一些需要池化的对象，这个方法是必须
+    // 要实现的，这个方法默认不进行任何处理
 	void releaseTarget(Object target) throws Exception;
 
 }

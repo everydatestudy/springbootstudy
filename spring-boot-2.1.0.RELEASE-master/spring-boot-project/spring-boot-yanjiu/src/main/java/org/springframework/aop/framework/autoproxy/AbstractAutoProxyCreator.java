@@ -266,6 +266,11 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	/**
 	 * 在创建Bean的流程中还没调用构造器来实例化Bean的时候进行调用(实例化前后) AOP解析切面以及事务解析事务注解都是在这里完成的
 	 * 
+	 * Spring Aop的代理主要分为三个步骤：
+	 * 获取所有的Advisor，
+	 * 过滤可应用到当前bean的Adivsor和使用Advisor为当前bean生成代理对象。
+	 * 本文主要对这三步中的第一步获取所有的Advisor进行讲解。
+	 * 
 	 * @param beanClass 当前正在创建的Bean的Class对象
 	 * @param beanName  beanName
 	 * @return
@@ -274,6 +279,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	@Override
 	public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) throws BeansException {
 		 //构建我们的缓存key
+		
 		Object cacheKey = getCacheKey(beanClass, beanName);
 		 // 判断TargetSource缓存中是否包含当前bean，如果不包含，则判断当前bean是否是已经被代理的bean，
 	    // 如果代理过，则不对当前传入的bean进行处理，如果没代理过，则判断当前bean是否为系统bean，或者是
@@ -346,7 +352,10 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	public Object postProcessAfterInitialization(@Nullable Object bean, String beanName) throws BeansException {
 		if (bean != null) {
 			 //获取缓存key
+			 // 获取当前bean的key：如果beanName不为空，则以beanName为key，如果为FactoryBean类型，
+	        // 前面还会添加&符号，如果beanName为空，则以当前bean对应的class为key
 			Object cacheKey = getCacheKey(bean.getClass(), beanName);
+			// 判断当前bean是否正在被代理，如果正在被代理则不进行封装
 			if (!this.earlyProxyReferences.contains(cacheKey)) {
 				return wrapIfNecessary(bean, beanName, cacheKey);
 			}
@@ -386,6 +395,10 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 */
 	protected Object wrapIfNecessary(Object bean, String beanName, Object cacheKey) {
 		   //已经被处理过
+		 // 判断当前bean是否在TargetSource缓存中存在，如果存在，则直接返回当前bean。这里进行如此判断的
+	    // 原因是在上文中，我们讲解了如何通过自己声明的TargetSource进行目标bean的封装，在封装之后其实
+	    // 就已经对封装之后的bean进行了代理，并且添加到了targetSourcedBeans缓存中。因而这里判断得到
+	    // 当前缓存中已经存在当前bean，则说明该bean已经被代理过，这样就可以直接返回当前bean。
 		if (StringUtils.hasLength(beanName) && this.targetSourcedBeans.contains(beanName)) {
 			return bean;
 		}
@@ -400,6 +413,12 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 
 		// Create proxy if we have advice.
 		 //如果有匹配的通知,就创建代理对象
+		 //getAdvicesAndAdvisorsForBean()方法就其名称而言是获取Advisors和Advices，
+		 //但实际上其返回值是一个Advisor的数组。
+		 //Spring Aop在为目标bean获取需要进行代理的切面逻辑的时候最终得到的是Advisor，
+		 //这里Advice表示的是每个切面逻辑中使用@Before、@After和@Around等需要织入的代理方法。
+		 //因为每个代理方法都表示一个Advice，并且每个代理方法最终都会生成一个Advisor，
+		//因而Advice和Advisor就本质而言其实没有太大的区别。Advice表示需要织入的切面逻辑，而Advisor则表示将切面逻辑进行封装之后的织入者。
 		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
 		if (specificInterceptors != DO_NOT_PROXY) {
 			this.advisedBeans.put(cacheKey, Boolean.TRUE);
@@ -514,6 +533,9 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		 //为proxyFactory设置创建jdk还是cglib代理
 	    // 检查proxyTargetClass属性，判断对于给定的bean使用类代理还是接口代理，
 	    // proxyTargetClass值默认为false，可以通过proxy-target-class属性设置为true
+		// 如果当前设置了不使用Cglib代理目标类，则判断目标类是否设置了preserveTargetClass属性，
+	    // 如果设置了，则还是强制使用Cglib代理目标类；如果没有设置，则判断目标类是否实现了相关接口，
+	    // 没有设置，则还是使用Cglib代理。需要注意的是Spring默认使用的是Jdk代理来织入切面逻辑。
 		if (!proxyFactory.isProxyTargetClass()) {
 	        // 检查preserveTargetClass属性，判断beanClass是应该基于类代理还是基于接口代理
 			if (shouldProxyTargetClass(beanClass, beanName)) {
@@ -524,7 +546,8 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 				evaluateProxyInterfaces(beanClass, proxyFactory);
 			}
 		}
-		//把我们的specificInterceptors数组中的Advisor转化为数组形式的
+		
+		// 将需要织入的切面逻辑都转换为Advisor对象
 		Advisor[] advisors = buildAdvisors(beanName, specificInterceptors);
 		  //为我们的代理工加入通知器，
 		proxyFactory.addAdvisors(advisors);

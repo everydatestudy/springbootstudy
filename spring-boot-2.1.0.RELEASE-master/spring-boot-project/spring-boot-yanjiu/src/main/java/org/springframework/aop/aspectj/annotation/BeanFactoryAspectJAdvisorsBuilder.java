@@ -102,7 +102,7 @@ public class BeanFactoryAspectJAdvisorsBuilder {
                      */
 					String[] beanNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
 							this.beanFactory, Object.class, true, false);
-					 //遍历我们从IOC容器中获取处的所有Bean的名称
+					 // // 判断当前bean是否为子类定制的需要过滤的bean
 					for (String beanName : beanNames) {
 						if (!isEligibleBean(beanName)) {
 							continue;
@@ -119,13 +119,20 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 							//是切面类
                             //加入到缓存中
 							aspectNames.add(beanName);
-							//把beanName和class对象构建成为一个AspectMetadata
+							// 对于使用了@Aspect注解标注的bean，将其封装为一个AspectMetadata类型。
+	                        // 这里在封装的过程中会解析@Aspect注解上的参数指定的切面类型，如perthis
+	                        // 和pertarget等。这些被解析的注解都会被封装到其perClausePointcut属性中
 							AspectMetadata amd = new AspectMetadata(beanType, beanName);
+							// 判断@Aspect注解中标注的是否为singleton类型，默认的切面类都是singleton类型
 							if (amd.getAjType().getPerClause().getKind() == PerClauseKind.SINGLETON) {
-								// 使用BeanFactory和beanName创建一个BeanFactoryAspectInstanceFactory，主要用来创建切面对象实例
+								 // 将BeanFactory和当前bean封装为MetadataAwareAspectInstanceFactory对象，这里会再次将@Aspect注解中的参数都封装
+	                            // 为一个AspectMetadata，并且保存在该factory中
 								MetadataAwareAspectInstanceFactory factory =new BeanFactoryAspectInstanceFactory(this.beanFactory, beanName);
-								//真正的去获取我们的Advisor
+								 // 通过封装的bean获取其Advice，如@Before，@After等等，并且将这些
+	                            //TODO Advice都解析并且封装为一个个的Advisor
 								List<Advisor> classAdvisors = this.advisorFactory.getAdvisors(factory);
+								// 如果切面类是singleton类型，则将解析得到的Advisor进行缓存，
+	                            // 否则将当前的factory进行缓存，以便再次获取时可以通过factory直接获取
 								if (this.beanFactory.isSingleton(beanName)) {
 									this.advisorsCache.put(beanName, classAdvisors);
 								}
@@ -157,6 +164,8 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 		if (aspectNames.isEmpty()) {
 			return Collections.emptyList();
 		}
+		  // 通过所有的aspectNames在缓存中获取切面对应的Advisor，这里如果是单例的，则直接从advisorsCache
+	    // 获取，如果是多例类型的，则通过MetadataAwareAspectInstanceFactory立即生成一个
 		List<Advisor> advisors = new ArrayList<>();
 		for (String aspectName : aspectNames) {
 			List<Advisor> cachedAdvisors = this.advisorsCache.get(aspectName);
