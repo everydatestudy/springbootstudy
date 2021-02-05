@@ -19,9 +19,11 @@ package org.springframework.web.context.support;
 import java.io.IOException;
 
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.ResourceEntityResolver;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
+import org.springframework.core.ResolvableType;
 
 /**
  * {@link org.springframework.web.context.WebApplicationContext} implementation
@@ -140,6 +142,18 @@ public class XmlWebApplicationContext extends AbstractRefreshableWebApplicationC
 		else {
 			return new String[] {DEFAULT_CONFIG_LOCATION};
 		}
+	}
+
+	@Override
+	public <T> ObjectProvider<T> getBeanProvider(Class<T> arg0) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public <T> ObjectProvider<T> getBeanProvider(ResolvableType arg0) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

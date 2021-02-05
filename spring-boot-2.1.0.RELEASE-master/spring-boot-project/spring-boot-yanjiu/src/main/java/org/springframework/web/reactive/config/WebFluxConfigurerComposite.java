@@ -30,6 +30,7 @@ import org.springframework.validation.MessageCodesResolver;
 import org.springframework.validation.Validator;
 import org.springframework.web.reactive.accept.RequestedContentTypeResolverBuilder;
 import org.springframework.web.reactive.result.method.annotation.ArgumentResolverConfigurer;
+import org.springframework.web.servlet.config.annotation.ViewResolverRegistry;
 
 /**
  * A {@link WebFluxConfigurer} that delegates to one or more others.
@@ -95,10 +96,7 @@ public class WebFluxConfigurerComposite implements WebFluxConfigurer {
 		return createSingleBean(WebFluxConfigurer::getMessageCodesResolver, MessageCodesResolver.class);
 	}
 
-	@Override
-	public void configureViewResolvers(ViewResolverRegistry registry) {
-		this.delegates.forEach(delegate -> delegate.configureViewResolvers(registry));
-	}
+	
 
 	@Nullable
 	private <T> T createSingleBean(Function<WebFluxConfigurer, T> factory, Class<T> beanType) {

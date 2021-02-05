@@ -131,7 +131,6 @@ public interface WebFluxConfigurer {
 	 * <p>The configured view resolvers will be used for both annotated
 	 * controllers and functional endpoints.
 	 */
-	default void configureViewResolvers(ViewResolverRegistry registry) {
-	}
+ 
 
 }

@@ -151,12 +151,16 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 		}
 
 		// Set bean properties from init parameters.
+		// 1. 封装及验证初始化参数
 		PropertyValues pvs = new ServletConfigPropertyValues(getServletConfig(), this.requiredProperties);
 		if (!pvs.isEmpty()) {
 			try {
+				// 2. 将当前 Servlet 实例转化为 BeanWrapper 实例
 				BeanWrapper bw = PropertyAccessorFactory.forBeanPropertyAccess(this);
+				// 3. 注册于相对于 Resource 的属性编辑器
 				ResourceLoader resourceLoader = new ServletContextResourceLoader(getServletContext());
 				bw.registerCustomEditor(Resource.class, new ResourceEditor(resourceLoader, getEnvironment()));
+				// 4. 属性注入
 				initBeanWrapper(bw);
 				bw.setPropertyValues(pvs, true);
 			}
@@ -169,6 +173,7 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 		}
 
 		// Let subclasses do whatever initialization they like.
+		// 5. servletBean的初始化
 		initServletBean();
 
 		if (logger.isDebugEnabled()) {
@@ -226,7 +231,7 @@ public abstract class HttpServletBean extends HttpServlet implements Environment
 
 			Set<String> missingProps = (!CollectionUtils.isEmpty(requiredProperties) ?
 					new HashSet<>(requiredProperties) : null);
-
+			// 获取 web.xml 中 DispatcherServlet 配置的 init-params 属性内容
 			Enumeration<String> paramNames = config.getInitParameterNames();
 			while (paramNames.hasMoreElements()) {
 				String property = paramNames.nextElement();

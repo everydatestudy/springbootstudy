@@ -65,6 +65,7 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebExceptionHandler;
 import org.springframework.web.server.i18n.AcceptHeaderLocaleContextResolver;
 import org.springframework.web.server.i18n.LocaleContextResolver;
+import org.springframework.web.servlet.config.annotation.ViewResolverRegistry;
 
 /**
  * The main class for Spring WebFlux configuration.
@@ -412,25 +413,9 @@ public class WebFluxConfigurationSupport implements ApplicationContextAware {
 				webFluxContentTypeResolver(), webFluxAdapterRegistry());
 	}
 
-	@Bean
-	public ViewResolutionResultHandler viewResolutionResultHandler() {
-		ViewResolverRegistry registry = getViewResolverRegistry();
-		List<ViewResolver> resolvers = registry.getViewResolvers();
-		ViewResolutionResultHandler handler = new ViewResolutionResultHandler(
-				resolvers, webFluxContentTypeResolver(), webFluxAdapterRegistry());
-		handler.setDefaultViews(registry.getDefaultViews());
-		handler.setOrder(registry.getOrder());
-		return handler;
-	}
+	
 
-	@Bean
-	public ServerResponseResultHandler serverResponseResultHandler() {
-		List<ViewResolver> resolvers = getViewResolverRegistry().getViewResolvers();
-		ServerResponseResultHandler handler = new ServerResponseResultHandler();
-		handler.setMessageWriters(serverCodecConfigurer().getWriters());
-		handler.setViewResolvers(resolvers);
-		return handler;
-	}
+	
 
 	/**
 	 * Callback for building the {@link ViewResolverRegistry}. This method is final,
@@ -438,7 +423,7 @@ public class WebFluxConfigurationSupport implements ApplicationContextAware {
 	 */
 	protected final ViewResolverRegistry getViewResolverRegistry() {
 		if (this.viewResolverRegistry == null) {
-			this.viewResolverRegistry = new ViewResolverRegistry(this.applicationContext);
+//			this.viewResolverRegistry = new ViewResolverRegistry(this.applicationContext);
 			configureViewResolvers(this.viewResolverRegistry);
 		}
 		return this.viewResolverRegistry;
@@ -448,8 +433,7 @@ public class WebFluxConfigurationSupport implements ApplicationContextAware {
 	 * Configure view resolution for supporting template engines.
 	 * @see ViewResolverRegistry
 	 */
-	protected void configureViewResolvers(ViewResolverRegistry registry) {
-	}
+	
 
 
 	private static final class EmptyHandlerMapping extends AbstractHandlerMapping {
@@ -471,6 +455,12 @@ public class WebFluxConfigurationSupport implements ApplicationContextAware {
 		@Override
 		public void validate(@Nullable Object target, Errors errors) {
 		}
+	}
+
+
+	protected void configureViewResolvers(ViewResolverRegistry registry) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

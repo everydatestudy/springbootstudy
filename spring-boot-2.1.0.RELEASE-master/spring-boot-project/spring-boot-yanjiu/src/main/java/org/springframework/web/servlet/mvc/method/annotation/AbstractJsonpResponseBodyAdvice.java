@@ -85,7 +85,7 @@ public abstract class AbstractJsonpResponseBodyAdvice extends AbstractMappingJac
 				}
 				MediaType contentTypeToUse = getContentType(contentType, request, response);
 				response.getHeaders().setContentType(contentTypeToUse);
-				bodyContainer.setJsonpFunction(value);
+			 
 				break;
 			}
 		}

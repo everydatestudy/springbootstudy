@@ -125,6 +125,7 @@ public class RequestMappingHandlerMapping extends RequestMappingInfoHandlerMappi
 
 	@Override
 	public void afterPropertiesSet() {
+		// 进行 RequestMapping 的配置
 		this.config = new RequestMappingInfo.BuilderConfiguration();
 		this.config.setUrlPathHelper(getUrlPathHelper());
 		this.config.setPathMatcher(getPathMatcher());
@@ -132,7 +133,7 @@ public class RequestMappingHandlerMapping extends RequestMappingInfoHandlerMappi
 		this.config.setTrailingSlashMatch(this.useTrailingSlashMatch);
 		this.config.setRegisteredSuffixPatternMatch(this.useRegisteredSuffixPatternMatch);
 		this.config.setContentNegotiationManager(getContentNegotiationManager());
-
+		// 调用父类的  afterPropertiesSet 方法。
 		super.afterPropertiesSet();
 	}
 
@@ -179,6 +180,7 @@ public class RequestMappingHandlerMapping extends RequestMappingInfoHandlerMappi
 	}
 
 	/**
+	 * // RequestMappingHandlerMapping 中的实现
 	 * Uses method and type-level @{@link RequestMapping} annotations to create
 	 * the RequestMappingInfo.
 	 * @return the created RequestMappingInfo, or {@code null} if the method
@@ -189,8 +191,11 @@ public class RequestMappingHandlerMapping extends RequestMappingInfoHandlerMappi
 	@Override
 	@Nullable
 	protected RequestMappingInfo getMappingForMethod(Method method, Class<?> handlerType) {
+		// 转换成 RequestMappingInfo ，如果方法没有被  @RequestMapping 注解修饰，则会返回null
+		// 解析出来方法上  @RequestMapping  注解的各种信息
 		RequestMappingInfo info = createRequestMappingInfo(method);
 		if (info != null) {
+			// 解析出来 bean 上  @RequestMapping  注解的各种信息
 			RequestMappingInfo typeInfo = createRequestMappingInfo(handlerType);
 			if (typeInfo != null) {
 				info = typeInfo.combine(info);
@@ -208,9 +213,12 @@ public class RequestMappingHandlerMapping extends RequestMappingInfoHandlerMappi
 	 */
 	@Nullable
 	private RequestMappingInfo createRequestMappingInfo(AnnotatedElement element) {
+		// 获取当前方法上的  @RequestMapping 注解
 		RequestMapping requestMapping = AnnotatedElementUtils.findMergedAnnotation(element, RequestMapping.class);
+		// 获取自定义的方法条件
 		RequestCondition<?> condition = (element instanceof Class ?
 				getCustomTypeCondition((Class<?>) element) : getCustomMethodCondition((Method) element));
+		// 这里可以看到 如果 requestMapping  = null，则会直接返回null，否则会封装成一个 RequestMappingInfo (包含 @RequestMapping 注解的各种参数) 返回。
 		return (requestMapping != null ? createRequestMappingInfo(requestMapping, condition) : null);
 	}
 

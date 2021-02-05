@@ -31,7 +31,7 @@ import org.springframework.web.reactive.resource.PathResourceResolver;
 import org.springframework.web.reactive.resource.ResourceResolver;
 import org.springframework.web.reactive.resource.ResourceTransformer;
 import org.springframework.web.reactive.resource.VersionResourceResolver;
-import org.springframework.web.reactive.resource.WebJarsResourceResolver;
+
 
 /**
  * Assists with the registration of resource resolvers and transformers.
@@ -87,9 +87,7 @@ public class ResourceChainRegistration {
 		else if (resolver instanceof PathResourceResolver) {
 			this.hasPathResolver = true;
 		}
-		else if (resolver instanceof WebJarsResourceResolver) {
-			this.hasWebjarsResolver = true;
-		}
+		 
 		return this;
 	}
 
@@ -111,7 +109,7 @@ public class ResourceChainRegistration {
 		if (!this.hasPathResolver) {
 			List<ResourceResolver> result = new ArrayList<>(this.resolvers);
 			if (isWebJarsAssetLocatorPresent && !this.hasWebjarsResolver) {
-				result.add(new WebJarsResourceResolver());
+			 
 			}
 			result.add(new PathResourceResolver());
 			return result;

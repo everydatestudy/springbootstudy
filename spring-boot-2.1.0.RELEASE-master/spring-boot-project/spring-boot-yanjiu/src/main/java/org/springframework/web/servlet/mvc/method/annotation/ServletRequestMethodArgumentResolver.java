@@ -26,7 +26,7 @@ import java.util.TimeZone;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import javax.servlet.http.PushBuilder;
+
 
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpMethod;
@@ -140,7 +140,7 @@ public class ServletRequestMethodArgumentResolver implements HandlerMethodArgume
 			return session;
 		}
 		else if (pushBuilder != null && pushBuilder.isAssignableFrom(paramType)) {
-			return PushBuilderDelegate.resolvePushBuilder(request, paramType);
+			return null;
 		}
 		else if (InputStream.class.isAssignableFrom(paramType)) {
 			InputStream inputStream = request.getInputStream();
@@ -186,21 +186,21 @@ public class ServletRequestMethodArgumentResolver implements HandlerMethodArgume
 	}
 
 
-	/**
-	 * Inner class to avoid a hard dependency on Servlet API 4.0 at runtime.
-	 */
-	private static class PushBuilderDelegate {
-
-		@Nullable
-		public static Object resolvePushBuilder(HttpServletRequest request, Class<?> paramType) {
-			PushBuilder pushBuilder = request.newPushBuilder();
-			if (pushBuilder != null && !paramType.isInstance(pushBuilder)) {
-				throw new IllegalStateException(
-						"Current push builder is not of type [" + paramType.getName() + "]: " + pushBuilder);
-			}
-			return pushBuilder;
-
-		}
-	}
+//	/**
+//	 * Inner class to avoid a hard dependency on Servlet API 4.0 at runtime.
+//	 */
+//	private static class PushBuilderDelegate {
+//
+//		@Nullable
+//		public static Object resolvePushBuilder(HttpServletRequest request, Class<?> paramType) {
+//			PushBuilder pushBuilder = request.newPushBuilder();
+//			if (pushBuilder != null && !paramType.isInstance(pushBuilder)) {
+//				throw new IllegalStateException(
+//						"Current push builder is not of type [" + paramType.getName() + "]: " + pushBuilder);
+//			}
+//			return pushBuilder;
+//
+//		}
+//	}
 
 }

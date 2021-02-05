@@ -27,6 +27,7 @@ import org.springframework.validation.MessageCodesResolver;
 import org.springframework.validation.Validator;
 import org.springframework.web.reactive.accept.RequestedContentTypeResolverBuilder;
 import org.springframework.web.reactive.result.method.annotation.ArgumentResolverConfigurer;
+import org.springframework.web.servlet.config.annotation.ViewResolverRegistry;
 
 /**
  * A subclass of {@code WebFluxConfigurationSupport} that detects and delegates
@@ -98,6 +99,6 @@ public class DelegatingWebFluxConfiguration extends WebFluxConfigurationSupport 
 
 	@Override
 	protected void configureViewResolvers(ViewResolverRegistry registry) {
-		this.configurers.configureViewResolvers(registry);
+	 
 	}
 }
