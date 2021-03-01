@@ -172,7 +172,23 @@ import org.springframework.web.util.WebUtils;
  * @see org.springframework.web.HttpRequestHandler
  * @see org.springframework.web.servlet.mvc.Controller
  * @see org.springframework.web.context.ContextLoaderListener
- */
+ * 
+ * Spring工作流程描述
+	1.用户向服务器发送请求，请求被Spring 前端控制Servelt DispatcherServlet捕获；
+	2.DispatcherServlet对请求URL进行解析，得到请求资源标识符（URI）。然后根据该URI，调用HandlerMapping获得该Handler配置的所有相关的对象（包括Handler对象以及Handler对象对应的拦截器），最后以HandlerExecutionChain对象的形式返回；
+	3.DispatcherServlet 根据获得的Handler，选择一个合适的HandlerAdapter。（附注：如果成功获得HandlerAdapter后，此时将开始执行拦截器的preHandler(…)方法）
+	4.提取Request中的模型数据，填充Handler入参，开始执行Handler（Controller)。 在填充Handler的入参过程中，根据你的配置，Spring将帮你做一些额外的工作：
+	5.HttpMessageConveter： 将请求消息（如Json、xml等数据）转换成一个对象，将对象转换为指定的响应信息
+	6.数据转换：对请求消息进行数据转换。如String转换成Integer、Double等
+		数据根式化：对请求消息进行数据格式化。 如将字符串转换成格式化数字或格式化日期等
+		数据验证： 验证数据的有效性（长度、格式等），验证结果存储到BindingResult或Error中
+	7.Handler执行完成后，向DispatcherServlet 返回一个ModelAndView对象；
+	8.根据返回的ModelAndView，选择一个适合的ViewResolver（必须是已经注册到Spring容器中的ViewResolver)返回给DispatcherServlet ；
+	ViewResolver 结合Model和View，来渲染视图
+	将渲染结果返回给客户端。
+	 * 
+	 * 
+	*/
 @SuppressWarnings("serial")
 public class DispatcherServlet extends FrameworkServlet {
 
@@ -583,7 +599,7 @@ public class DispatcherServlet extends FrameworkServlet {
 //		initRequestToViewNameTranslator(context);
 //		initViewResolvers(context);
 //		initFlashMapManager(context);
-		// 初始化多文件上传解析器
+		////文件上传解析，如果请求类型是multipart将通过MultipartResolver进行文件上传解析
 		initMultipartResolver(context);
 		// 初始化国际化解析器
 		initLocaleResolver(context);
@@ -611,6 +627,7 @@ public class DispatcherServlet extends FrameworkServlet {
 	 */
 	private void initMultipartResolver(ApplicationContext context) {
 		try {
+			//bean id被写死，在配置的时候需要注意,文件上传时需要注入bean名称为multipartResolver的类
 			this.multipartResolver = context.getBean(MULTIPART_RESOLVER_BEAN_NAME, MultipartResolver.class);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Using MultipartResolver [" + this.multipartResolver + "]");
@@ -640,6 +657,7 @@ public class DispatcherServlet extends FrameworkServlet {
 	 */
 	private void initLocaleResolver(ApplicationContext context) {
 		try {
+			//在配置多语言本地化时会注入bean名称为localeResolver，默认实现的类有FixedLocaleResolver ，SessionLocaleResolver ，CookieLocaleResolver， AcceptHeaderLocaleResolver 
 			this.localeResolver = context.getBean(LOCALE_RESOLVER_BEAN_NAME, LocaleResolver.class);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Using LocaleResolver [" + this.localeResolver + "]");
@@ -664,6 +682,8 @@ public class DispatcherServlet extends FrameworkServlet {
 	 */
 	private void initThemeResolver(ApplicationContext context) {
 		try {
+			//需要在配置文件中注入bean名称为themeResolver的，FixedThemeResolver, SessionThemeResolver和CookieThemeResolver
+
 			this.themeResolver = context.getBean(THEME_RESOLVER_BEAN_NAME, ThemeResolver.class);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Using ThemeResolver [" + this.themeResolver + "]");
@@ -773,6 +793,14 @@ public class DispatcherServlet extends FrameworkServlet {
 		// 如果还没有获取到适配器，则使用默认策略的适配器。从 DispatcherServlet.properties 中获取
 		// org.springframework.web.servlet.HandlerAdapter 为key值的value加载到容器中。
 		if (this.handlerAdapters == null) {
+//			这里我们简单介绍一下三个 HandlerAdapter
+//
+//			HttpRequestHandlerAdapter : Http请求处理器适配器。
+//			HTTP请求处理适配器仅仅支持 HTTP 请求处理器的适配。他简单的将HTTP请求对象和响应对象传递给HTTP请求处理器的实现，他并不需要返回值。主要应用在基于 HTTP的远程调用实现上。
+//			SimpleControllerHandlerAdapter ： 简单控制器处理器适配器
+//			这个实现类将HTTP请求适配到了一个控制器的实现进行处理。这里的控制器的实现是一个简单的控制器接口的 实现。简单控制器处理器适配器被设计成一个框架类的实现，不需要被改写，客户化的业务逻辑通常在控制器接口的实现类中实现的。
+//			RequestMappingHandlerAdapter ： 请求映射处理器适配器
+//			这个实现类需要通过注解方法映射和注解方法处理器协同工作。它通过解析声明在注解控制器的请求映射信息来解析相应的处理器方法来处理当前的http请求，在处理的过程中，他通过反射来发现探测处理器方法的参数，调用处理器方法，并映射返回值到模型和控制器对象。最后返回模型和控制器对象给作为主控制器的派遣器Servlet。
 			this.handlerAdapters = getDefaultStrategies(context, HandlerAdapter.class);
 			if (logger.isDebugEnabled()) {
 				logger.debug("No HandlerAdapters found in servlet '" + getServletName() + "': using default");
@@ -996,6 +1024,7 @@ public class DispatcherServlet extends FrameworkServlet {
 			for (String className : classNames) {
 				try {
 					Class<?> clazz = ClassUtils.forName(className, DispatcherServlet.class.getClassLoader());
+					//这里是通过Beanfactory工厂创建对象
 					Object strategy = createDefaultStrategy(context, clazz);
 					strategies.add((T) strategy);
 				} catch (ClassNotFoundException ex) {
@@ -1057,9 +1086,14 @@ public class DispatcherServlet extends FrameworkServlet {
 		}
 
 		// Make framework objects available to handlers and view objects.
+		// 设置一些Spring 上下文
+		/* 设置web应用上下文**/
 		request.setAttribute(WEB_APPLICATION_CONTEXT_ATTRIBUTE, getWebApplicationContext());
+		/* 国际化本地**/
 		request.setAttribute(LOCALE_RESOLVER_ATTRIBUTE, this.localeResolver);
+		/* 样式**/
 		request.setAttribute(THEME_RESOLVER_ATTRIBUTE, this.themeResolver);
+		//设置样式资源
 		request.setAttribute(THEME_SOURCE_ATTRIBUTE, getThemeSource());
 
 		if (this.flashMapManager != null) {
@@ -1067,7 +1101,9 @@ public class DispatcherServlet extends FrameworkServlet {
 			if (inputFlashMap != null) {
 				request.setAttribute(INPUT_FLASH_MAP_ATTRIBUTE, Collections.unmodifiableMap(inputFlashMap));
 			}
+			//Flash attributes 在对请求的重定向生效之前被临时存储（通常是在session)中，并且在重定向之后被立即移除
 			request.setAttribute(OUTPUT_FLASH_MAP_ATTRIBUTE, new FlashMap());
+			//FlashMap 被用来管理 flash attributes 而 FlashMapManager 则被用来存储，获取和管理 FlashMap 实体
 			request.setAttribute(FLASH_MAP_MANAGER_ATTRIBUTE, this.flashMapManager);
 		}
 
@@ -1083,7 +1119,14 @@ public class DispatcherServlet extends FrameworkServlet {
 		}
 	}
 
-	/**
+	 
+	 /**
+	 *将Handler进行分发，handler会被handlerMapping有序的获得
+	 *通过查询servlet安装的HandlerAdapters来获得HandlerAdapters来查找第一个支持handler的类
+	 *所有的HTTP的方法都会被这个方法掌控。取决于HandlerAdapters 或者handlers 他们自己去决定哪些方法是可用
+	 *@param request current HTTP request
+	 *@param response current HTTP response
+ 
 	 * Process the actual dispatching to the handler.
 	 * <p>
 	 * The handler will be obtained by applying the servlet's HandlerMappings in
@@ -1110,11 +1153,12 @@ public class DispatcherServlet extends FrameworkServlet {
 
 			try {
 				// 1. 如果是 MultipartContent 类型的request 则转换request 为 MultipartHttpServletRequest
-				// 类型的request
+				//判断是否有文件上传
 				processedRequest = checkMultipart(request);
 				multipartRequestParsed = (processedRequest != request);
 
 				// Determine handler for the current request.
+				// 获得HandlerExecutionChain，其包含HandlerIntercrptor和HandlerMethod
 				mappedHandler = getHandler(processedRequest);
 				if (mappedHandler == null) {
 					noHandlerFound(processedRequest, response);
@@ -1122,9 +1166,11 @@ public class DispatcherServlet extends FrameworkServlet {
 				}
 
 				// Determine handler adapter for the current request.
+				//获得HandlerAdapter
 				HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 
 				// Process last-modified header, if supported by the handler.
+				//获得HTTP请求方法
 				String method = request.getMethod();
 				boolean isGet = "GET".equals(method);
 				if (isGet || "HEAD".equals(method)) {
@@ -1143,12 +1189,14 @@ public class DispatcherServlet extends FrameworkServlet {
 
 				// Actually invoke the handler.
 				// 真正调用 handler 并 返回视图
+				//返回ModelAndView
 				mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
 
 				if (asyncManager.isConcurrentHandlingStarted()) {
 					return;
 				}
 				//视图名称转换应用于需要添加前缀的情况
+				//当 控制层的返回结果是 null 或者 void 时，则表明没有找到对应视图，Spring 会根据request 信息来进行解析，查找默认的视图
 				applyDefaultViewName(processedRequest, mv);
 				// 6.2 拦截器后置方法的调用
 				mappedHandler.applyPostHandle(processedRequest, response, mv);
@@ -1168,6 +1216,7 @@ public class DispatcherServlet extends FrameworkServlet {
 			triggerAfterCompletion(processedRequest, response, mappedHandler,
 					new NestedServletException("Handler processing failed", err));
 		} finally {
+			//判断是否是异步请求
 			if (asyncManager.isConcurrentHandlingStarted()) {
 				// Instead of postHandle and afterCompletion
 				if (mappedHandler != null) {
@@ -1176,6 +1225,7 @@ public class DispatcherServlet extends FrameworkServlet {
 			} else {
 				// Clean up any resources used by a multipart request.
 				if (multipartRequestParsed) {
+					//删除上传资源
 					cleanupMultipart(processedRequest);
 				}
 			}
@@ -1203,7 +1253,7 @@ public class DispatcherServlet extends FrameworkServlet {
 			throws Exception {
 
 		boolean errorView = false;
-
+		// 判断上面的过程是否出现了异常。如果本次请求出现了异常，并不能因此终止程序。所以需要解析出来异常，返回对应的视图结果，告知用户出现了异常。
 		if (exception != null) {
 			if (exception instanceof ModelAndViewDefiningException) {
 				logger.debug("ModelAndViewDefiningException encountered", exception);
@@ -1216,6 +1266,7 @@ public class DispatcherServlet extends FrameworkServlet {
 		}
 
 		// Did the handler return a view to render?
+		// 如果在Handler实例的处理过程中返回了 view，则需要做页面处理
 		if (mv != null && !mv.wasCleared()) {
 			render(mv, request, response);
 			if (errorView) {
@@ -1234,6 +1285,7 @@ public class DispatcherServlet extends FrameworkServlet {
 		}
 
 		if (mappedHandler != null) {
+			// 触发 拦截器完成事件
 			mappedHandler.triggerAfterCompletion(request, response, null);
 		}
 	}
@@ -1269,6 +1321,7 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * @see MultipartResolver#resolveMultipart
 	 */
 	protected HttpServletRequest checkMultipart(HttpServletRequest request) throws MultipartException {
+		 //默认是空的值，没有数据
 		if (this.multipartResolver != null && this.multipartResolver.isMultipart(request)) {
 			if (WebUtils.getNativeRequest(request, MultipartHttpServletRequest.class) != null) {
 				logger.debug("Request is already a MultipartHttpServletRequest - if not in a forward, "
@@ -1471,6 +1524,7 @@ public class DispatcherServlet extends FrameworkServlet {
 
 		View view;
 		String viewName = mv.getViewName();
+		// 如果viewname不为null，则需要通过viewName 解析出来对应的 View
 		if (viewName != null) {
 			// We need to resolve the view name.
 			view = resolveViewName(viewName, mv.getModelInternal(), locale, request);
@@ -1537,7 +1591,7 @@ public class DispatcherServlet extends FrameworkServlet {
 	@Nullable
 	protected View resolveViewName(String viewName, @Nullable Map<String, Object> model, Locale locale,
 			HttpServletRequest request) throws Exception {
-
+		// 遍历视图解析器，直到有解析器能解析出来视图
 		if (this.viewResolvers != null) {
 			for (ViewResolver viewResolver : this.viewResolvers) {
 				View view = viewResolver.resolveViewName(viewName, locale);

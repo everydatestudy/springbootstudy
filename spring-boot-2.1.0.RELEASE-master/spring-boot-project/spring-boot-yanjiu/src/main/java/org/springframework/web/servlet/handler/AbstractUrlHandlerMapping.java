@@ -112,7 +112,7 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping i
 		this.lazyInitHandlers = lazyInitHandlers;
 	}
 
-	/**
+	/**获取Handler，主要是通过url和method的对应关系来查找
 	 * Look up a handler for the URL path of the given request.
 	 * @param request current HTTP request
 	 * @return the handler instance, or {@code null} if none found
@@ -120,7 +120,9 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping i
 	@Override
 	@Nullable
 	protected Object getHandlerInternal(HttpServletRequest request) throws Exception {
+		//获取request中的请求链接
 		String lookupPath = getUrlPathHelper().getLookupPathForRequest(request);
+		//根据链接查找handler
 		Object handler = lookupHandler(lookupPath, request);
 		if (handler == null) {
 			// We need to care for the default handler directly, since we need to

@@ -75,11 +75,13 @@ public class CookieLocaleResolver extends CookieGenerator implements LocaleConte
 	 * @see org.springframework.web.servlet.support.RequestContext#getTimeZone
 	 * @see org.springframework.web.servlet.support.RequestContextUtils#getTimeZone
 	 */
+	//多语言时区cookie名称
 	public static final String TIME_ZONE_REQUEST_ATTRIBUTE_NAME = CookieLocaleResolver.class.getName() + ".TIME_ZONE";
 
 	/**
 	 * The default cookie name used if none is explicitly set.
 	 */
+	//默认的多语言cookie名称
 	public static final String DEFAULT_COOKIE_NAME = CookieLocaleResolver.class.getName() + ".LOCALE";
 
 

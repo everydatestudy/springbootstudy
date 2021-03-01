@@ -74,7 +74,7 @@ public class HandlerMethodReturnValueHandlerComposite implements HandlerMethodRe
 	@Override
 	public void handleReturnValue(@Nullable Object returnValue, MethodParameter returnType,
 			ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
-
+		//这里判断是否存在reponsebody
 		HandlerMethodReturnValueHandler handler = selectHandler(returnValue, returnType);
 		if (handler == null) {
 			throw new IllegalArgumentException("Unknown return value type: " + returnType.getParameterType().getName());
@@ -85,6 +85,22 @@ public class HandlerMethodReturnValueHandlerComposite implements HandlerMethodRe
 	@Nullable
 	private HandlerMethodReturnValueHandler selectHandler(@Nullable Object value, MethodParameter returnType) {
 		boolean isAsyncValue = isAsyncReturnValue(value, returnType);
+//		org.springframework.web.servlet.mvc.method.annotation.ModelAndViewMethodReturnValueHandler@fa87b1f
+//		org.springframework.web.method.annotation.ModelMethodProcessor@16f949a
+//		org.springframework.web.servlet.mvc.method.annotation.ViewMethodReturnValueHandler@550106f
+//		org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitterReturnValueHandler@40529ea1
+//		org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBodyReturnValueHandler@cee6537
+//		org.springframework.web.servlet.mvc.method.annotation.HttpEntityMethodProcessor@7158fb74
+//		org.springframework.web.servlet.mvc.method.annotation.HttpHeadersReturnValueHandler@740e5e58
+//		org.springframework.web.servlet.mvc.method.annotation.CallableMethodReturnValueHandler@207d61ee
+//		org.springframework.web.servlet.mvc.method.annotation.DeferredResultMethodReturnValueHandler@5f456f0b
+//		org.springframework.web.servlet.mvc.method.annotation.AsyncTaskMethodReturnValueHandler@69f0bccc
+//		org.springframework.web.method.annotation.ModelAttributeMethodProcessor@6f0ad334
+//		org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor@2433bd2a
+//		org.springframework.web.servlet.mvc.method.annotation.ViewNameMethodReturnValueHandler@507ab390
+//		org.springframework.web.method.annotation.MapMethodProcessor@3c80738f
+//		org.springframework.web.method.annotation.ModelAttributeMethodProcessor@52a8458
+		/**这里是所有的默认处理器，是在类{@link RequestMappingHandlerAdapter}*/
 		for (HandlerMethodReturnValueHandler handler : this.returnValueHandlers) {
 			if (isAsyncValue && !(handler instanceof AsyncHandlerMethodReturnValueHandler)) {
 				continue;

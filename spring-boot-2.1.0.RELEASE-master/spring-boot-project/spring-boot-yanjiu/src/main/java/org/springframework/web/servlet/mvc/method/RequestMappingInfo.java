@@ -36,6 +36,103 @@ import org.springframework.web.servlet.mvc.condition.RequestMethodsRequestCondit
 import org.springframework.web.util.UrlPathHelper;
 
 /**
+ *  一共有六项配置，可以看出这些配置项是用于限定被注解的方法对象可以处理哪些类型的request请求。
+ * 当spring启动过程中创建处理器映射对象时，会寻找所有被@Controller注解的类中被@RequestMapping注解的方法对象，
+ * 然后解析方法对象的@RequestMapping注解，把解析结果封装成RequestMappingInfo对象，
+ * 也就是说RequestMappingInfo对象是用来装载请求处理方法的配置信息的，
+ * 每个请求处理方法对象都会对应一个RequestMappingInfo对象。现在大家应该能明白RequestMappingInfo的作用了吧
+ 
+ 1. PatternsRequestCondition(模式请求路径过滤器)
+
+a. 创建跟请求匹配的过滤器对象
+
+       从持有的模式请求路径列表中筛选出同request请求匹配的模式请求路径，可能会有多个，对筛选后的模式请求路径列表执行排序，最详细最具体的路径排在前面，然后使用过滤后的模式请求列表创建一个新的过滤器并返回。多个模式请求路径之间是或关系，只要有一个模式请求路径跟request请求匹配，就认为过滤对象跟request请求匹配。
+
+b.组合两个过滤条件对象 
+
+       对两个模式请求路径列表中的元素进行自然连接后，再执行简单拼接, 像这样， 
+
+
+Pattern 1	Pattern 2	Result
+/hotels	null	/hotels
+null	/hotels	/hotels
+/hotels	/bookings	/hotels/bookings
+/hotels	bookings	/hotels/bookings
+/hotels/*	/bookings	/hotels/bookings
+/hotels/**	/bookings	"/hotels/**\/bookings"
+然后创建新的模式请求路径过滤条件对象, 并返回.
+c.比较过滤条件对象优先级规则是谁的模式请求路径跟请求路径匹配度更高.
+————————————————
+2. ParamsRequestCondition(请求参数过滤器)
+
+a. 创建跟请求匹配的过滤条件对象
+
+       判断所有的参数表达式是否都匹配request请求对象, 是则返回本过滤对象, 否则返回null，认为过滤对象不匹配request请求。
+
+b.组合两个过滤条件对象
+
+  把两个过滤对象的参数表达式集合累加起来,  然后创建新的请求参数过滤对象, 并返回。
+
+c.比较过滤条件对象优先级
+
+  参数表达式个数多的那个过滤器优先级高。
+
+3. HeadersRequestCondition(头字段过滤器)
+a. 创建跟请求匹配的过滤条件对象
+
+       判断所有的头字段表达式是否都匹配请求对象, 是则返回本过滤器，否则返回null，认为过滤器不匹配request请求。
+
+b.组合两个过滤条件对象
+
+把两个过滤对象的头字段表达式集合累加起来,  然后创建新的过滤对象, 并返回。
+
+c.比较过滤条件对象优先级
+
+头字段表达式个数多的过滤器优先级高。
+
+4.RequestMethodsRequestCondition (请求方法过滤器)
+
+a. 创建跟请求匹配的过滤条件对象
+
+筛选出同request请求匹配的方法名称, 然后创建新的过滤条件对象，并返回，如果返回null，则认为过滤器不匹配请求。
+
+b.组合两个过滤条件对象
+
+把两个过滤对象的方法名称集合累加起来,  然后创建新的过滤对象, 并返回。
+
+c.比较过滤条件对象优先级
+
+请求方法名称个数多的那个过滤器优先级高。
+
+5.ProducesRequestCondition(应答媒体类型过滤器)
+
+a. 创建跟请求匹配的过滤条件对象
+
+筛选出同请求Content-Type匹配的媒体类型表达式列表, 然后创建新的过滤条件对象, 并返回。
+
+b.组合两个过滤条件对象
+
+如果传入的过滤器的媒体类型表达式列表不为空, 则优先使用，这样处理的目的是方法的匹配覆盖类的配置。
+
+c.比较过滤条件对象优先级
+
+同请求Content-Type匹配度高的过滤对象优先级高。
+
+6.ConsumesRequestCondition(请求媒体类型过滤器)
+
+a. 创建跟请求匹配的过滤条件对象
+
+筛选出同请求Accpet匹配的媒体类型表达式列表, 然后创建新的过滤条件对象, 并返回。
+b.组合两个过滤条件对象
+如果传入的过滤器的媒体类型表达式列表不为空, 则优先使用，这样处理的目的是方法的匹配覆盖类的配置。
+c.比较过滤条件对象优先级
+      同请求Accpet匹配度高的过滤对象优先级高。
+————————————————
+版权声明：本文为CSDN博主「叶琎宇」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/roberts939299/article/details/73260485
+ 
+ 
+原文链接：https://blog.csdn.net/roberts939299/article/details/73260485
  * A {@link RequestCondition} that consists of the following other conditions:
  * <ol>
  * <li>{@link PatternsRequestCondition}

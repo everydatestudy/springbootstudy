@@ -146,18 +146,32 @@ public class InvocableHandlerMethod extends HandlerMethod {
 	 */
 	private Object[] getMethodArgumentValues(NativeWebRequest request, @Nullable ModelAndViewContainer mavContainer,
 			Object... providedArgs) throws Exception {
-
+		/**
+		 * 获取到所有的参数名
+		 */
 		MethodParameter[] parameters = getMethodParameters();
 		Object[] args = new Object[parameters.length];
 		for (int i = 0; i < parameters.length; i++) {
 			MethodParameter parameter = parameters[i];
 			parameter.initParameterNameDiscovery(this.parameterNameDiscoverer);
+			/**
+			 * 下面这行代码，看注释的意思是：从提供的参数列表中获取对应的值，但是从前面的调用链中会发现，入参的providedArgs是null
+			 */
 			args[i] = resolveProvidedArgument(parameter, providedArgs);
 			if (args[i] != null) {
 				continue;
 			}
+			/**
+			 * 遍历所有的参数解析器，看哪个解析器可以解析，如果参数解析器返回true，就表示可以解析
+			 * 如果我们要扩展参数解析器，就需要看下这里的逻辑
+			 * 需要学习下这里的argumentResolvers是在哪里赋值的
+			 */
 			if (this.argumentResolvers.supportsParameter(parameter)) {
 				try {
+					/**
+					 * 这里就是用parameter对应的解析器去解析该参数
+					 *   // 参数解析器解析HTTP报文到参数
+					 */
 					args[i] = this.argumentResolvers.resolveArgument(
 							parameter, mavContainer, request, this.dataBinderFactory);
 					continue;

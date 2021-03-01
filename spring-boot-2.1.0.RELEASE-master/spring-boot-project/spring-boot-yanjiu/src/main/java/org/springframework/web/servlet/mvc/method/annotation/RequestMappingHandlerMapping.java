@@ -47,7 +47,13 @@ import org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMappi
  * Creates {@link RequestMappingInfo} instances from type and method-level
  * {@link RequestMapping @RequestMapping} annotations in
  * {@link Controller @Controller} classes.
- *
+ *完成@Controller和@RequestMapping 的解析，并将解析保存。
+ *请求发送时与请求路径进行匹配对应找到合适的Handler。RequestMappingHandlerMapping 实现了 InitializingBean 接口，会在afterPropertiesSet 方法中。
+调用时机: 解析@Controller和@RequestMapping注解是在 afterPropertiesSet方法中进行的。
+匹配调用则是在 DispatcherServlet doDispatch方法中的getHandler中调用了HandlerMapper中的getHandler中的getHandlerInternal方法。
+————————————————
+版权声明：本文为CSDN博主「猫吻鱼」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/qq_36882793/article/details/109175480
  * @author Arjen Poutsma
  * @author Rossen Stoyanchev
  * @author Sam Brannen

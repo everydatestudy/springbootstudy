@@ -26,6 +26,18 @@ import org.springframework.core.annotation.AliasFor;
 import org.springframework.ui.Model;
 
 /**
+ * 
+@ModelAttribute一个具有如下三个作用：
+①绑定请求参数到命令对象：放在功能处理方法的入参上时，用于将多个请求参数绑定到一个命令对象，从而简化绑
+定流程，而且自动暴露为模型数据用于视图页面展示时使用；
+②暴露表单引用对象为模型数据：放在处理器的一般方法（非功能处理方法）上时，是为表单准备要展示的表单引用
+对象，如注册时需要选择的所在城市等，而且在执行功能处理方法（@RequestMapping 注解的方法）之前，自动添加
+到模型对象中，用于视图页面展示时使用；
+③暴露@RequestMapping 方法返回值为模型数据：放在功能处理方法的返回值上时，是暴露功能处理方法的返回值为
+模型数据，用于视图页面展示时使用。
+————————————————
+版权声明：本文为CSDN博主「归田」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/qq924862077/article/details/53924606
  * Annotation that binds a method parameter or method return value
  * to a named model attribute, exposed to a web view. Supported
  * for controller classes with {@link RequestMapping @RequestMapping}

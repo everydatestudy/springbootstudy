@@ -16,8 +16,9 @@ public class MySpringApplication {
 
 		// Load Spring web application configuration
 		AnnotationConfigWebApplicationContext ac = new AnnotationConfigWebApplicationContext();
+
 		ac.register(AppConfig.class);
-		ac.refresh();
+//		ac.refresh();
 
 		Tomcat tomcat = new Tomcat();
 		tomcat.setPort(9090);
@@ -29,12 +30,17 @@ public class MySpringApplication {
 		Context context = tomcat.addContext("/", file.getAbsolutePath());
 
 		DispatcherServlet dispatcherServlet = new DispatcherServlet(ac);
+		// DispatcherServlet dispatcherServlet = new DispatcherServlet();
 		Wrapper sw = Tomcat.addServlet(context, "testServlet", dispatcherServlet);
 		sw.setLoadOnStartup(1);
 		context.addServletMappingDecoded("/", "testServlet");
-
+		System.out.println(ac.getParent() + "----------------------------------------------------");
 		tomcat.start();
 		tomcat.getServer().await();
 
+	}
+
+	public static void main(String[] args) throws Exception {
+		MySpringApplication.run();
 	}
 }

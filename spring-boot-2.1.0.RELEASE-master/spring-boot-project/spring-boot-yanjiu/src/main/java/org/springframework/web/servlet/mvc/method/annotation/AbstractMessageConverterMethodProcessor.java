@@ -244,6 +244,7 @@ public abstract class AbstractMessageConverterMethodProcessor extends AbstractMe
 		}
 
 		MediaType selectedMediaType = null;
+		//匹配消息数据转换器
 		for (MediaType mediaType : mediaTypesToUse) {
 			if (mediaType.isConcrete()) {
 				selectedMediaType = mediaType;
@@ -254,9 +255,10 @@ public abstract class AbstractMessageConverterMethodProcessor extends AbstractMe
 				break;
 			}
 		}
-
+		//匹配消息数据转换器
 		if (selectedMediaType != null) {
 			selectedMediaType = selectedMediaType.removeQualityValue();
+			//这里又进行了一次判断是否存在匹配的内容数据
 			for (HttpMessageConverter<?> converter : this.messageConverters) {
 				GenericHttpMessageConverter genericConverter = (converter instanceof GenericHttpMessageConverter ?
 						(GenericHttpMessageConverter<?>) converter : null);
@@ -272,6 +274,7 @@ public abstract class AbstractMessageConverterMethodProcessor extends AbstractMe
 							genericConverter.write(outputValue, declaredType, selectedMediaType, outputMessage);
 						}
 						else {
+							//将数据转换为配置的数据格式
 							((HttpMessageConverter) converter).write(outputValue, selectedMediaType, outputMessage);
 						}
 						if (logger.isDebugEnabled()) {
@@ -341,7 +344,7 @@ public abstract class AbstractMessageConverterMethodProcessor extends AbstractMe
 	@SuppressWarnings("unchecked")
 	protected List<MediaType> getProducibleMediaTypes(
 			HttpServletRequest request, Class<?> valueClass, @Nullable Type declaredType) {
-
+		//处理类型转换
 		Set<MediaType> mediaTypes =
 				(Set<MediaType>) request.getAttribute(HandlerMapping.PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE);
 		if (!CollectionUtils.isEmpty(mediaTypes)) {

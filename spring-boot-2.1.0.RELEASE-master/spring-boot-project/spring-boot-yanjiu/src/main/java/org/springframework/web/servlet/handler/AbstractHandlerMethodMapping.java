@@ -215,6 +215,8 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 						logger.debug("Could not resolve target class for bean with name '" + beanName + "'", ex);
 					}
 				}
+			 	// 如果 beanType != null  && beanType 是 handler。
+				//在 RequestMappingHandlerMapping  中的判断是 bean被 @Controller 或者 @RequestMapping 注解修饰。则会进行bean的handler方法筛选 
 				if (beanType != null && isHandler(beanType)) {
 					detectHandlerMethods(beanName);
 				}
@@ -562,20 +564,26 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 			try {
 				// 将 handler 和 method 封装成一个  HandlerMethod  实例
 				HandlerMethod handlerMethod = createHandlerMethod(handler, method);
+				// 校验实例的合法性。即唯一性
 				assertUniqueMethodMapping(handlerMethod, mapping);
+				// 保存映射关心， key是 RequestMappingInfo,   value 是 HandlerMethod
 				this.mappingLookup.put(mapping, handlerMethod);
 
 				if (logger.isInfoEnabled()) {
 					logger.info("Mapped \"" + mapping + "\" onto " + handlerMethod);
 				}
-
+				// 获取url映射，如果是 restful 请求则获取不到。建立 url 和Mapping 的映射。
+				// 一个mapping 可以对应多个url
 				List<String> directUrls = getDirectUrls(mapping);
+				// 这里将url 和  mapping映射起来
+				// 在进行匹配的时候，就是先根据url找到合适的mapping，然后根据找到的mapping再去找到HandlerMethod
 				for (String url : directUrls) {
 					this.urlLookup.add(url, mapping);
 				}
-
+				// 保存 类名#方法名 ： HandlerMethod 的映射关系
 				String name = null;
 				if (getNamingStrategy() != null) {
+					// 这里解析出来的name 并不是完整的类名，而是类名的首字母组合。比如方法名是 DemoController.say() ，解析出来的name即为 DC#say。如果是 SayController.say()。解析出来则为 name = SC#say
 					name = getNamingStrategy().getName(handlerMethod, mapping);
 					addMappingName(name, handlerMethod);
 				}
@@ -584,7 +592,7 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 				if (corsConfig != null) {
 					this.corsLookup.put(handlerMethod, corsConfig);
 				}
-
+				// 保存到 registry 中
 				this.registry.put(mapping, new MappingRegistration<>(mapping, handlerMethod, directUrls, name));
 			}
 			finally {

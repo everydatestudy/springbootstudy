@@ -19,8 +19,12 @@ package org.springframework.web.servlet;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+
+import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -43,6 +47,7 @@ import org.springframework.core.GenericTypeResolver;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
@@ -162,7 +167,9 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 */
 	private static final String INIT_PARAM_DELIMITERS = ",; \t\n";
 
-
+	/** Whether to log potentially sensitive info (request params at DEBUG + headers at TRACE). */
+	private boolean enableLoggingRequestDetails = false;
+	
 	/** ServletContext attribute to find the WebApplicationContext in */
 	@Nullable
 	private String contextAttribute;
@@ -427,7 +434,25 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	public void setThreadContextInheritable(boolean threadContextInheritable) {
 		this.threadContextInheritable = threadContextInheritable;
 	}
+	/**
+	 * Whether to log request params at DEBUG level, and headers at TRACE level.
+	 * Both may contain sensitive information.
+	 * <p>By default set to {@code false} so that request details are not shown.
+	 * @param enable whether to enable or not
+	 * @since 5.1
+	 */
+	public void setEnableLoggingRequestDetails(boolean enable) {
+		this.enableLoggingRequestDetails = enable;
+	}
 
+	/**
+	 * Whether logging of potentially sensitive, request details at DEBUG and
+	 * TRACE level is allowed.
+	 * @since 5.1
+	 */
+	public boolean isEnableLoggingRequestDetails() {
+		return this.enableLoggingRequestDetails;
+	}
 	/**
 	 * Set whether this servlet should dispatch an HTTP OPTIONS request to
 	 * the {@link #doService} method.
@@ -482,7 +507,60 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		}
 	}
 
+	private void logResult(HttpServletRequest request, HttpServletResponse response,
+			@Nullable Throwable failureCause, WebAsyncManager asyncManager) {
 
+		if (!logger.isDebugEnabled()) {
+			return;
+		}
+
+		String dispatchType = request.getDispatcherType().name();
+		boolean initialDispatch = request.getDispatcherType().equals(DispatcherType.REQUEST);
+
+		if (failureCause != null) {
+			if (!initialDispatch) {
+				// FORWARD/ERROR/ASYNC: minimal message (there should be enough context already)
+				if (logger.isDebugEnabled()) {
+					logger.debug("Unresolved failure from \"" + dispatchType + "\" dispatch: " + failureCause);
+				}
+			}
+			else if (logger.isTraceEnabled()) {
+				logger.trace("Failed to complete request", failureCause);
+			}
+			else {
+				logger.debug("Failed to complete request: " + failureCause);
+			}
+			return;
+		}
+
+		if (asyncManager.isConcurrentHandlingStarted()) {
+			logger.debug("Exiting but response remains open for further handling");
+			return;
+		}
+
+		int status = response.getStatus();
+		String headers = ""; // nothing below trace
+
+		if (logger.isTraceEnabled()) {
+			Collection<String> names = response.getHeaderNames();
+			if (this.enableLoggingRequestDetails) {
+				headers = names.stream().map(name -> name + ":" + response.getHeaders(name))
+						.collect(Collectors.joining(", "));
+			}
+			else {
+				headers = names.isEmpty() ? "" : "masked";
+			}
+			headers = ", headers={" + headers + "}";
+		}
+
+		if (!initialDispatch) {
+			logger.debug("Exiting from \"" + dispatchType + "\" dispatch, status " + status + headers);
+		}
+		else {
+			HttpStatus httpStatus = HttpStatus.resolve(status);
+			logger.debug("Completed " + (httpStatus != null ? httpStatus : status) + headers);
+		}
+	}
 	/**
 	 * Overridden method of {@link HttpServletBean}, invoked after any bean properties
 	 * have been set. Creates this servlet's WebApplicationContext.
@@ -505,10 +583,16 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 			throw ex;
 		}
 
-		if (this.logger.isInfoEnabled()) {
-			long elapsedTime = System.currentTimeMillis() - startTime;
-			this.logger.info("FrameworkServlet '" + getServletName() + "': initialization completed in " +
-					elapsedTime + " ms");
+		if (logger.isDebugEnabled()) {
+			String value = this.enableLoggingRequestDetails ?
+					"shown which may lead to unsafe logging of potentially sensitive data" :
+					"masked to prevent unsafe logging of potentially sensitive data";
+			logger.debug("enableLoggingRequestDetails='" + this.enableLoggingRequestDetails +
+					"': request parameters and headers will be " + value);
+		}
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Completed initialization in " + (System.currentTimeMillis() - startTime) + " ms");
 		}
 	}
 
@@ -525,7 +609,10 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		WebApplicationContext rootContext =
 				WebApplicationContextUtils.getWebApplicationContext(getServletContext());
 		WebApplicationContext wac = null;
-
+		//在调用 initWebApplicationContext 方法时 第一步的判断条件就是 this.webApplicationContext != null。如果this.webApplicationContext != null。则说明 WebApplicationContext 是通过构造注入的方式注入进来
+		//如果webApplicationContext已经不为空，表示这个Servlet类是通过编程式注册到容器中的(Servlet 3.0 +中的ServletContext.addServlet（）)，
+		//上下文也由编程式传入。若这个传入的上下文还没有被初始化，将rootContext上下文设置为它的父上下文，然后将其初始化，否则直接使用。
+	
 		if (this.webApplicationContext != null) {
 			// A context instance was injected at construction time -> use it
 			wac = this.webApplicationContext;
@@ -540,12 +627,14 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 						cwac.setParent(rootContext);
 					}
 					// 2.刷新上下文环境
+					//这里会调用很牛掰的onRefresh方法，
 					configureAndRefreshWebApplicationContext(cwac);
 				}
 			}
 		}
 		// 3. 如果构造函数并没有注入，则wac为null，根据 contextAttribute 属性加载 WebApplicationContext
 		if (wac == null) {
+			
 			// No context instance was injected at construction time -> see if one
 			// has been registered in the servlet context. If one exists, it is assumed
 			// that the parent context (if any) has already been set and that the
@@ -557,6 +646,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		if (wac == null) {
 			// No context instance is defined for this servlet -> create a local one
 			// 自己尝试创建WebApplicationContext
+			//会调用XmlWebApplicationContext的getDefaultConfigLocations方法来得到，/WEB-INF/传入的servlet对象-test-servlet.xml
 			wac = createWebApplicationContext(rootContext);
 		}
 
@@ -564,11 +654,15 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 			// Either the context is not a ConfigurableApplicationContext with refresh
 			// support or the context injected at construction time had already been
 			// refreshed -> trigger initial onRefresh manually here.
+			//这个在上面的第二步已经执行过了，所以这里不会执行的
+			
 			onRefresh(wac);
 		}
 
 		if (this.publishContext) {
 			// Publish the context as a servlet context attribute.
+			//将这个上下文发布到ServletContext中，也就是将上下文以一个和Servlet类在web.xml中注册名字有关的值为键
+			//设置为ServletContext的一个属性
 			String attrName = getServletContextAttributeName();
 			getServletContext().setAttribute(attrName, wac);
 			if (this.logger.isDebugEnabled()) {
@@ -592,6 +686,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 */
 	@Nullable
 	protected WebApplicationContext findWebApplicationContext() {
+		//contextAttribute 在初始化 DispatcherServlet 的时候可以通过 setContextAttribute 进行设置。默认的contextAttribute 为null。
 		String attrName = getContextAttribute();
 		if (attrName == null) {
 			return null;
@@ -636,8 +731,9 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		// 反射创建，并设置属性
 		ConfigurableWebApplicationContext wac =
 				(ConfigurableWebApplicationContext) BeanUtils.instantiateClass(contextClass);
-
+		//设置IOC容器相关的属性，这样springMVC的IOC容器就创建好了
 		wac.setEnvironment(getEnvironment());
+		//设置parent,这样就把springMVC和Spring的两个IOC容器连接了在一起
 		wac.setParent(parent);
 		// 获取web.xml 配置的 DispatcherServlet init-params contextConfigLocation 属性
 		String configLocation = getContextConfigLocation();
@@ -667,6 +763,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		wac.setServletContext(getServletContext());
 		wac.setServletConfig(getServletConfig());
 		wac.setNamespace(getNamespace());
+		//这里使用了一个广播的事件，通过事件可以最后初始化子类的DispatcherServlet.onfresh方法
 		wac.addApplicationListener(new SourceFilteringListener(wac, new ContextRefreshListener()));
 
 		// The wac environment's #initPropertySources will be called in any case when the context
@@ -970,9 +1067,11 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		long startTime = System.currentTimeMillis();
 		Throwable failureCause = null;
 		// 1234 的目的是为了保证当前线程的 LocaleContext 和 RequestAttributes 在当前请求后还能恢复，所以提取保存
+		// 1 提取当前线程的 LocaleContext  属性
 		LocaleContext previousLocaleContext = LocaleContextHolder.getLocaleContext();
+		// 2. 根据当前的request 创建对应的 LocaleContext ,并绑定到当前线程
 		LocaleContext localeContext = buildLocaleContext(request);
-
+		// 3. 提取当前线程的 RequestAttributes 属性
 		RequestAttributes previousAttributes = RequestContextHolder.getRequestAttributes();
 		ServletRequestAttributes requestAttributes = buildRequestAttributes(request, response, previousAttributes);
 
@@ -994,6 +1093,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		}
 
 		finally {
+			// 6. 请求结束，恢复线程原状
 			resetContextHolders(request, previousLocaleContext, previousAttributes);
 			if (requestAttributes != null) {
 				requestAttributes.requestCompleted();
@@ -1012,7 +1112,8 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 					}
 				}
 			}
-
+			logResult(request, response, failureCause, asyncManager);
+			// 发布请求结束的通知事件，无论成功与否
 			publishRequestHandledEvent(request, response, startTime, failureCause);
 		}
 	}

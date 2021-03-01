@@ -108,8 +108,9 @@ public final class ModelFactory {
 
 		Map<String, ?> sessionAttributes = this.sessionAttributesHandler.retrieveAttributes(request);
 		container.mergeAttributes(sessionAttributes);
+		//执行@ModelAttribute注解的方法
 		invokeModelAttributeMethods(request, container);
-
+		//方法执行结果的值放到mavContainer
 		for (String name : findSessionAttributeArguments(handlerMethod)) {
 			if (!container.containsAttribute(name)) {
 				Object value = this.sessionAttributesHandler.retrieveAttribute(request, name);
@@ -130,6 +131,7 @@ public final class ModelFactory {
 
 		while (!this.modelMethods.isEmpty()) {
 			InvocableHandlerMethod modelMethod = getNextModelMethod(container).getHandlerMethod();
+			//判断方法是否被@ModelAttribute注解
 			ModelAttribute ann = modelMethod.getMethodAnnotation(ModelAttribute.class);
 			Assert.state(ann != null, "No ModelAttribute annotation");
 			if (container.containsAttribute(ann.name())) {
@@ -138,8 +140,9 @@ public final class ModelFactory {
 				}
 				continue;
 			}
-
+			//执行被@ModelAttribute注解的方法
 			Object returnValue = modelMethod.invokeForRequest(request, container);
+			//返回值放到mavContainer
 			if (!modelMethod.isVoid()){
 				String returnValueName = getNameForReturnValue(returnValue, modelMethod.getReturnType());
 				if (!ann.binding()) {

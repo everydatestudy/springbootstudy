@@ -128,7 +128,8 @@ public abstract class AbstractMessageConverterMethodArgumentResolver implements 
 		return this.advice;
 	}
 
-	/**
+	/**在父类AbstractMessageConverterMethodArgumentResolver的方法readWithMessageConverters中的处理如下：简单来说就是根据提供的实现的HttpMessageConverter来对提交的RequestBody中的数据进行转换处理。
+
 	 * Create the method argument value of the expected parameter type by
 	 * reading from the given request.
 	 * @param <T> the expected type of the argument value to be created
@@ -163,7 +164,7 @@ public abstract class AbstractMessageConverterMethodArgumentResolver implements 
 	@Nullable
 	protected <T> Object readWithMessageConverters(HttpInputMessage inputMessage, MethodParameter parameter,
 			Type targetType) throws IOException, HttpMediaTypeNotSupportedException, HttpMessageNotReadableException {
-
+		//获取数据类型
 		MediaType contentType;
 		boolean noContentType = false;
 		try {
@@ -190,11 +191,12 @@ public abstract class AbstractMessageConverterMethodArgumentResolver implements 
 		EmptyBodyCheckingHttpInputMessage message;
 		try {
 			message = new EmptyBodyCheckingHttpInputMessage(inputMessage);
-
+			//选择适合的消息处理器来处理参数
 			for (HttpMessageConverter<?> converter : this.messageConverters) {
 				Class<HttpMessageConverter<?>> converterType = (Class<HttpMessageConverter<?>>) converter.getClass();
 				GenericHttpMessageConverter<?> genericConverter =
 						(converter instanceof GenericHttpMessageConverter ? (GenericHttpMessageConverter<?>) converter : null);
+				 // 判断转换器是否支持参数类型
 				if (genericConverter != null ? genericConverter.canRead(targetType, contextClass, contentType) :
 						(targetClass != null && converter.canRead(targetClass, contentType))) {
 					if (logger.isDebugEnabled()) {
