@@ -1,0 +1,14 @@
+考虑BeanDefinition是描述bean的数据值
+还有BeanDefinitionHolder的数据
+BeanPostProcessor有很多子类，包含了bean整个生命周期处理，在所有的生命周期中都提供了扩展
+spring的重点的数据包括
+1.asm扫描class的数据，
+https://www.xiefayang.com/2019/04/01/Spring%20Boot%20%E9%85%8D%E7%BD%AE%E7%BB%91%E5%AE%9A%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/
+BeanFactoryPostProcessor以前集成继承BeanPostProcessor，
+
+至此, 我们见到了Binder, Bindable, 接下来还会见到BindResult, 这都是Spring Boot 2.x中Binder API中的东西
+
+    文档中说明了: 一个Binder采用一个Bindable并返回一个BindResult
+
+https://my.oschina.net/u/1178126?q=Spring%20Boot springboot源码分析，第四讲是处理banding数据的
+
