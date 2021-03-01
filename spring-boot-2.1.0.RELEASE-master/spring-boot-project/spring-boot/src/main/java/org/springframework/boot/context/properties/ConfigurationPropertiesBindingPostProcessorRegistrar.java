@@ -43,7 +43,8 @@ public class ConfigurationPropertiesBindingPostProcessorRegistrar
 			// (1)注册ConfigurationPropertiesBindingPostProcessor后置处理器，用来对配置属性进行后置处理
 			registerConfigurationPropertiesBindingPostProcessor(registry);
 			// (2)注册一个ConfigurationBeanFactoryMetadata类型的bean，
-			// 注意ConfigurationBeanFactoryMetadata实现了BeanFactoryPostProcessor，然后其会在postProcessBeanFactory中注册一些元数据
+			// 注意ConfigurationBeanFactoryMetadata实现了BeanFactoryPostProcessor，
+			//然后其会在postProcessBeanFactory中注册一些元数据
 			registerConfigurationBeanFactoryMetadata(registry);
 		}
 	}

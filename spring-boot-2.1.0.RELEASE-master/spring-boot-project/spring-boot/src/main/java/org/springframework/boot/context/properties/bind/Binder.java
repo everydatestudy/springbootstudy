@@ -130,7 +130,8 @@ public class Binder {
 			ConversionService conversionService,
 			Consumer<PropertyEditorRegistry> propertyEditorInitializer) {
 		Assert.notNull(sources, "Sources must not be null");
-		this.sources = sources; // 这里将从配置文件application.properties中的读取的配置值赋给Iterable<ConfigurationPropertySource>集合对象sources
+		// 这里将从配置文件application.properties中的读取的配置值赋给Iterable<ConfigurationPropertySource>集合对象sources
+		this.sources = sources; 
 		this.placeholdersResolver = (placeholdersResolver != null) ? placeholdersResolver
 				: PlaceholdersResolver.NONE;
 		this.conversionService = (conversionService != null) ? conversionService

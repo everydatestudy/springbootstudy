@@ -100,6 +100,7 @@ class EnableConfigurationPropertiesImportSelector implements ImportSelector {
 			// 根据bean name判断beanFactory容器中是否包含该bean
 			if (!containsBeanDefinition(beanFactory, name)) {
 				// 若不包含，那么注册bean definition
+				System.err.println("::name"+name+"type:"+type);
 				registerBeanDefinition(registry, name, type);
 			}
 		}
