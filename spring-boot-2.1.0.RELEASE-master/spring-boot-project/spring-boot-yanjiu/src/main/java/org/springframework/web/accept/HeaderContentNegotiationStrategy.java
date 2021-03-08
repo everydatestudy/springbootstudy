@@ -28,7 +28,7 @@ import org.springframework.web.context.request.NativeWebRequest;
 
 /**
  * A {@code ContentNegotiationStrategy} that checks the 'Accept' request header.
- *
+ *Accept Header解析：它根据请求头Accept来协商。
  * @author Rossen Stoyanchev
  * @author Juergen Hoeller
  * @since 3.2
@@ -42,6 +42,8 @@ public class HeaderContentNegotiationStrategy implements ContentNegotiationStrat
 	@Override
 	public List<MediaType> resolveMediaTypes(NativeWebRequest request)
 			throws HttpMediaTypeNotAcceptableException {
+		// 我的Chrome浏览器值是：[text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3]
+				// postman的值是：[*/*]
 
 		String[] headerValueArray = request.getHeaderValues(HttpHeaders.ACCEPT);
 		if (headerValueArray == null) {
@@ -52,6 +54,15 @@ public class HeaderContentNegotiationStrategy implements ContentNegotiationStrat
 		try {
 			List<MediaType> mediaTypes = MediaType.parseMediaTypes(headerValues);
 			MediaType.sortBySpecificityAndQuality(mediaTypes);
+			//可以看到，如果没有传递Accept，则默认使用MediaType.ALL 也就是*/*
+			// 最后Chrome浏览器的List如下：
+			// 0 = {MediaType@6205} "text/html"
+			// 1 = {MediaType@6206} "application/xhtml+xml"
+			// 2 = {MediaType@6207} "image/webp"
+			// 3 = {MediaType@6208} "image/apng"
+			// 4 = {MediaType@6209} "application/signed-exchange;v=b3"
+			// 5 = {MediaType@6210} "application/xml;q=0.9"
+			// 6 = {MediaType@6211} "*/*;q=0.8"
 			return !CollectionUtils.isEmpty(mediaTypes) ? mediaTypes : MEDIA_TYPE_ALL_LIST;
 		}
 		catch (InvalidMediaTypeException ex) {

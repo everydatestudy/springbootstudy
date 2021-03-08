@@ -33,7 +33,9 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.context.ServletContextAware;
 
-/**
+/**顾名思义，它是专门用于来创建一个ContentNegotiationManager的FactoryBean
+ * 后缀 > 请求参数 > HTTP首部Accept
+ * 
  * Factory to create a {@code ContentNegotiationManager} and configure it with
  * one or more {@link ContentNegotiationStrategy} instances.
  *
@@ -83,7 +85,7 @@ import org.springframework.web.context.ServletContextAware;
  * parameters, and URI decoding. Consider setting {@link #setFavorPathExtension}
  * to {@literal false} or otherwise set the strategies to use explicitly via
  * {@link #setStrategies(List)}.
- *
+   *  还实现了ServletContextAware，可以得到当前servlet容器上下文
  * @author Rossen Stoyanchev
  * @author Brian Clozel
  * @since 3.2
@@ -94,11 +96,11 @@ public class ContentNegotiationManagerFactoryBean
 	@Nullable
 	private List<ContentNegotiationStrategy> strategies;
 
-
+	// 默认就是开启了对后缀的支持的
 	private boolean favorPathExtension = true;
-
+	// 默认没有开启对param的支持
 	private boolean favorParameter = false;
-
+	// 默认也是开启了对Accept的支持的
 	private boolean ignoreAcceptHeader = false;
 
 	private Map<String, MediaType> mediaTypes = new HashMap<>();
@@ -143,7 +145,7 @@ public class ContentNegotiationManagerFactoryBean
 		this.favorPathExtension = favorPathExtension;
 	}
 
-	/**
+	/**注意这里传入的是：Properties  表示后缀和MediaType的对应关系
 	 * Add a mapping from a key, extracted from a path extension or a query
 	 * parameter, to a MediaType. This is required in order for the parameter
 	 * strategy to work. Any extensions explicitly registered here are also
@@ -287,7 +289,7 @@ public class ContentNegotiationManagerFactoryBean
 		this.servletContext = servletContext;
 	}
 
-
+	// 这里面处理了很多默认逻辑
 	@Override
 	public void afterPropertiesSet() {
 		build();
@@ -304,6 +306,8 @@ public class ContentNegotiationManagerFactoryBean
 			strategies.addAll(this.strategies);
 		}
 		else {
+			// 默认favorPathExtension=true，所以是支持path后缀模式的
+			// servlet环境使用的是ServletPathExtensionContentNegotiationStrategy，否则使用的是PathExtensionContentNegotiationStrategy
 			if (this.favorPathExtension) {
 				PathExtensionContentNegotiationStrategy strategy;
 				if (this.servletContext != null && !useRegisteredExtensionsOnly()) {
@@ -318,7 +322,7 @@ public class ContentNegotiationManagerFactoryBean
 				}
 				strategies.add(strategy);
 			}
-
+			// 默认favorParameter=false 木有开启滴
 			if (this.favorParameter) {
 				ParameterContentNegotiationStrategy strategy = new ParameterContentNegotiationStrategy(this.mediaTypes);
 				strategy.setParameterName(this.parameterName);
@@ -330,21 +334,22 @@ public class ContentNegotiationManagerFactoryBean
 				}
 				strategies.add(strategy);
 			}
-
+			// 注意这前面有个!，所以默认Accept也是支持的
 			if (!this.ignoreAcceptHeader) {
 				strategies.add(new HeaderContentNegotiationStrategy());
 			}
-
+			// 若你喜欢，你可以设置一个defaultNegotiationStrategy  最终也会被add进去
 			if (this.defaultNegotiationStrategy != null) {
 				strategies.add(this.defaultNegotiationStrategy);
 			}
 		}
-
+		// 这部分我需要提醒注意的是：这里使用的是ArrayList，所以你add的顺序就是u最后的执行顺序
+		// 所以若你指定了defaultNegotiationStrategy，它也是放到最后的
 		this.contentNegotiationManager = new ContentNegotiationManager(strategies);
 		return this.contentNegotiationManager;
 	}
 
-
+	// 三个接口方法
 	@Override
 	@Nullable
 	public ContentNegotiationManager getObject() {

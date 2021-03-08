@@ -60,7 +60,9 @@ public class PathExtensionContentNegotiationStrategy extends AbstractMappingCont
 	public PathExtensionContentNegotiationStrategy(@Nullable Map<String, MediaType> mediaTypes) {
 		super(mediaTypes);
 		setUseRegisteredExtensionsOnly(false);
+		 // 注意：这个值设置为了true
 		setIgnoreUnknownExtensions(true);
+		// 不需要解码（url请勿有中文）
 		this.urlPathHelper.setUrlDecode(false);
 	}
 
@@ -81,7 +83,8 @@ public class PathExtensionContentNegotiationStrategy extends AbstractMappingCont
 	public void setUseJaf(boolean useJaf) {
 		setUseRegisteredExtensionsOnly(!useJaf);
 	}
-
+	// 子类ServletPathExtensionContentNegotiationStrategy有使用和复写
+		// 它的作用是面向Resource找到这个资源对应的MediaType ~
 	@Override
 	@Nullable
 	protected String getMediaTypeKey(NativeWebRequest webRequest) {
@@ -96,6 +99,8 @@ public class PathExtensionContentNegotiationStrategy extends AbstractMappingCont
 	}
 
 	/**
+	 * // 子类ServletPathExtensionContentNegotiationStrategy有使用和复写
+	// 它的作用是面向Resource找到这个资源对应的MediaType ~
 	 * A public method exposing the knowledge of the path extension strategy to
 	 * resolve file extensions to a {@link MediaType} in this case for a given
 	 * {@link Resource}. The method first looks up any explicitly registered

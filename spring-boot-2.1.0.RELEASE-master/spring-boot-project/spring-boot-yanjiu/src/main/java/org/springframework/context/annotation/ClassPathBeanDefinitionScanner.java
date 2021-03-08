@@ -274,9 +274,11 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 		for (String basePackage : basePackages) {
 			//扫描basePackage路径下的java文件
 			//符合条件的并把它转成BeanDefinition类型
+			//通过包名，扫描该包名下的所有bean的定义信息
 			Set<BeanDefinition> candidates = findCandidateComponents(basePackage);
 			for (BeanDefinition candidate : candidates) {
 				//解析scope属性
+				//scope注解解析器，获取Scope注解的属性信息，封装成ScopeMetadata,请看com.hmy.springboot.MyMath的类
 				ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(candidate);
 				candidate.setScope(scopeMetadata.getScopeName());
 				String beanName = this.beanNameGenerator.generateBeanName(candidate, this.registry);
@@ -293,8 +295,8 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 				}
 				if (checkCandidate(beanName, candidate)) {
 					BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(candidate, beanName);
-					definitionHolder =
-							AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
+					 //这里处理scope注解，下面跟进这个，这里产生的类就是加上了scopedTarget.xxxx,这里是产生了代理的
+					definitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
 					beanDefinitions.add(definitionHolder);
 					//加入到map当中
 					registerBeanDefinition(definitionHolder, this.registry);

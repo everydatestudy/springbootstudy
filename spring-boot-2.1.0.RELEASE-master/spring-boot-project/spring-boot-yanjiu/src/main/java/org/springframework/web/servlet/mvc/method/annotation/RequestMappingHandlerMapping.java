@@ -133,11 +133,17 @@ public class RequestMappingHandlerMapping extends RequestMappingInfoHandlerMappi
 	public void afterPropertiesSet() {
 		// 进行 RequestMapping 的配置
 		this.config = new RequestMappingInfo.BuilderConfiguration();
+		//	    设置url路径解析器
 		this.config.setUrlPathHelper(getUrlPathHelper());
+		//设置路径匹配器
 		this.config.setPathMatcher(getPathMatcher());
+		//设置前缀路径匹配器
 		this.config.setSuffixPatternMatch(this.useSuffixPatternMatch);
+		//设置后缀路径匹配器
 		this.config.setTrailingSlashMatch(this.useTrailingSlashMatch);
+		//注册路径前缀匹配器
 		this.config.setRegisteredSuffixPatternMatch(this.useRegisteredSuffixPatternMatch);
+		//设置媒体类型管理器
 		this.config.setContentNegotiationManager(getContentNegotiationManager());
 		// 调用父类的  afterPropertiesSet 方法。
 		super.afterPropertiesSet();

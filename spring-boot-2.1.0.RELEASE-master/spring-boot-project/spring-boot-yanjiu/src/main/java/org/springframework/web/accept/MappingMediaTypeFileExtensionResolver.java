@@ -40,11 +40,11 @@ import org.springframework.util.MultiValueMap;
  * @since 3.2
  */
 public class MappingMediaTypeFileExtensionResolver implements MediaTypeFileExtensionResolver {
-
+	// key是lowerCaseExtension，value是对应的mediaType
 	private final ConcurrentMap<String, MediaType> mediaTypes = new ConcurrentHashMap<>(64);
-
+	// 和上面相反，key是mediaType，value是lowerCaseExtension（显然用的是多值map）
 	private final MultiValueMap<MediaType, String> fileExtensions = new LinkedMultiValueMap<>();
-
+	// 所有的扩展名（List非set哦~）
 	private final List<String> allFileExtensions = new ArrayList<>();
 
 
@@ -74,6 +74,8 @@ public class MappingMediaTypeFileExtensionResolver implements MediaTypeFileExten
 	/**
 	 * Map an extension to a MediaType. Ignore if extension already mapped.
 	 */
+	// 给extension添加一个对应的mediaType
+	// 采用ConcurrentMap是为了避免出现并发情况下导致的一致性问题
 	protected void addMapping(String extension, MediaType mediaType) {
 		MediaType previous = this.mediaTypes.putIfAbsent(extension, mediaType);
 		if (previous == null) {
@@ -82,7 +84,7 @@ public class MappingMediaTypeFileExtensionResolver implements MediaTypeFileExten
 		}
 	}
 
-
+	// 接口方法：拿到指定的mediaType对应的扩展名们~
 	@Override
 	public List<String> resolveFileExtensions(MediaType mediaType) {
 		List<String> fileExtensions = this.fileExtensions.get(mediaType);
@@ -94,7 +96,7 @@ public class MappingMediaTypeFileExtensionResolver implements MediaTypeFileExten
 		return Collections.unmodifiableList(this.allFileExtensions);
 	}
 
-	/**
+	/** protected 方法：根据扩展名找到一个MediaType~（当然可能是找不到的）
 	 * Use this method for a reverse lookup from extension to MediaType.
 	 * @return a MediaType for the key, or {@code null} if none found
 	 */

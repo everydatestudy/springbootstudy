@@ -219,7 +219,10 @@ public abstract class AbstractMessageConverterMethodProcessor extends AbstractMe
 		}
 		else {
 			HttpServletRequest request = inputMessage.getServletRequest();
+			// 这里交给contentNegotiationManager.resolveMediaTypes()  找出客户端可以接受的MediaType们~~~
+			// 此处是已经排序好的（根据Q值等等）
 			List<MediaType> requestedMediaTypes = getAcceptableMediaTypes(request);
+			// 这是服务端它所能提供出的MediaType们
 			List<MediaType> producibleMediaTypes = getProducibleMediaTypes(request, valueType, declaredType);
 
 			if (outputValue != null && producibleMediaTypes.isEmpty()) {
@@ -344,14 +347,17 @@ public abstract class AbstractMessageConverterMethodProcessor extends AbstractMe
 	@SuppressWarnings("unchecked")
 	protected List<MediaType> getProducibleMediaTypes(
 			HttpServletRequest request, Class<?> valueClass, @Nullable Type declaredType) {
-		//处理类型转换
-		Set<MediaType> mediaTypes =
-				(Set<MediaType>) request.getAttribute(HandlerMapping.PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE);
+		// 它设值的地方唯一在于：@RequestMapping.producers属性
+		// 大多数情况下：我们一般都不会给此属性赋值吧~~~
+		Set<MediaType> mediaTypes =	(Set<MediaType>) request.getAttribute(HandlerMapping.PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE);
 		if (!CollectionUtils.isEmpty(mediaTypes)) {
 			return new ArrayList<>(mediaTypes);
 		}
+		// 大多数情况下：都会走进这个逻辑 --> 从消息转换器中匹配一个合适的出来
 		else if (!this.allSupportedMediaTypes.isEmpty()) {
 			List<MediaType> result = new ArrayList<>();
+			// 从所有的消息转换器中  匹配出一个/多个List<MediaType> result出来
+			// 这就代表着：我服务端所能支持的所有的List<MediaType>们了
 			for (HttpMessageConverter<?> converter : this.messageConverters) {
 				if (converter instanceof GenericHttpMessageConverter && declaredType != null) {
 					if (((GenericHttpMessageConverter<?>) converter).canWrite(declaredType, valueClass, null)) {

@@ -30,7 +30,7 @@ import org.springframework.util.Assert;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.context.request.NativeWebRequest;
 
-/**
+/**它不仅管理一堆strategies（List），还管理一堆resolvers（Set）
  * Central class to determine requested {@linkplain MediaType media types}
  * for a request. This is done by delegating to a list of configured
  * {@code ContentNegotiationStrategy} instances.
@@ -76,7 +76,7 @@ public class ContentNegotiationManager implements ContentNegotiationStrategy, Me
 		}
 	}
 
-	/**
+	/**若没特殊指定，至少是包含了这一种的策略的：HeaderContentNegotiationStrategy
 	 * Create a default instance with a {@link HeaderContentNegotiationStrategy}.
 	 */
 	public ContentNegotiationManager() {

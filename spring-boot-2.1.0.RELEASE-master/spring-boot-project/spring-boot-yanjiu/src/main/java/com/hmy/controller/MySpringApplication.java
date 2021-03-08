@@ -35,9 +35,10 @@ public class MySpringApplication {
 		sw.setLoadOnStartup(1);
 		context.addServletMappingDecoded("/", "testServlet");
 		System.out.println(ac.getParent() + "----------------------------------------------------");
+		tomcat.getConnector();// Tomcat 9.0 必须调用 Tomcat#getConnector() 方法之后才会监听端口
 		tomcat.start();
 		tomcat.getServer().await();
-
+		//Thread.sleep(2000000000l);
 	}
 
 	public static void main(String[] args) throws Exception {

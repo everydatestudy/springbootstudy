@@ -585,14 +585,13 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Eagerly cache singletons to be able to resolve circular references
 		// even when triggered by lifecycle interfaces like BeanFactoryAware.
 	   /**
-        * 该对象进行判断是否能够暴露早期对象的条件
-        * 单实例 this.allowCircularReferences 默认为true
+	          * 该对象进行判断是否能够暴露早期对象的条件
+                   * 单实例 this.allowCircularReferences 默认为true
         * isSingletonCurrentlyInCreation
         * (表示当前的bean对象正在创建singletonsCurrentlyInCreation包含当前正在创建的bean)
-        */
-	    /**
-	      * 该对象进行判断是否能够暴露早期对象的条件
-              * 单实例 this.allowCircularReferences 默认为true
+   
+	          * 该对象进行判断是否能够暴露早期对象的条件
+                   * 单实例 this.allowCircularReferences 默认为true
          * isSingletonCurrentlyInCreation
          * (表示当前的bean对象正在创建singletonsCurrentlyInCreation包含当前正在创建的bean)
          */
@@ -1918,7 +1917,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				((InitializingBean) bean).afterPropertiesSet();
 			}
 		}
-
+		//这里就是在写@bean时候的initMethod方法的执行
 		if (mbd != null && bean.getClass() != NullBean.class) {
 			String initMethodName = mbd.getInitMethodName();
 			  //判断自定义的init方法名称不叫afterPropertiesSet

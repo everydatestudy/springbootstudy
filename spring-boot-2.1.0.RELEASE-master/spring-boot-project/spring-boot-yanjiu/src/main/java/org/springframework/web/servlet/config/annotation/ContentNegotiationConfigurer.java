@@ -33,7 +33,7 @@ import org.springframework.web.accept.HeaderContentNegotiationStrategy;
 import org.springframework.web.accept.ParameterContentNegotiationStrategy;
 import org.springframework.web.accept.PathExtensionContentNegotiationStrategy;
 
-/**
+/**虽然说默认情况下Spring开启的协商支持能覆盖我们绝大部分应用场景了，但不乏有的时候我们也还是需要对它进行个性化的，那么这部分就讲解下对它的个性化配置~
  * Creates a {@code ContentNegotiationManager} and configures it with
  * one or more {@link ContentNegotiationStrategy} instances.
  *
@@ -262,7 +262,8 @@ public class ContentNegotiationConfigurer {
 	}
 
 
-	/**
+	/** 手动创建出一个ContentNegotiationManager 此方法是protected 
+	   *   唯一调用处是：WebMvcConfigurationSupport
 	 * Build a {@link ContentNegotiationManager} based on this configurer's settings.
 	 * @since 4.3.12
 	 * @see ContentNegotiationManagerFactoryBean#getObject()

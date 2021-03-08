@@ -46,7 +46,8 @@ public class FixedContentNegotiationStrategy implements ContentNegotiationStrate
 		this(Collections.singletonList(contentType));
 	}
 
-	/**
+	/** 构造函数：必须指定MediaType
+	   *   一般通过@RequestMapping.produces这个注解属性指定（可指定多个）
 	 * Constructor with an ordered List of default {@code MediaType}'s to return
 	 * for use in applications that support a variety of content types.
 	 * <p>Consider appending {@link MediaType#ALL} at the end if destinations

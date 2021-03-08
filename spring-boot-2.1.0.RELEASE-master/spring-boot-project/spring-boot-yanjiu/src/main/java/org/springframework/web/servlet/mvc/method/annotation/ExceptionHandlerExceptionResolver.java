@@ -64,10 +64,12 @@ import org.springframework.web.servlet.support.RequestContextUtils;
  * An {@link AbstractHandlerMethodExceptionResolver} that resolves exceptions
  * through {@code @ExceptionHandler} methods.
  *
- * <p>Support for custom argument and return value types can be added via
- * {@link #setCustomArgumentResolvers} and {@link #setCustomReturnValueHandlers}.
- * Or alternatively to re-configure all argument and return value types use
- * {@link #setArgumentResolvers} and {@link #setReturnValueHandlers(List)}.
+ * <p>
+ * Support for custom argument and return value types can be added via
+ * {@link #setCustomArgumentResolvers} and
+ * {@link #setCustomReturnValueHandlers}. Or alternatively to re-configure all
+ * argument and return value types use {@link #setArgumentResolvers} and
+ * {@link #setReturnValueHandlers(List)}.
  *
  * @author Rossen Stoyanchev
  * @author Juergen Hoeller
@@ -97,16 +99,13 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 	@Nullable
 	private ApplicationContext applicationContext;
 
-	private final Map<Class<?>, ExceptionHandlerMethodResolver> exceptionHandlerCache =
-			new ConcurrentHashMap<>(64);
+	private final Map<Class<?>, ExceptionHandlerMethodResolver> exceptionHandlerCache = new ConcurrentHashMap<>(64);
 
-	private final Map<ControllerAdviceBean, ExceptionHandlerMethodResolver> exceptionHandlerAdviceCache =
-			new LinkedHashMap<>();
-
+	private final Map<ControllerAdviceBean, ExceptionHandlerMethodResolver> exceptionHandlerAdviceCache = new LinkedHashMap<>();
 
 	public ExceptionHandlerExceptionResolver() {
 		StringHttpMessageConverter stringHttpMessageConverter = new StringHttpMessageConverter();
-		stringHttpMessageConverter.setWriteAcceptCharset(false);  // see SPR-7316
+		stringHttpMessageConverter.setWriteAcceptCharset(false); // see SPR-7316
 
 		this.messageConverters = new ArrayList<>();
 		this.messageConverters.add(new ByteArrayHttpMessageConverter());
@@ -115,14 +114,13 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 		this.messageConverters.add(new AllEncompassingFormHttpMessageConverter());
 	}
 
-
 	/**
 	 * Provide resolvers for custom argument types. Custom resolvers are ordered
-	 * after built-in ones. To override the built-in support for argument
-	 * resolution use {@link #setArgumentResolvers} instead.
+	 * after built-in ones. To override the built-in support for argument resolution
+	 * use {@link #setArgumentResolvers} instead.
 	 */
 	public void setCustomArgumentResolvers(@Nullable List<HandlerMethodArgumentResolver> argumentResolvers) {
-		this.customArgumentResolvers= argumentResolvers;
+		this.customArgumentResolvers = argumentResolvers;
 	}
 
 	/**
@@ -134,22 +132,21 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 	}
 
 	/**
-	 * Configure the complete list of supported argument types thus overriding
-	 * the resolvers that would otherwise be configured by default.
+	 * Configure the complete list of supported argument types thus overriding the
+	 * resolvers that would otherwise be configured by default.
 	 */
 	public void setArgumentResolvers(@Nullable List<HandlerMethodArgumentResolver> argumentResolvers) {
 		if (argumentResolvers == null) {
 			this.argumentResolvers = null;
-		}
-		else {
+		} else {
 			this.argumentResolvers = new HandlerMethodArgumentResolverComposite();
 			this.argumentResolvers.addResolvers(argumentResolvers);
 		}
 	}
 
 	/**
-	 * Return the configured argument resolvers, or possibly {@code null} if
-	 * not initialized yet via {@link #afterPropertiesSet()}.
+	 * Return the configured argument resolvers, or possibly {@code null} if not
+	 * initialized yet via {@link #afterPropertiesSet()}.
 	 */
 	@Nullable
 	public HandlerMethodArgumentResolverComposite getArgumentResolvers() {
@@ -157,9 +154,9 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 	}
 
 	/**
-	 * Provide handlers for custom return value types. Custom handlers are
-	 * ordered after built-in ones. To override the built-in support for
-	 * return value handling use {@link #setReturnValueHandlers}.
+	 * Provide handlers for custom return value types. Custom handlers are ordered
+	 * after built-in ones. To override the built-in support for return value
+	 * handling use {@link #setReturnValueHandlers}.
 	 */
 	public void setCustomReturnValueHandlers(@Nullable List<HandlerMethodReturnValueHandler> returnValueHandlers) {
 		this.customReturnValueHandlers = returnValueHandlers;
@@ -174,22 +171,21 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 	}
 
 	/**
-	 * Configure the complete list of supported return value types thus
-	 * overriding handlers that would otherwise be configured by default.
+	 * Configure the complete list of supported return value types thus overriding
+	 * handlers that would otherwise be configured by default.
 	 */
 	public void setReturnValueHandlers(@Nullable List<HandlerMethodReturnValueHandler> returnValueHandlers) {
 		if (returnValueHandlers == null) {
 			this.returnValueHandlers = null;
-		}
-		else {
+		} else {
 			this.returnValueHandlers = new HandlerMethodReturnValueHandlerComposite();
 			this.returnValueHandlers.addHandlers(returnValueHandlers);
 		}
 	}
 
 	/**
-	 * Return the configured handlers, or possibly {@code null} if not
-	 * initialized yet via {@link #afterPropertiesSet()}.
+	 * Return the configured handlers, or possibly {@code null} if not initialized
+	 * yet via {@link #afterPropertiesSet()}.
 	 */
 	@Nullable
 	public HandlerMethodReturnValueHandlerComposite getReturnValueHandlers() {
@@ -198,7 +194,8 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 
 	/**
 	 * Set the message body converters to use.
-	 * <p>These converters are used to convert from and to HTTP requests and responses.
+	 * <p>
+	 * These converters are used to convert from and to HTTP requests and responses.
 	 */
 	public void setMessageConverters(List<HttpMessageConverter<?>> messageConverters) {
 		this.messageConverters = messageConverters;
@@ -212,8 +209,8 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 	}
 
 	/**
-	 * Set the {@link ContentNegotiationManager} to use to determine requested media types.
-	 * If not set, the default constructor is used.
+	 * Set the {@link ContentNegotiationManager} to use to determine requested media
+	 * types. If not set, the default constructor is used.
 	 */
 	public void setContentNegotiationManager(ContentNegotiationManager contentNegotiationManager) {
 		this.contentNegotiationManager = contentNegotiationManager;
@@ -228,9 +225,9 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 
 	/**
 	 * Add one or more components to be invoked after the execution of a controller
-	 * method annotated with {@code @ResponseBody} or returning {@code ResponseEntity}
-	 * but before the body is written to the response with the selected
-	 * {@code HttpMessageConverter}.
+	 * method annotated with {@code @ResponseBody} or returning
+	 * {@code ResponseEntity} but before the body is written to the response with
+	 * the selected {@code HttpMessageConverter}.
 	 */
 	public void setResponseBodyAdvice(@Nullable List<ResponseBodyAdvice<?>> responseBodyAdvice) {
 		this.responseBodyAdvice.clear();
@@ -249,17 +246,19 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 		return this.applicationContext;
 	}
 
-
 	@Override
 	public void afterPropertiesSet() {
 		// Do this first, it may add ResponseBodyAdvice beans
+		// 初始化异常handler通知缓存 -》
 		initExceptionHandlerAdviceCache();
 
 		if (this.argumentResolvers == null) {
+			// 获取默认的参数解析器-》
 			List<HandlerMethodArgumentResolver> resolvers = getDefaultArgumentResolvers();
 			this.argumentResolvers = new HandlerMethodArgumentResolverComposite().addResolvers(resolvers);
 		}
 		if (this.returnValueHandlers == null) {
+			// 获取默认的ReturnValueHandlers -》
 			List<HandlerMethodReturnValueHandler> handlers = getDefaultReturnValueHandlers();
 			this.returnValueHandlers = new HandlerMethodReturnValueHandlerComposite().addHandlers(handlers);
 		}
@@ -272,7 +271,7 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 		if (logger.isDebugEnabled()) {
 			logger.debug("Looking for exception mappings: " + getApplicationContext());
 		}
-
+		// 查找@ControllerAdvice注解的controller -》
 		List<ControllerAdviceBean> adviceBeans = ControllerAdviceBean.findAnnotatedBeans(getApplicationContext());
 		AnnotationAwareOrderComparator.sort(adviceBeans);
 
@@ -298,33 +297,40 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 	}
 
 	/**
-	 * Return an unmodifiable Map with the {@link ControllerAdvice @ControllerAdvice}
-	 * beans discovered in the ApplicationContext. The returned map will be empty if
-	 * the method is invoked before the bean has been initialized via
-	 * {@link #afterPropertiesSet()}.
+	 * Return an unmodifiable Map with the
+	 * {@link ControllerAdvice @ControllerAdvice} beans discovered in the
+	 * ApplicationContext. The returned map will be empty if the method is invoked
+	 * before the bean has been initialized via {@link #afterPropertiesSet()}.
 	 */
 	public Map<ControllerAdviceBean, ExceptionHandlerMethodResolver> getExceptionHandlerAdviceCache() {
 		return Collections.unmodifiableMap(this.exceptionHandlerAdviceCache);
 	}
 
 	/**
-	 * Return the list of argument resolvers to use including built-in resolvers
-	 * and custom resolvers provided via {@link #setCustomArgumentResolvers}.
+	 * Return the list of argument resolvers to use including built-in resolvers and
+	 * custom resolvers provided via {@link #setCustomArgumentResolvers}.
 	 */
 	protected List<HandlerMethodArgumentResolver> getDefaultArgumentResolvers() {
 		List<HandlerMethodArgumentResolver> resolvers = new ArrayList<>();
 
 		// Annotation-based argument resolution
+		// 从session中解析参数解析器@SessionAttribute
 		resolvers.add(new SessionAttributeMethodArgumentResolver());
+		////    从request中解析参数解析器@RequestAttribute
 		resolvers.add(new RequestAttributeMethodArgumentResolver());
 
 		// Type-based argument resolution
+		//基于servletRequets的参数解析器
 		resolvers.add(new ServletRequestMethodArgumentResolver());
+		//基于servletResponse的参数解析器
 		resolvers.add(new ServletResponseMethodArgumentResolver());
+		//重定向绑定参数解析器
 		resolvers.add(new RedirectAttributesMethodArgumentResolver());
+		//从model中解析参数解析器
 		resolvers.add(new ModelMethodProcessor());
 
 		// Custom arguments
+		//Custom arguments 自定义参数解析器
 		if (getCustomArgumentResolvers() != null) {
 			resolvers.addAll(getCustomArgumentResolvers());
 		}
@@ -333,47 +339,55 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 	}
 
 	/**
-	 * Return the list of return value handlers to use including built-in and
-	 * custom handlers provided via {@link #setReturnValueHandlers}.
+	 * Return the list of return value handlers to use including built-in and custom
+	 * handlers provided via {@link #setReturnValueHandlers}.
 	 */
 	protected List<HandlerMethodReturnValueHandler> getDefaultReturnValueHandlers() {
 		List<HandlerMethodReturnValueHandler> handlers = new ArrayList<>();
 
 		// Single-purpose return value types
+		//基于modelAndView返回值解析器
 		handlers.add(new ModelAndViewMethodReturnValueHandler());
+		// 基于model的返回值解析器
 		handlers.add(new ModelMethodProcessor());
+		// 基于view的返回值解析器
 		handlers.add(new ViewMethodReturnValueHandler());
-		handlers.add(new HttpEntityMethodProcessor(
-				getMessageConverters(), this.contentNegotiationManager, this.responseBodyAdvice));
-
+		// 基于HttpEntity的返回值解析器
+		handlers.add(new HttpEntityMethodProcessor(getMessageConverters(), this.contentNegotiationManager,this.responseBodyAdvice));
+		//基于@ModelAttribute属性方法的返回值解析器
 		// Annotation-based return value types
 		handlers.add(new ModelAttributeMethodProcessor(false));
-		handlers.add(new RequestResponseBodyMethodProcessor(
-				getMessageConverters(), this.contentNegotiationManager, this.responseBodyAdvice));
+		// 基于@RequestBody和@ResponseBody注解方法的参数解析器
+		handlers.add(new RequestResponseBodyMethodProcessor(getMessageConverters(), this.contentNegotiationManager,
+				this.responseBodyAdvice));
 
 		// Multi-purpose return value types
+		//基于视图名字的返回值解析器
 		handlers.add(new ViewNameMethodReturnValueHandler());
+		//基于map的返回值解析器
 		handlers.add(new MapMethodProcessor());
 
 		// Custom return value types
+		// // Custom return value types 自定义返回值解析器
 		if (getCustomReturnValueHandlers() != null) {
 			handlers.addAll(getCustomReturnValueHandlers());
 		}
 
 		// Catch-all
+		// 基于@ModelAttribute注解方法的解析器
 		handlers.add(new ModelAttributeMethodProcessor(true));
 
 		return handlers;
 	}
 
-
 	/**
-	 * Find an {@code @ExceptionHandler} method and invoke it to handle the raised exception.
+	 * Find an {@code @ExceptionHandler} method and invoke it to handle the raised
+	 * exception.
 	 */
 	@Override
 	@Nullable
-	protected ModelAndView doResolveHandlerMethodException(HttpServletRequest request,
-			HttpServletResponse response, @Nullable HandlerMethod handlerMethod, Exception exception) {
+	protected ModelAndView doResolveHandlerMethodException(HttpServletRequest request, HttpServletResponse response,
+			@Nullable HandlerMethod handlerMethod, Exception exception) {
 
 		ServletInvocableHandlerMethod exceptionHandlerMethod = getExceptionHandlerMethod(handlerMethod, exception);
 		if (exceptionHandlerMethod == null) {
@@ -398,13 +412,11 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 			if (cause != null) {
 				// Expose cause as provided argument as well
 				exceptionHandlerMethod.invokeAndHandle(webRequest, mavContainer, exception, cause, handlerMethod);
-			}
-			else {
+			} else {
 				// Otherwise, just the given exception as-is
 				exceptionHandlerMethod.invokeAndHandle(webRequest, mavContainer, exception, handlerMethod);
 			}
-		}
-		catch (Throwable invocationEx) {
+		} catch (Throwable invocationEx) {
 			// Any other than the original exception is unintended here,
 			// probably an accident (e.g. failed assertion or the like).
 			if (invocationEx != exception && logger.isWarnEnabled()) {
@@ -416,8 +428,7 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 
 		if (mavContainer.isRequestHandled()) {
 			return new ModelAndView();
-		}
-		else {
+		} else {
 			ModelMap model = mavContainer.getModel();
 			HttpStatus status = mavContainer.getStatus();
 			ModelAndView mav = new ModelAndView(mavContainer.getViewName(), model, status);
@@ -435,17 +446,20 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 
 	/**
 	 * Find an {@code @ExceptionHandler} method for the given exception. The default
-	 * implementation searches methods in the class hierarchy of the controller first
-	 * and if not found, it continues searching for additional {@code @ExceptionHandler}
-	 * methods assuming some {@linkplain ControllerAdvice @ControllerAdvice}
-	 * Spring-managed beans were detected.
-	 * @param handlerMethod the method where the exception was raised (may be {@code null})
-	 * @param exception the raised exception
+	 * implementation searches methods in the class hierarchy of the controller
+	 * first and if not found, it continues searching for additional
+	 * {@code @ExceptionHandler} methods assuming some
+	 * {@linkplain ControllerAdvice @ControllerAdvice} Spring-managed beans were
+	 * detected.
+	 * 
+	 * @param handlerMethod the method where the exception was raised (may be
+	 *                      {@code null})
+	 * @param exception     the raised exception
 	 * @return a method to handle the exception, or {@code null} if none
 	 */
 	@Nullable
-	protected ServletInvocableHandlerMethod getExceptionHandlerMethod(
-			@Nullable HandlerMethod handlerMethod, Exception exception) {
+	protected ServletInvocableHandlerMethod getExceptionHandlerMethod(@Nullable HandlerMethod handlerMethod,
+			Exception exception) {
 
 		Class<?> handlerType = null;
 
@@ -462,14 +476,16 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 			if (method != null) {
 				return new ServletInvocableHandlerMethod(handlerMethod.getBean(), method);
 			}
-			// For advice applicability check below (involving base packages, assignable types
+			// For advice applicability check below (involving base packages, assignable
+			// types
 			// and annotation presence), use target class instead of interface-based proxy.
 			if (Proxy.isProxyClass(handlerType)) {
 				handlerType = AopUtils.getTargetClass(handlerMethod.getBean());
 			}
 		}
 
-		for (Map.Entry<ControllerAdviceBean, ExceptionHandlerMethodResolver> entry : this.exceptionHandlerAdviceCache.entrySet()) {
+		for (Map.Entry<ControllerAdviceBean, ExceptionHandlerMethodResolver> entry : this.exceptionHandlerAdviceCache
+				.entrySet()) {
 			ControllerAdviceBean advice = entry.getKey();
 			if (advice.isApplicableToBeanType(handlerType)) {
 				ExceptionHandlerMethodResolver resolver = entry.getValue();

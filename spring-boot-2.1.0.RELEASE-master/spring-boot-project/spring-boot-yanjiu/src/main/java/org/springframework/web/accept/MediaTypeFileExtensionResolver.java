@@ -24,19 +24,22 @@ import org.springframework.http.MediaType;
  * Strategy to resolve {@link MediaType} to a list of file extensions.
  * For example resolve "application/json" to "json".
  *
+ *MediaType和路径扩展名解析策略的接口，例如将 .json 解析成 application/json 或者反向解析
+ *
  * @author Rossen Stoyanchev
  * @since 3.2
  */
 public interface MediaTypeFileExtensionResolver {
 
 	/**
+	 * // 根据指定的mediaType返回一组文件扩展名
 	 * Resolve the given media type to a list of path extensions.
 	 * @param mediaType the media type to resolve
 	 * @return a list of extensions or an empty list (never {@code null})
 	 */
 	List<String> resolveFileExtensions(MediaType mediaType);
 
-	/**
+	/**返回该接口注册进来的所有的扩展名
 	 * Return all registered file extensions.
 	 * @return a list of extensions or an empty list (never {@code null})
 	 */
