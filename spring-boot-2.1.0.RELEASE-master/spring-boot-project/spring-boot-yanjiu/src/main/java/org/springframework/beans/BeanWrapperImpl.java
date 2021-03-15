@@ -30,7 +30,7 @@ import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ReflectionUtils;
 
-/**
+/**在Spring2.5之前，此实现类是非public的，但在2.5之后给public了并且还提供了工厂：PropertyAccessorFactory帮助第三方框架能快速获取到一个实例~
  * Default {@link BeanWrapper} implementation that should be sufficient
  * for all typical use cases. Caches introspection results for efficiency.
  *
@@ -60,9 +60,20 @@ import org.springframework.util.ReflectionUtils;
  * @see BeanWrapper
  * @see PropertyEditorRegistrySupport
  */
+//Bean包裹器
+//属性访问器（PropertyAccessor）
+//属性编辑器注册表（PropertyEditorRegistry）
+//从源码中继续分析还能再得出如下两个结论：
+//
+//它给属性赋值调用的是Method方法，如readMethod.invoke和writeMethod.invoke
+//它对Bean的操作，大都委托给CachedIntrospectionResults去完成~
+//因此若想了解它，必然主要是要先了解java.beans.PropertyDescriptor和org.springframework.beans.CachedIntrospectionResults，首当其冲的自然还有Java内省。
+//————————————————
+//版权声明：本文为CSDN博主「YourBatman」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//原文链接：https://blog.csdn.net/f641385712/article/details/95907073
 public class BeanWrapperImpl extends AbstractNestablePropertyAccessor implements BeanWrapper {
 
-	/**
+	/**缓存内省结果~
 	 * Cached introspections results for this object, to prevent encountering
 	 * the cost of JavaBeans introspection every time.
 	 */
@@ -76,7 +87,7 @@ public class BeanWrapperImpl extends AbstractNestablePropertyAccessor implements
 	private AccessControlContext acc;
 
 
-	/**
+	/**构造方法都是沿用父类的~
 	 * Create a new empty BeanWrapperImpl. Wrapped instance needs to be set afterwards.
 	 * Registers default editors.
 	 * @see #setWrappedInstance
@@ -223,7 +234,7 @@ public class BeanWrapperImpl extends AbstractNestablePropertyAccessor implements
 		GenericTypeAwarePropertyDescriptor gpd = (GenericTypeAwarePropertyDescriptor) pd;
 		return new Property(gpd.getBeanClass(), gpd.getReadMethod(), gpd.getWriteMethod(), gpd.getName());
 	}
-
+	// 此处理器处理的是PropertyDescriptor 
 	@Override
 	@Nullable
 	protected BeanPropertyHandler getLocalPropertyHandler(String propertyName) {
@@ -282,11 +293,12 @@ public class BeanWrapperImpl extends AbstractNestablePropertyAccessor implements
 //			return this;
 //		}
 //	}
-// 
+// // 此处理器处理的是PropertyDescriptor 
 	private class BeanPropertyHandler extends PropertyHandler {
 
 		private final PropertyDescriptor pd;
-
+		// 是否可读、可写  都是由PropertyDescriptor 去决定了~
+		// java.beans.PropertyDescriptor~~
 		public BeanPropertyHandler(PropertyDescriptor pd) {
 			super(pd.getPropertyType(), pd.getReadMethod() != null, pd.getWriteMethod() != null);
 			this.pd = pd;

@@ -60,7 +60,9 @@ import org.springframework.web.servlet.handler.AbstractHandlerMethodExceptionRes
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
-/**
+/**该子类实现就是用于处理标注有@ExceptionHandler注解的HandlerMethod方法的，是@ExceptionHandler功能的实现部分。
+
+请注意命名上和ExceptionHandlerMethodResolver做区分~
  * An {@link AbstractHandlerMethodExceptionResolver} that resolves exceptions
  * through {@code @ExceptionHandler} methods.
  *
@@ -75,21 +77,33 @@ import org.springframework.web.servlet.support.RequestContextUtils;
  * @author Juergen Hoeller
  * @since 3.1
  */
+//对它的功能，总结如下：
+//
+//@ExceptionHandler的处理和执行是由本类完成的，同一个Class上的所有@ExceptionHandler方法对应着同一个ExceptionHandlerExceptionResolver，不同Class上的对应着不同的~
+//标注有@ExceptionHandler的方法入参上可写：具体异常类型、ServletRequest/ServletResponse/RedirectAttributes/ModelMethod等等
+//1. 注意：入参写具体异常类型时只能够写一个类型。（若有多种异常，请写公共父类，你再用instanceof来辨别，而不能直接写多个）
+//返回值可写：ModelAndView/Model/View/HttpEntity/ModelAttribute/RequestResponseBody/@ResponseStatus等等
+//@ExceptionHandler只能标注在方法上。既能标注在Controller本类内的方法上（只对本类生效），也可配合@ControllerAdvice一起使用（对全局生效）
+//对步骤4的两种情况，执行时的匹配顺序如下：优先匹配本类（本Controller），再匹配全局的。
+//有必要再强调一句：@ExceptionHandler方式并不是只能返回JSON串，步骤4也说了，它返回一个ModelAndView也是ok的
+//————————————————
+//版权声明：本文为CSDN博主「YourBatman」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//原文链接：https://blog.csdn.net/f641385712/article/details/102294670
 public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExceptionResolver
 		implements ApplicationContextAware, InitializingBean {
-
+	// 这个熟悉：用于处理方法入参的（比如支持入参里可写HttpServletRequest等等）
 	@Nullable
 	private List<HandlerMethodArgumentResolver> customArgumentResolvers;
 
 	@Nullable
 	private HandlerMethodArgumentResolverComposite argumentResolvers;
-
+	// 用于处理方法返回值（ModelAndView、@ResponseBody、@ResponseStatus等）
 	@Nullable
 	private List<HandlerMethodReturnValueHandler> customReturnValueHandlers;
 
 	@Nullable
 	private HandlerMethodReturnValueHandlerComposite returnValueHandlers;
-
+	// 消息处理器和内容协商管理器
 	private List<HttpMessageConverter<?>> messageConverters;
 
 	private ContentNegotiationManager contentNegotiationManager = new ContentNegotiationManager();
@@ -98,11 +112,12 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 
 	@Nullable
 	private ApplicationContext applicationContext;
-
+	// 缓存：异常类型对应的处理器
+	// 它缓存着Controller本类，对应的异常处理器（多个@ExceptionHandler）~~~~
 	private final Map<Class<?>, ExceptionHandlerMethodResolver> exceptionHandlerCache = new ConcurrentHashMap<>(64);
-
+	// 它缓存ControllerAdviceBean对应的异常处理器（@ExceptionHandler）
 	private final Map<ControllerAdviceBean, ExceptionHandlerMethodResolver> exceptionHandlerAdviceCache = new LinkedHashMap<>();
-
+	// 唯一构造函数：注册上默认的消息转换器
 	public ExceptionHandlerExceptionResolver() {
 		StringHttpMessageConverter stringHttpMessageConverter = new StringHttpMessageConverter();
 		stringHttpMessageConverter.setWriteAcceptCharset(false); // see SPR-7316
@@ -250,13 +265,23 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 	public void afterPropertiesSet() {
 		// Do this first, it may add ResponseBodyAdvice beans
 		// 初始化异常handler通知缓存 -》
+		// 这一步骤同RequestMappingHandlerAdapter#initControllerAdviceCache
+		// 目的是找到项目中所有的`ResponseBodyAdvice`，然后缓存起来。
+		// 并且把它里面所有的标注有@ExceptionHandler的方法都解析保存起来
+		// exceptionHandlerAdviceCache：每个advice切面对应哪个ExceptionHandlerMethodResolver（含多个@ExceptionHandler处理方法）
+				
+		//并且，并且若此Advice还实现了接口：ResponseBodyAdvice。那就还可干预到异常处理器的返回值处理上（基于body）
+		//可见：若你想干预到异常处理器的返回值body上，可通过ResponseBodyAdvice来实现哟~~~~~~~~~ 
+		// 可见ResponseBodyAdvice连异常处理方法也是生效的，但是`RequestBodyAdvice`可就木有啦。
 		initExceptionHandlerAdviceCache();
-
+		// 注册默认的参数处理器。支持到了@SessionAttribute、@RequestAttribute
+				// ServletRequest/ServletResponse/RedirectAttributes/ModelMethod等等（当然你还可以自定义）
 		if (this.argumentResolvers == null) {
 			// 获取默认的参数解析器-》
 			List<HandlerMethodArgumentResolver> resolvers = getDefaultArgumentResolvers();
 			this.argumentResolvers = new HandlerMethodArgumentResolverComposite().addResolvers(resolvers);
-		}
+		}// 支持到了：ModelAndView/Model/View/HttpEntity/ModelAttribute/RequestResponseBody
+		// ViewName/Map等等这些返回值 当然还可以自定义
 		if (this.returnValueHandlers == null) {
 			// 获取默认的ReturnValueHandlers -》
 			List<HandlerMethodReturnValueHandler> handlers = getDefaultReturnValueHandlers();
@@ -380,7 +405,8 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 		return handlers;
 	}
 
-	/**
+	/** 处理HandlerMethod类型的异常。它的步骤是找到标注有@ExceptionHandler匹配的方法
+	// 然后执行此方法来处理所抛出的异常
 	 * Find an {@code @ExceptionHandler} method and invoke it to handle the raised
 	 * exception.
 	 */
@@ -388,12 +414,19 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 	@Nullable
 	protected ModelAndView doResolveHandlerMethodException(HttpServletRequest request, HttpServletResponse response,
 			@Nullable HandlerMethod handlerMethod, Exception exception) {
+		// 这个方法是精华，是关键。它最终返回的是一个ServletInvocableHandlerMethod可执行的方法处理器
+		// 也就是说标注有@ExceptionHandler的方法最终会成为它
+
+		// 1、本类能够找到处理方法，就在本类里找，找到就返回一个ServletInvocableHandlerMethod
+		// 2、本类木有，就去ControllerAdviceBean切面里找，匹配上了也是欧克的
+		//   显然此处会判断：advice.isApplicableToBeanType(handlerType) 看此advice是否匹配
+		// 若两者都木有找到，那就返回null。这里的核心其实是ExceptionHandlerMethodResolver这个类
 
 		ServletInvocableHandlerMethod exceptionHandlerMethod = getExceptionHandlerMethod(handlerMethod, exception);
 		if (exceptionHandlerMethod == null) {
 			return null;
 		}
-
+		// 给该执行器设置一些值，方便它的指定（封装参数和处理返回值）
 		if (this.argumentResolvers != null) {
 			exceptionHandlerMethod.setHandlerMethodArgumentResolvers(this.argumentResolvers);
 		}

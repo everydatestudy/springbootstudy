@@ -69,23 +69,27 @@ public class ResponseStatusExceptionResolver extends AbstractHandlerExceptionRes
 	@Nullable
 	protected ModelAndView doResolveException(
 			HttpServletRequest request, HttpServletResponse response, @Nullable Object handler, Exception ex) {
-
+		// 若异常类型是，那就处理这个异常
+		// 处理很简单：response.sendError(statusCode, resolvedReason)
+		// 当然会有国际化消息的处理。最终new一个空的new ModelAndView()供以返回
 		try {
 			if (ex instanceof ResponseStatusException) {
 				return resolveResponseStatusException((ResponseStatusException) ex, request, response, handler);
 			}
-
+			// 若异常类型所在的类上标注了ResponseStatus注解，就处理这个状态码
+						//（可见：异常类型优先于ResponseStatus）
+						// 处理方式同上~~~~
 			ResponseStatus status = AnnotatedElementUtils.findMergedAnnotation(ex.getClass(), ResponseStatus.class);
 			if (status != null) {
 				return resolveResponseStatus(status, request, response, handler, ex);
 			}
-
+			// 这里有个递归：如果异常类型是Course里面的，也会继续处理，所以需要注意这里的递归处理
 			if (ex.getCause() instanceof Exception) {
 				ex = (Exception) ex.getCause();
 				return doResolveException(request, response, handler, ex);
 			}
 		}
-		catch (Exception resolveEx) {
+		catch (Exception resolveEx) {// 处理失败，就记录warn日志（非info哦~）
 			logger.warn("ResponseStatus handling resulted in exception", resolveEx);
 		}
 		return null;

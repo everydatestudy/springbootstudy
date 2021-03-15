@@ -67,7 +67,8 @@ public class PathVariableMethodArgumentResolver extends AbstractNamedValueMethod
 
 	private static final TypeDescriptor STRING_TYPE_DESCRIPTOR = TypeDescriptor.valueOf(String.class);
 
-
+	// 简单一句话描述：@PathVariable是必须，不管你啥类型
+		// 标注了注解，且是Map类型，
 	@Override
 	public boolean supportsParameter(MethodParameter parameter) {
 		if (!parameter.hasParameterAnnotation(PathVariable.class)) {
@@ -86,7 +87,11 @@ public class PathVariableMethodArgumentResolver extends AbstractNamedValueMethod
 		Assert.state(ann != null, "No PathVariable annotation");
 		return new PathVariableNamedValueInfo(ann);
 	}
-
+	// 根据name去拿值的过程非常之简单，但是它和前面的只知识是有关联的
+		// 至于这个attr是什么时候放进去的，AbstractHandlerMethodMapping.handleMatch()匹配处理器方法上
+		// 通过UrlPathHelper.decodePathVariables() 把参数提取出来了，然后放进request属性上暂存了~~~
+		// 关于HandlerMapping内容，可来这里：https://blog.csdn.net/f641385712/article/details/89810020
+ 
 	@Override
 	@SuppressWarnings("unchecked")
 	@Nullable
@@ -100,7 +105,8 @@ public class PathVariableMethodArgumentResolver extends AbstractNamedValueMethod
 	protected void handleMissingValue(String name, MethodParameter parameter) throws ServletRequestBindingException {
 		throw new MissingPathVariableException(name, parameter);
 	}
-
+	// 值完全处理结束后，把处理好的值放进请求域，方便view里渲染时候使用~
+	// 抽象父类的handleResolvedValue方法，只有它复写了~
 	@Override
 	@SuppressWarnings("unchecked")
 	protected void handleResolvedValue(@Nullable Object arg, String name, MethodParameter parameter,

@@ -23,7 +23,13 @@ import org.springframework.lang.Nullable;
 import org.springframework.web.servlet.HandlerAdapter;
 import org.springframework.web.servlet.ModelAndView;
 
-/**
+/**SimpleControllerHandlerAdapter
+适配org.springframework.web.servlet.mvc.Controller这种Handler。它是一个非常古老的适配器（几乎已弃用状态）：
+
+Controller它没有对参数的自动封装、校验等一系列高级功能，但是它保留有对ModelAndView的处理能力，这是区别Servlet这种处理器的地方。
+————————————————
+版权声明：本文为CSDN博主「YourBatman」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/f641385712/article/details/89844141
  * Adapter to use the plain {@link Controller} workflow interface with
  * the generic {@link org.springframework.web.servlet.DispatcherServlet}.
  * Supports handlers that implement the {@link LastModified} interface.

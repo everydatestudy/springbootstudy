@@ -132,7 +132,27 @@ import org.springframework.web.servlet.handler.AbstractHandlerExceptionResolver;
  * </tr>
  * </tbody>
  * </table>
- *
+ *默认的异常处理器。它能够处理标准的Spring MVC异常们，并且把它转换为对应的HTTP status codes，一般作为兜底处理，Spring MVC默认也注册了此处理器。它能处理的异常非常之多，简单列出来如下：
+
+异常类型	状态码
+MissingPathVariableException	500
+ConversionNotSupportedException	500
+HttpMessageNotWritableException	500
+AsyncRequestTimeoutException	503
+MissingServletRequestParameterException	400
+ServletRequestBindingException	400
+TypeMismatchException	400
+HttpMessageNotReadableException	400
+MethodArgumentNotValidException	400
+MissingServletRequestPartException	400
+BindException	400
+NoHandlerFoundException	404
+HttpRequestMethodNotSupportedException	405
+HttpMediaTypeNotAcceptableException	406
+HttpMediaTypeNotSupportedException	415
+————————————————
+版权声明：本文为CSDN博主「YourBatman」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/f641385712/article/details/101840833
  * @author Arjen Poutsma
  * @author Rossen Stoyanchev
  * @author Juergen Hoeller

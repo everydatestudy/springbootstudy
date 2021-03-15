@@ -113,6 +113,9 @@ public abstract class AbstractTemplateView extends AbstractUrlBasedView {
 	@Override
 	protected final void renderMergedOutputModel(
 			Map<String, Object> model, HttpServletRequest request, HttpServletResponse response) throws Exception {
+		//1、exposeRequestAttributes，通过request.getAttributeNames()把请求域里面的attr都暴露出去
+		//2、exposeSessionAttributes,session.getAttributeNames()把session域里面所有的attr都暴露出去
+		//3、exposeSpringMacroHelpers，把RequestContext暴露出去（上两个默认值都是false，这个默认值是true）
 
 		if (this.exposeRequestAttributes) {
 			for (Enumeration<String> en = request.getAttributeNames(); en.hasMoreElements();) {

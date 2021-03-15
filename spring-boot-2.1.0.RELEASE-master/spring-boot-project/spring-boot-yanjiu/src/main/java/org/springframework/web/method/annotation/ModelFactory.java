@@ -46,7 +46,7 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.method.support.InvocableHandlerMethod;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
-/**
+/**Spring MVC对@SessionAttributes的处理操作入口，是在ModelFactory.initModel()方法里会对@SessionAttributes的注解进行解析、处理，然后方法完成之后也会对它进行属性同步。
  * Assist with initialization of the {@link Model} before controller method
  * invocation and with updates to it after the invocation.
  *
@@ -78,7 +78,7 @@ public final class ModelFactory {
 	 */
 	public ModelFactory(@Nullable List<InvocableHandlerMethod> handlerMethods,
 			WebDataBinderFactory binderFactory, SessionAttributesHandler attributeHandler) {
-
+		// 把InvocableHandlerMethod转为内部类ModelMethod
 		if (handlerMethods != null) {
 			for (InvocableHandlerMethod handlerMethod : handlerMethods) {
 				this.modelMethods.add(new ModelMethod(handlerMethod));
@@ -105,12 +105,22 @@ public final class ModelFactory {
 	 */
 	public void initModel(NativeWebRequest request, ModelAndViewContainer container, HandlerMethod handlerMethod)
 			throws Exception {
-
+		// 先拿到sessionAttr里所有的属性们（首次进来肯定木有，但同一个session第二次进来就有了）
 		Map<String, ?> sessionAttributes = this.sessionAttributesHandler.retrieveAttributes(request);
+		// 和当前请求中 已经有的model合并属性信息
+				// 注意：sessionAttributes中只有当前model不存在的属性，它才会放进去
 		container.mergeAttributes(sessionAttributes);
 		//执行@ModelAttribute注解的方法
+		// 此方法重要：调用模型属性方法来填充模型  这里ModelAttribute会生效
+		// 关于@ModelAttribute的内容  我放到了这里：https://blog.csdn.net/f641385712/article/details/98260361
+		// 总之：完成这步之后 Model就有值了~~~~
+
 		invokeModelAttributeMethods(request, container);
-		//方法执行结果的值放到mavContainer
+		// 最后，最后，最后还做了这么一步操作~~~
+		// findSessionAttributeArguments的作用：把@ModelAttribute的入参也列入SessionAttributes（非常重要） 详细见下文
+		// 这里一定要掌握：因为使用中的坑坑经常是因为没有理解到这块逻辑
+
+ 
 		for (String name : findSessionAttributeArguments(handlerMethod)) {
 			if (!container.containsAttribute(name)) {
 				Object value = this.sessionAttributesHandler.retrieveAttribute(request, name);
@@ -122,20 +132,21 @@ public final class ModelFactory {
 		}
 	}
 
-	/**
+	/**调用标注有注解的方法来填充Model
 	 * Invoke model attribute methods to populate the model.
 	 * Attributes are added only if not already present in the model.
 	 */
 	private void invokeModelAttributeMethods(NativeWebRequest request, ModelAndViewContainer container)
 			throws Exception {
-
+		// modelMethods是构造函数进来的  一个个的处理吧
 		while (!this.modelMethods.isEmpty()) {
+			// getNextModelMethod：通过next其实能看出 执行是有顺序的  拿到一个可执行的InvocableHandlerMethod
 			InvocableHandlerMethod modelMethod = getNextModelMethod(container).getHandlerMethod();
 			//判断方法是否被@ModelAttribute注解
 			ModelAttribute ann = modelMethod.getMethodAnnotation(ModelAttribute.class);
 			Assert.state(ann != null, "No ModelAttribute annotation");
 			if (container.containsAttribute(ann.name())) {
-				if (!ann.binding()) {
+				if (!ann.binding()) {// 若binding是false  就禁用掉此name的属性  让不支持绑定了  此方法也处理完成
 					container.setBindingDisabled(ann.name());
 				}
 				continue;
@@ -144,27 +155,35 @@ public final class ModelFactory {
 			Object returnValue = modelMethod.invokeForRequest(request, container);
 			//返回值放到mavContainer
 			if (!modelMethod.isVoid()){
+				// returnValueName的生成规则 上文有解释过  本处略
 				String returnValueName = getNameForReturnValue(returnValue, modelMethod.getReturnType());
 				if (!ann.binding()) {
 					container.setBindingDisabled(returnValueName);
 				}
+				//在个判断是个小细节：只有容器内不存在此属性，才会放进去   因此并不会有覆盖的效果哦~~~
+				// 所以若出现同名的  请自己控制好顺序吧
 				if (!container.containsAttribute(returnValueName)) {
 					container.addAttribute(returnValueName, returnValue);
 				}
 			}
 		}
 	}
-
+	// 拿到下一个标注有此注解方法~~~
 	private ModelMethod getNextModelMethod(ModelAndViewContainer container) {
+		// 每次都会遍历所有的构造进来的modelMethods
 		for (ModelMethod modelMethod : this.modelMethods) {
+			// dependencies：表示该方法的所有入参中 标注有@ModelAttribute的入参们
+			// checkDependencies的作用是：所有的dependencies依赖们必须都是container已经存在的属性，才会进到这里来
 			if (modelMethod.checkDependencies(container)) {
 				if (logger.isTraceEnabled()) {
 					logger.trace("Selected @ModelAttribute method " + modelMethod);
 				}
+				// 找到一个 就移除一个
+				// 这里使用的是List的remove方法，不用担心并发修改异常？？？ 哈哈其实不用担心的  小伙伴能知道为什么吗？？
 				this.modelMethods.remove(modelMethod);
 				return modelMethod;
 			}
-		}
+		}// 若并不是所有的依赖属性Model里都有，那就拿第一个吧~~~~
 		ModelMethod modelMethod = this.modelMethods.get(0);
 		if (logger.isTraceEnabled()) {
 			logger.trace("Selected @ModelAttribute method (not present: " +
@@ -174,12 +193,15 @@ public final class ModelFactory {
 		return modelMethod;
 	}
 
-	/**
+	/**把@ModelAttribute标注的入参也列入SessionAttributes 放进sesson里（非常重要）
+	// 这个动作是很多开发者都忽略了的
 	 * Find {@code @ModelAttribute} arguments also listed as {@code @SessionAttributes}.
 	 */
 	private List<String> findSessionAttributeArguments(HandlerMethod handlerMethod) {
 		List<String> result = new ArrayList<>();
+		// 遍历所有的方法参数
 		for (MethodParameter parameter : handlerMethod.getMethodParameters()) {
+			// 只有参数里标注了@ModelAttribute的才会进入继续解析~~~
 			if (parameter.hasParameterAnnotation(ModelAttribute.class)) {
 				String name = getNameForParameter(parameter);
 				Class<?> paramType = parameter.getParameterType();
@@ -244,6 +266,10 @@ public final class ModelFactory {
 				!(value instanceof Map) && !BeanUtils.isSimpleValueType(value.getClass()));
 	}
 
+	// 静态方法：决定了parameter的名字  它是public的，因为ModelAttributeMethodProcessor里也有使用
+		// 请注意：这里不是MethodParameter.getParameterName()获取到的形参名字，而是有自己的一套规则的
+
+		// @ModelAttribute指定了value值就以它为准，否则就是类名的首字母小写（当然不同类型不一样，下面有给范例）
 
 	/**
 	 * Derive the model attribute name for the given method parameter based on
@@ -259,7 +285,8 @@ public final class ModelFactory {
 		return (StringUtils.hasText(name) ? name : Conventions.getVariableNameForParameter(parameter));
 	}
 
-	/**
+	/** 关于方法这块的处理逻辑，和上差不多，主要是返回类型和实际类型的区分
+	// 比如List<String>它对应的名是：stringList。即使你的返回类型是Object~~~
 	 * Derive the model attribute name for the given return value based on:
 	 * <ol>
 	 * <li>the method {@code ModelAttribute} annotation value
@@ -293,6 +320,7 @@ public final class ModelFactory {
 
 		public ModelMethod(InvocableHandlerMethod handlerMethod) {
 			this.handlerMethod = handlerMethod;
+			// 把方法入参中所有标注了@ModelAttribute了的Name都搜集进来
 			for (MethodParameter parameter : handlerMethod.getMethodParameters()) {
 				if (parameter.hasParameterAnnotation(ModelAttribute.class)) {
 					this.dependencies.add(getNameForParameter(parameter));

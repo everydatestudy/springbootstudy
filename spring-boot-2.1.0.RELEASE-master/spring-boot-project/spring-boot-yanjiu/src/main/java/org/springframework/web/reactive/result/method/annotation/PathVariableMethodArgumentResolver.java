@@ -34,6 +34,8 @@ import org.springframework.web.server.ServerErrorException;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
+ * 它帮助Spring MVC实现restful风格的URL。它用于处理标注有@PathVariable注解的方法参数，用于从URL中获取值（并不是?后面的参数哦）。
+并且，并且，并且它还可以解析@PathVariable注解的value值不为空的Map
  * Resolves method arguments annotated with @{@link PathVariable}.
  *
  * <p>An @{@link PathVariable} is a named value that gets resolved from a URI
@@ -82,9 +84,12 @@ public class PathVariableMethodArgumentResolver extends AbstractNamedValueSyncAr
 		Assert.state(ann != null, "No PathVariable annotation");
 		return new PathVariableNamedValueInfo(ann);
 	}
+	// 根据name去拿值的过程非常之简单，但是它和前面的只知识是有关联的
+	// 至于这个attr是什么时候放进去的，AbstractHandlerMethodMapping.handleMatch()匹配处理器方法上
+	// 通过UrlPathHelper.decodePathVariables() 把参数提取出来了，然后放进request属性上暂存了~~~
+	// 关于HandlerMapping内容，可来这里：https://blog.csdn.net/f641385712/article/details/89810020
 
 	@Override
-	@SuppressWarnings("unchecked")
 	protected Object resolveNamedValue(String name, MethodParameter parameter, ServerWebExchange exchange) {
 		String attributeName = HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE;
 		return exchange.getAttributeOrDefault(attributeName, Collections.emptyMap()).get(name);
@@ -94,9 +99,9 @@ public class PathVariableMethodArgumentResolver extends AbstractNamedValueSyncAr
 	protected void handleMissingValue(String name, MethodParameter parameter) {
 		throw new ServerErrorException(name, parameter, null);
 	}
-
+	// 值完全处理结束后，把处理好的值放进请求域，方便view里渲染时候使用~
+	// 抽象父类的handleResolvedValue方法，只有它复写了~
 	@Override
-	@SuppressWarnings("unchecked")
 	protected void handleResolvedValue(
 			@Nullable Object arg, String name, MethodParameter parameter, Model model, ServerWebExchange exchange) {
 

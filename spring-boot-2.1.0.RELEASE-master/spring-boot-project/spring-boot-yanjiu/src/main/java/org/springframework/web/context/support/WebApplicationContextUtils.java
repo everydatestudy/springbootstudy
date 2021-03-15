@@ -67,7 +67,8 @@ public abstract class WebApplicationContextUtils {
 			ClassUtils.isPresent("javax.faces.context.FacesContext", RequestContextHolder.class.getClassLoader());
 
 
-	/**
+	/**	//Required这个方法和上面唯一的区别是：它如果返回null 就直接抛出异常了，上面是返回null
+
 	 * Find the root {@code WebApplicationContext} for this web app, typically
 	 * loaded via {@link org.springframework.web.context.ContextLoaderListener}.
 	 * <p>Will rethrow an exception that happened on root context startup,
@@ -85,7 +86,7 @@ public abstract class WebApplicationContextUtils {
 		return wac;
 	}
 
-	/**
+	/**	// 我在讲解源码的时候：创建容器失败的时候，也会吧异常放进来（我们调用者一般较少使用）
 	 * Find the root {@code WebApplicationContext} for this web app, typically
 	 * loaded via {@link org.springframework.web.context.ContextLoaderListener}.
 	 * <p>Will rethrow an exception that happened on root context startup,
@@ -172,7 +173,8 @@ public abstract class WebApplicationContextUtils {
 		registerWebApplicationScopes(beanFactory, null);
 	}
 
-	/**
+	/**	//向WebApplicationContext使用的BeanFactory注册web有关作用域对象 :
+
 	 * Register web-specific scopes ("request", "session", "globalSession", "application")
 	 * with the given BeanFactory, as used by the WebApplicationContext.
 	 * @param beanFactory the BeanFactory to configure
@@ -187,9 +189,12 @@ public abstract class WebApplicationContextUtils {
 			ServletContextScope appScope = new ServletContextScope(sc);
 			beanFactory.registerScope(WebApplicationContext.SCOPE_APPLICATION, appScope);
 			// Register as ServletContext attribute, for ContextCleanupListener to detect it.
+			// Register as ServletContext attribute, for ContextCleanupListener to detect it.
+			// 此处，还吧ServletContext上下文的Scope，注册到上下文里，方便ContextCleanupListener 进行获取
+		
 			sc.setAttribute(ServletContextScope.class.getName(), appScope);
 		}
-
+		// 定义注入规则。当开发人员依赖注入ServletRequest对象时，注入的bean其实是这里的RequestObjectFactory工厂bean
 		beanFactory.registerResolvableDependency(ServletRequest.class, new RequestObjectFactory());
 		beanFactory.registerResolvableDependency(ServletResponse.class, new ResponseObjectFactory());
 		beanFactory.registerResolvableDependency(HttpSession.class, new SessionObjectFactory());
@@ -216,6 +221,7 @@ public abstract class WebApplicationContextUtils {
 	 */
 	public static void registerEnvironmentBeans(ConfigurableListableBeanFactory bf,
 			@Nullable ServletContext servletContext, @Nullable ServletConfig servletConfig) {
+		// 把servletContext和servletConfig以Bean的形式，注册到容器里面，这样我们就可以@Autowired了  如下面例子
 
 		if (servletContext != null && !bf.containsBean(WebApplicationContext.SERVLET_CONTEXT_BEAN_NAME)) {
 			bf.registerSingleton(WebApplicationContext.SERVLET_CONTEXT_BEAN_NAME, servletContext);
@@ -224,6 +230,9 @@ public abstract class WebApplicationContextUtils {
 		if (servletConfig != null && !bf.containsBean(ConfigurableWebApplicationContext.SERVLET_CONFIG_BEAN_NAME)) {
 			bf.registerSingleton(ConfigurableWebApplicationContext.SERVLET_CONFIG_BEAN_NAME, servletConfig);
 		}
+		//这个特别特别重要：我们可以看到Spring在启动的时候，把ServletContext里面所有所有的InitParameter都拿出来了，存到一个Map里面
+		// 最后把这个Bean注册到容器里面了，Bean名称为：contextParameters
+		// 这就是为什么，后面我们可以非常非常方便拿到initParam的原因~~~
 
 		if (!bf.containsBean(WebApplicationContext.CONTEXT_PARAMETERS_BEAN_NAME)) {
 			Map<String, String> parameterMap = new HashMap<>();
@@ -244,7 +253,7 @@ public abstract class WebApplicationContextUtils {
 			bf.registerSingleton(WebApplicationContext.CONTEXT_PARAMETERS_BEAN_NAME,
 					Collections.unmodifiableMap(parameterMap));
 		}
-
+		// 原理同上，这里吧ServletContext里面的contextAttributes，都以Bean的形式放进Bean容器里了
 		if (!bf.containsBean(WebApplicationContext.CONTEXT_ATTRIBUTES_BEAN_NAME)) {
 			Map<String, Object> attributeMap = new HashMap<>();
 			if (servletContext != null) {

@@ -29,6 +29,12 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.WebUtils;
 
 /**
+ * 顾名思义它就是通过简单映射关系来决定由哪个错误视图来处理当前的异常信息。它提供了多种映射关系可以使用：
+
+通过异常类型Properties exceptionMappings;映射。它的key可以是全类名、短名称，同时还有继承效果：比如key是Exception那将匹配所有的异常。value是view name视图名称
+1. 若有需要，可以配合Class<?>[] excludedExceptions来一起使用
+通过状态码Map<String, Integer> statusCodes匹配。key是view name，value是http状态码
+
  * {@link org.springframework.web.servlet.HandlerExceptionResolver} implementation
  * that allows for mapping exception class names to view names, either for a set of
  * given handlers or for all handlers in the DispatcherServlet.
@@ -185,14 +191,21 @@ public class SimpleMappingExceptionResolver extends AbstractHandlerExceptionReso
 			HttpServletRequest request, HttpServletResponse response, @Nullable Object handler, Exception ex) {
 
 		// Expose ModelAndView for chosen error view.
+		// 根据异常类型去exceptionMappings匹配到一个viewName
+	    // 实在木有匹配到，就用的defaultErrorView（当然defaultErrorView也可能为null没配置，不过建议配置）
 		String viewName = determineViewName(ex, request);
 		if (viewName != null) {
 			// Apply HTTP status code for error views, if specified.
 			// Only apply it if we're processing a top-level request.
+			// 如果匹配上了一个视图后，再去使用视图匹配出一个statusCode
+						// 若没匹配上就用defaultStatusCode（当然它也有可能为null）
 			Integer statusCode = determineStatusCode(request, viewName);
 			if (statusCode != null) {
 				applyStatusCodeIfPossible(request, response, statusCode);
 			}
+			// new ModelAndView(viewName) 设置好viewName
+			// 并且，并且，并且：mv.addObject(this.exceptionAttribute, ex)把异常信息放进去。exceptionAttribute的值默认为：exception
+
 			return getModelAndView(viewName, ex, request);
 		}
 		else {

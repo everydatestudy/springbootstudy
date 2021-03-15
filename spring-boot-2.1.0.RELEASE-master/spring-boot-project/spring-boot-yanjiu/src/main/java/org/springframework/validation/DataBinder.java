@@ -124,10 +124,10 @@ public class DataBinder implements PropertyEditorRegistry, TypeConverter {
 	private final Object target;
 
 	private final String objectName;
-
+	// BindingResult：绑定错误、失败的时候会放进这里来~
 	@Nullable
 	private AbstractPropertyBindingResult bindingResult;
-
+	//类型转换器，会注册最为常用的那么多类型转换Map<Class<?>, PropertyEditor> defaultEditors
 	@Nullable
 	private SimpleTypeConverter typeConverter;
 
@@ -412,6 +412,10 @@ public class DataBinder implements PropertyEditorRegistry, TypeConverter {
 	public boolean isIgnoreInvalidFields() {
 		return this.ignoreInvalidFields;
 	}
+	// 设置指定的可以绑定的字段，默认是所有字段~~~
+		// 例如，在绑定HTTP请求参数时，限制这一点以避免恶意用户进行不必要的修改。
+		// 简单的说：我可以控制只有指定的一些属性才允许你修改~~~~
+		// 注意：它支持xxx*,*xxx,*xxx*这样的通配符  支持[]这样子来写~
 
 	/**
 	 * Register fields that should be allowed for binding. Default is all

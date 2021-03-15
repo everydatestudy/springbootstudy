@@ -99,7 +99,9 @@ public class HandlerMappingIntrospector
 	public void setApplicationContext(ApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
 	}
-
+	// 1、Map<String, HandlerMapping> beans = BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, HandlerMapping.class, true, false)
+	// 2、如果第一步获取到了Beans，sort()排序一下
+	// 3、若没找到，回退到`DispatcherServlet.properties`这个配置文件里去找
 	@Override
 	public void afterPropertiesSet() {
 		if (this.handlerMappings == null) {
@@ -152,6 +154,8 @@ public class HandlerMappingIntrospector
 			if (handler == null) {
 				continue;
 			}
+			// 拿到作用在此Handler上的所有的拦截器们：HandlerInterceptor
+			// 若有拦截器实现了CorsConfigurationSource接口，那就返回此拦截器上的CORS配置源
 			if (handler.getInterceptors() != null) {
 				for (HandlerInterceptor interceptor : handler.getInterceptors()) {
 					if (interceptor instanceof CorsConfigurationSource) {
@@ -159,6 +163,8 @@ public class HandlerMappingIntrospector
 					}
 				}
 			}
+			// 若这个Handle本身（注意：并不是所有的handler都是一个方法，也可能是个类，所以也有可能是会实现接口的）
+			// 就是个CorsConfigurationSource 那就以它的为准
 			if (handler.getHandler() instanceof CorsConfigurationSource) {
 				return ((CorsConfigurationSource) handler.getHandler()).getCorsConfiguration(wrapper);
 			}

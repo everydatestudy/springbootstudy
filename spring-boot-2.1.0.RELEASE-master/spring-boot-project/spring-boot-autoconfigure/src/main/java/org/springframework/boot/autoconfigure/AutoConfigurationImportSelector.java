@@ -224,7 +224,8 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 	 */
 	protected List<String> getCandidateConfigurations(AnnotationMetadata metadata, AnnotationAttributes attributes) {
 		List<String> configurations = SpringFactoriesLoader.loadFactoryNames( // 得到所有自动配置类
-				getSpringFactoriesLoaderFactoryClass(), getBeanClassLoader()); // getSpringFactoriesLoaderFactoryClass()返回EnableAutoConfiguration.class
+				// getSpringFactoriesLoaderFactoryClass()返回EnableAutoConfiguration.class
+				getSpringFactoriesLoaderFactoryClass(), getBeanClassLoader()); 
 		Assert.notEmpty(configurations, "No auto configuration classes found in META-INF/spring.factories. If you "
 				+ "are using a custom packaging, make sure that file is correct.");
 		return configurations;
@@ -479,9 +480,9 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 							deferredImportSelector.getClass().getName()));
 			// 1,调用getAutoConfigurationEntry方法得到自动配置类放入autoConfigurationEntry对象中
 			AutoConfigurationEntry autoConfigurationEntry = ((AutoConfigurationImportSelector) deferredImportSelector)
-					.getAutoConfigurationEntry(getAutoConfigurationMetadata(), // 这里注意autoConfigurationMetadata和annotationMetadata的区别，autoConfigurationMetadata的properteis的键是自动配置类+条件注解类，值是条件注解类里面的属性值，TODO
-																				// 唯一得注意的是有些自定义的配置类或加载配置类不在里面，这里不太明白
-							annotationMetadata); // annotationMetadata即的启动类标注有@SpringBootApplication的注解属性值
+					// 这里注意autoConfigurationMetadata和annotationMetadata的区别，autoConfigurationMetadata的properteis的键是自动配置类+条件注解类，值是条件注解类里面的属性值，
+					// 唯一得注意的是有些自定义的配置类或加载配置类不在里面，这里不太明白,TODO这里是自动装配
+					.getAutoConfigurationEntry(getAutoConfigurationMetadata(),annotationMetadata); // annotationMetadata即的启动类标注有@SpringBootApplication的注解属性值
 			// 2，又将封装了自动配置类的autoConfigurationEntry对象装进autoConfigurationEntries集合
 			this.autoConfigurationEntries.add(autoConfigurationEntry);
 			// 3，遍历刚获取的自动配置类

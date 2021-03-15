@@ -22,7 +22,18 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
+/**最后，此注解的使用的注意事项我把它总结如下，供各位使用过程中参考：
+
+@InitBinder标注的方法执行是多次的，一次请求来就执行一次（第一次惩罚）
+Controller实例中的所有@InitBinder只对当前所在的Controller有效
+@InitBinder的value属性控制的是模型Model里的key，而不是方法名（不写代表对所有的生效）
+@InitBinder标注的方法不能有返回值（只能是void或者returnValue=null）
+@InitBinder对@RequestBody这种基于消息转换器的请求参数无效
+1. 因为@InitBinder它用于初始化DataBinder数据绑定、类型转换等功能，而@RequestBody它的数据解析、转换时消息转换器来完成的，所以即使你自定义了属性编辑器，对它是不生效的（它的WebDataBinder只用于数据校验，不用于数据绑定和数据转换。它的数据绑定转换若是json，一般都是交给了jackson来完成的）
+只有AbstractNamedValueMethodArgumentResolver才会调用binder.convertIfNecessary进行数据转换，从而属性编辑器才会生效
+————————————————
+版权声明：本文为CSDN博主「YourBatman」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/f641385712/article/details/95473929
  * Annotation that identifies methods which initialize the
  * {@link org.springframework.web.bind.WebDataBinder} which
  * will be used for populating command and form object arguments

@@ -23,16 +23,18 @@ import java.util.Map;
 
 import org.springframework.web.cors.CorsConfiguration;
 
-/**
+/**这两个类虽然简单，但是在@EnableWebMvc里扩展配置时使用得较多，参见下个章节对WebMvcConfigurer扩展使用和配置
+
  * Assists with the registration of global, URL pattern based
  * {@link CorsConfiguration} mappings.
  *
  * @author Sebastien Deleuze
  * @author Rossen Stoyanchev
  * @since 5.0
+ * TODO 架构是慢慢演进出来的，不是设计出来的。架构没有最好，只有最合适
  */
 public class CorsRegistry {
-
+	// 保存着全局的配置，每个CorsRegistration就是URL pattern和CorsConfiguration配置
 	private final List<CorsRegistration> registrations = new ArrayList<>();
 
 
@@ -50,12 +52,17 @@ public class CorsRegistry {
 	 *     <li>Set max age to 1800 seconds (30 minutes).</li>
 	 * </ul>
 	 */
+	// 像上面List添加一个全局配置（和pathPattern绑定）
+	// 它使用的是new CorsRegistration(pathPattern)
+	// 可见使用配置是默认配置：new CorsConfiguration().applyPermitDefaultValues()
+	// 当然它CorsRegistration return给你了，你还可以改（配置）的~~~~
+
 	public CorsRegistration addMapping(String pathPattern) {
 		CorsRegistration registration = new CorsRegistration(pathPattern);
 		this.registrations.add(registration);
 		return registration;
 	}
-
+	// 这个就比较简单了：把当前List专程Map。key就是PathPattern~~~~
 	protected Map<String, CorsConfiguration> getCorsConfigurations() {
 		Map<String, CorsConfiguration> configs = new LinkedHashMap<>(this.registrations.size());
 		for (CorsRegistration registration : this.registrations) {

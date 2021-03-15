@@ -75,7 +75,8 @@ public class RedirectAttributesModelMap extends ModelMap implements RedirectAttr
 		super.addAttribute(attributeName, formatValue(attributeValue));
 		return this;
 	}
-
+	// 可见这里的dataBinder是用于数据转换的
+		// 把所有参数都转换为String类型（因为Http都是string传参嘛）
 	@Nullable
 	private String formatValue(@Nullable Object value) {
 		if (value == null) {

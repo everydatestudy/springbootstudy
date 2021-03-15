@@ -64,11 +64,12 @@ public class HandlerMethod {
 	private final Class<?> beanType;
 
 	private final Method method;
-
+	// 被桥接的方法,如果method是原生的,它的值同method
 	private final Method bridgedMethod;
-
+	// 封装方法参数的类实例，**一个MethodParameter就是一个入参**
+		// MethodParameter也是Spring抽象出来的一个非常重要的概念
 	private final MethodParameter[] parameters;
-
+	// http状态码（毕竟它要负责处理和返回）
 	@Nullable
 	private HttpStatus responseStatus;
 
@@ -165,7 +166,10 @@ public class HandlerMethod {
 		this.resolvedFromHandlerMethod = handlerMethod;
 	}
 
+	// 所有构造都执行了两个方法：initMethodParameters和evaluateResponseStatus
 
+		// 初始化该方法所有的入参，此处使用的是内部类HandlerMethodParameter
+		// 注意：处理了泛型的~~~
 	private MethodParameter[] initMethodParameters() {
 		int count = this.bridgedMethod.getParameterCount();
 		MethodParameter[] result = new MethodParameter[count];
@@ -176,7 +180,11 @@ public class HandlerMethod {
 		}
 		return result;
 	}
-
+	// 看看方法上是否有标注了@ResponseStatus注解（接口上或者父类 组合注解上都行）
+		// 若方法上没有，还会去所在的类上去看看有没有标注此注解
+		// 主要只解析这个注解，把它的两个属性code和reason拿过来，最后就是返回它俩了~~~
+		// code状态码默认是HttpStatus.INTERNAL_SERVER_ERROR-->(500, "Internal Server Error")
+ 
 	private void evaluateResponseStatus() {
 		ResponseStatus annotation = getMethodAnnotation(ResponseStatus.class);
 		if (annotation == null) {
@@ -253,7 +261,8 @@ public class HandlerMethod {
 	public MethodParameter getReturnType() {
 		return new HandlerMethodParameter(-1);
 	}
-
+	// 注意和上面的区别。举个列子：比如方法返回的是Object，但实际return “fsx”字符串
+		// 那么上面返回永远是Object.class，下面你实际的值是什么类型就是什么类型
 	/**
 	 * Return the actual return value type.
 	 */

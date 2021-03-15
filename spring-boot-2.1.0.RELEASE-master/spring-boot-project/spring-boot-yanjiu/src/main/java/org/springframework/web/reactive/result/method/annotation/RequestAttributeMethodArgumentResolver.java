@@ -51,13 +51,13 @@ public class RequestAttributeMethodArgumentResolver extends AbstractNamedValueSy
 		super(factory, registry);
 	}
 
-
+	// 只处理标注了@RequestAttribute注解的入参
 	@Override
 	public boolean supportsParameter(MethodParameter param) {
 		return param.hasParameterAnnotation(RequestAttribute.class);
 	}
-
-
+	// 封装此注解的属性到NamedValueInfo 这里关于参数名的处理有这么一个处理
+		// info.name.isEmpty()也就说如果自己没有指定，就用形参名parameter.getParameterName()
 	@Override
 	protected NamedValueInfo createNamedValueInfo(MethodParameter parameter) {
 		RequestAttribute ann = parameter.getParameterAnnotation(RequestAttribute.class);

@@ -40,7 +40,8 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 import org.springframework.web.multipart.MultipartRequest;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
-/**
+/**这种方式使用得其实还比较多的。比如平时我们需要用Servlet源生的API：HttpServletRequest, HttpServletResponse肿么办？
+ *  在Spring MVC内就特别特别简单，只需要在入参上声明：就可以直接使用啦~
  * Resolves request-related method argument values of the following types:
  * <ul>
  * <li>{@link WebRequest}
@@ -62,6 +63,7 @@ import org.springframework.web.servlet.support.RequestContextUtils;
  * @author Juergen Hoeller
  * @since 3.1
  */
+//它支持到的可不仅仅是ServletRequest，多到令人发指
 public class ServletRequestMethodArgumentResolver implements HandlerMethodArgumentResolver {
 
 	@Nullable
@@ -78,7 +80,7 @@ public class ServletRequestMethodArgumentResolver implements HandlerMethodArgume
 		}
 	}
 
-
+	 //支持"注入"的类型，可谓多多益善
 	@Override
 	public boolean supportsParameter(MethodParameter parameter) {
 		Class<?> paramType = parameter.getParameterType();

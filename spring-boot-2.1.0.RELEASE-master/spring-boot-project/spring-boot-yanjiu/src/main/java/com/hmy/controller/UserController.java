@@ -18,10 +18,10 @@ public class UserController {
 
 	@RequestMapping("/test")
 	@ResponseBody
-	public MultiValueMap<String, String> test(HttpServletRequest request,Integer str) {
+	public Map<String, String> test(HttpServletRequest request,Integer str) {
 		
-		MultiValueMap<String, String> parts = new LinkedMultiValueMap<>();
-		 parts.add("field 1", "value 1");
+		Map<String, String> parts = new HashMap<>();
+//		 parts.add("field 1", "value 1");
 	 
 		System.out.println(request);
 		System.out.println("***************");

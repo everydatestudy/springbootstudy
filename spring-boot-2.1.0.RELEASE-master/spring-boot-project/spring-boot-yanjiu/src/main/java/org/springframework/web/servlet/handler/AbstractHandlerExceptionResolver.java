@@ -49,10 +49,10 @@ public abstract class AbstractHandlerExceptionResolver implements HandlerExcepti
 	protected final Log logger = LogFactory.getLog(getClass());
 
 	private int order = Ordered.LOWEST_PRECEDENCE;
-
+	// 可以设置任何的handler，表示只作用于这些Handler们
 	@Nullable
 	private Set<?> mappedHandlers;
-
+	// 表示只作用域这些Class类型的Handler们~~~
 	@Nullable
 	private Class<?>[] mappedHandlerClasses;
 
@@ -71,7 +71,9 @@ public abstract class AbstractHandlerExceptionResolver implements HandlerExcepti
 		return this.order;
 	}
 
-	/**
+	/**此抽象类主要是提供setMappedHandlers和setMappedHandlerClasses让此处理器可以作用在指定类型/处理器上，
+	 * 因此子类只要继承了它都将会有这种能力，这也是为何我推荐自定义实现也继承于它的原因。它提供了shouldApplyTo()方法用于匹配逻辑，子类若想定制化匹配规则，亦可复写此方法。
+
 	 * Specify the set of handlers that this exception resolver should apply to.
 	 * <p>The exception mappings and the default error view will only apply to the specified handlers.
 	 * <p>If no handlers or handler classes are set, the exception mappings and the default error
@@ -130,9 +132,15 @@ public abstract class AbstractHandlerExceptionResolver implements HandlerExcepti
 	@Nullable
 	public ModelAndView resolveException(
 			HttpServletRequest request, HttpServletResponse response, @Nullable Object handler, Exception ex) {
-
+		// 这个作用匹配逻辑很简答
+		// 若mappedHandlers和mappedHandlerClasses都为null永远返回true
+		// 但凡配置了一个就需要精确匹配（并集关系）
+		// 需要注意的是：shouldApplyTo方法，子类AbstractHandlerMethodExceptionResolver是有复写的
+ 
 		if (shouldApplyTo(request, handler)) {
+			// 是否执行；response.addHeader(HEADER_CACHE_CONTROL, "no-store")  默认是不执行的
 			prepareResponse(ex, response);
+			// 此抽象方法留给子类去完成~~~~~
 			ModelAndView result = doResolveException(request, response, handler, ex);
 			if (result != null) {
 				// Print warn message when warn logger is not enabled...
@@ -144,7 +152,7 @@ public abstract class AbstractHandlerExceptionResolver implements HandlerExcepti
 			}
 			return result;
 		}
-		else {
+		else {// 若此处理器不处理，就返回null呗
 			return null;
 		}
 	}

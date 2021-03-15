@@ -32,7 +32,8 @@ import org.springframework.util.ObjectUtils;
  * @see #determineUrlsForHandler
  */
 public abstract class AbstractDetectingUrlHandlerMapping extends AbstractUrlHandlerMapping {
-
+	// 是否要去祖先容器里面检测所有的Handlers    默认是false表示只在自己的容器里面找
+		// 若设置为true，相当于在父容器里的Controller也会被挖出来~~~~ 一般我并不建议这么去做
 	private boolean detectHandlersInAncestorContexts = false;
 
 
@@ -49,7 +50,7 @@ public abstract class AbstractDetectingUrlHandlerMapping extends AbstractUrlHand
 	}
 
 
-	/**
+	/**说白了，这里是检测的入口 detectHandlers();
 	 * Calls the {@link #detectHandlers()} method in addition to the
 	 * superclass's initialization.
 	 */
@@ -72,15 +73,20 @@ public abstract class AbstractDetectingUrlHandlerMapping extends AbstractUrlHand
 		if (logger.isDebugEnabled()) {
 			logger.debug("Looking for URL mappings in application context: " + applicationContext);
 		}
+		// 这个就不解释了：默认只会在当前容器里面去查找检测~~~
+				// 注意：这里使用的Object.class  说明是把本容器内所有类型的Bean定义都拿出来了~~~~
 		String[] beanNames = (this.detectHandlersInAncestorContexts ?
 				BeanFactoryUtils.beanNamesForTypeIncludingAncestors(applicationContext, Object.class) :
 				applicationContext.getBeanNamesForType(Object.class));
 
 		// Take any bean name that we can determine URLs for.
 		for (String beanName : beanNames) {
+			// 这是个抽象方法由子类去实现。  它的作用就是看看url和bean怎么才算是匹配呢？也就是说这个handler到底能够处理哪些URL呢？
+			// 注意：此处还是类级别（Bean），相当于一个类就是一个Handler哦~~~~
 			String[] urls = determineUrlsForHandler(beanName);
 			if (!ObjectUtils.isEmpty(urls)) {
 				// URL paths found: Let's consider it a handler.
+				// 注册进去  缓存起来~
 				registerHandler(urls, beanName);
 			}
 			else {

@@ -23,7 +23,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.ui.Model;
 import org.springframework.web.servlet.FlashMap;
 
-/**
+/**从命名就能看出是和重定向有关的，它扩展了Model接口：
  * A specialization of the {@link Model} interface that controllers can use to
  * select attributes for a redirect scenario. Since the intent of adding
  * redirect attributes is very explicit --  i.e. to be used for a redirect URL,
@@ -72,14 +72,14 @@ public interface RedirectAttributes extends Model {
 	@Override
 	RedirectAttributes mergeAttributes(Map<String, ?> attributes);
 
-	/**
+	/**	// 它扩展的三个方法，均和flash属性有关
 	 * Add the given flash attribute.
 	 * @param attributeName the attribute name; never {@code null}
 	 * @param attributeValue the attribute value; may be {@code null}
 	 */
 	RedirectAttributes addFlashAttribute(String attributeName, @Nullable Object attributeValue);
 
-	/**
+	/**这里没指定key，因为key根据Conventions#getVariableName()自动生成
 	 * Add the given flash storage using a
 	 * {@link org.springframework.core.Conventions#getVariableName generated name}.
 	 * @param attributeValue the flash attribute value; never {@code null}

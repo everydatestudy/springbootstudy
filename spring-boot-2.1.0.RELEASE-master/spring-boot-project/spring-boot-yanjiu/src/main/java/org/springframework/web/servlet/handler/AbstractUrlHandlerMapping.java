@@ -53,14 +53,14 @@ import org.springframework.web.servlet.HandlerExecutionChain;
  * @since 16.04.2003
  */
 public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping implements MatchableHandlerMapping {
-
+	// 根路径 / 的处理器~
 	@Nullable
 	private Object rootHandler;
-
+	// 是否使用斜线/匹配   如果为true  那么`/users`它也会匹配上`/users/`  默认是false的
 	private boolean useTrailingSlashMatch = false;
-
+	// 设置是否延迟初始化handler。仅适用于单实例handler   默认是false表示立即实例化
 	private boolean lazyInitHandlers = false;
-
+	// 这个Map就是缓存下，URL对应的Handler（注意这里只是handler，而不是chain）
 	private final Map<String, Object> handlerMap = new LinkedHashMap<>();
 
 
@@ -121,9 +121,20 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping i
 	@Nullable
 	protected Object getHandlerInternal(HttpServletRequest request) throws Exception {
 		//获取request中的请求链接
+		//// 找到URL的后半段：如`/api/v1/hello`  由此可见Spring MVC处理URL路径匹配都是从工程名后面开始匹配的~~~
 		String lookupPath = getUrlPathHelper().getLookupPathForRequest(request);
 		//根据链接查找handler
+		// 根据url查找handler 
+		// 1、先去handlerMap里找，若找到了那就实例化它，并且并且给chain里加入一个拦截器：`PathExposingHandlerInterceptor`  它是个private私有类的HandlerInterceptor
+		// 该拦截器的作用：request.setAttribute()请求域里面放置四个属性 key见HandlerMapping的常量们~~~
+		// 2、否则就使用PathMatcher去匹配URL，这里面光匹配其实是比较简单的。但是这里面还解决了一个问题：那就是匹配上多个路径的问题
+		// 因此：若匹配上多个路径了，就按照PathMatcher的排序规则排序，取值get(0)~~~最后就是同上，加上那个HandlerInterceptor即可
+		// 需要注意的是：若存在uriTemplateVariables，也就是路径里都存在多个最佳的匹配的情况  比如/book/{id}和/book/{name}这两种。
+		// 还有就是URI完全一样，但是一个是get方法，一个是post方法之类的  那就再加一个拦截器`UriTemplateVariablesHandlerInterceptor`  它request.setAttribute()了一个属性：key为 xxx.uriTemplateVariables
+		// 这些Attribute后续都是有用滴~~~~~~ 请注意：这里默认的两个拦截器每次都是new出来的和Handler可议说是绑定的，所以不会存在线程安全问题~~~~
+
 		Object handler = lookupHandler(lookupPath, request);
+		// 若没找到：
 		if (handler == null) {
 			// We need to care for the default handler directly, since we need to
 			// expose the PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE for it as well.
@@ -141,6 +152,8 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping i
 					rawHandler = obtainApplicationContext().getBean(handlerName);
 				}
 				validateHandler(rawHandler, request);
+				// 就是注册上面说的默认的两个拦截器~~~~~~~  第四个参数为null，就只会注册一个拦截器~~~
+				// 然后把rawHandler转换成chain（这个时候chain里面可能已经有两个拦截器了，然后父类还会继续把用户自定义的拦截器放上去~~~~）
 				handler = buildPathExposingHandler(rawHandler, lookupPath, lookupPath, null);
 			}
 		}
@@ -350,6 +363,8 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping i
 
 		Object mappedHandler = this.handlerMap.get(urlPath);
 		if (mappedHandler != null) {
+			// 这个异常错误信息，相信我们在开发中经常碰到吧：简单就是说就是一个URL只能映射到一个Handler上（但是一个Handler是可以处理多个URL的，这个需要注意）
+			// 这个校验必不可少啊~~~~
 			if (mappedHandler != resolvedHandler) {
 				throw new IllegalStateException(
 						"Cannot map " + getHandlerDescription(handler) + " to URL path [" + urlPath +
@@ -357,18 +372,25 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping i
 			}
 		}
 		else {
+			// 如果你的handler处理的路径是根路径，那太好了  你的这个处理器就很特殊啊~~~~
 			if (urlPath.equals("/")) {
 				if (logger.isInfoEnabled()) {
 					logger.info("Root mapping to " + getHandlerDescription(handler));
 				}
 				setRootHandler(resolvedHandler);
 			}
+			// 这个路径相当于处理所有  优先级是最低的  所以当作默认的处理器来使用~~~~
 			else if (urlPath.equals("/*")) {
 				if (logger.isInfoEnabled()) {
 					logger.info("Default mapping to " + getHandlerDescription(handler));
 				}
 				setDefaultHandler(resolvedHandler);
 			}
+			// 正常的路径了~~~
+			// 注意此处：好像是Spring5之后 把这句Mapped的日志级别   直接降低到trace级别了，简直太低了有木有~~~
+			// 在Spring 5之前，这里的日志级别包括上面的setRoot等是info（所以我们在控制台经常能看见大片的'Mapped URL path'日志~~~~）
+			// 所以：自Spring5之后不再会看controller这样的映射的日志了（除非你日志界别调低~~~）可能Spring认为这种日志多，且不认为是重要的信息吧~~~
+ 
 			else {
 				this.handlerMap.put(urlPath, resolvedHandler);
 				if (logger.isInfoEnabled()) {
@@ -383,7 +405,7 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping i
 	}
 
 
-	/**
+	/**该缓存也提供了一个只读视图给调用者访问~~~
 	 * Return the registered handlers as an unmodifiable Map, with the registered path
 	 * as key and the handler object (or handler bean name in case of a lazy-init handler)
 	 * as value.

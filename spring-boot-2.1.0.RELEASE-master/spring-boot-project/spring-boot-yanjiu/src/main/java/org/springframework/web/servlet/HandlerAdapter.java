@@ -21,7 +21,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.lang.Nullable;
 
-/**
+/**Spring MVC的Handler（Controller接口，HttpRequestHandler，Servlet、@RequestMapping）有四种表现形式，在Handler不确定是什么方式的时候（可能是方法、也可能是类），适配器这种设计模式就能模糊掉具体的实现，从而就能提供统一访问接口。
+————————————————
+版权声明：本文为CSDN博主「YourBatman」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/f641385712/article/details/89844141
  * MVC framework SPI, allowing parameterization of the core MVC workflow.
  *
  * <p>Interface that must be implemented for each handler type to handle a request.
@@ -49,7 +52,8 @@ import org.springframework.lang.Nullable;
  */
 public interface HandlerAdapter {
 
-	/**
+	/**判断当前的这个HandlerAdapter  是否 支持给与的handler
+	// 因为一般来说：每个适配器只能作用于一种处理器（你总不能把手机适配器拿去用于电脑吧）
 	 * Given a handler instance, return whether or not this {@code HandlerAdapter}
 	 * can support it. Typical HandlerAdapters will base the decision on the handler
 	 * type. HandlerAdapters will usually only support one handler type each.
@@ -62,7 +66,8 @@ public interface HandlerAdapter {
 	 */
 	boolean supports(Object handler);
 
-	/**
+	/**核心方法：利用 Handler 处理请求，然后返回一个ModelAndView 
+	// DispatcherServlet最终就是调用此方法，来返回一个ModelAndView的~
 	 * Use the given handler to handle this request.
 	 * The workflow that is required may vary widely.
 	 * @param request current HTTP request

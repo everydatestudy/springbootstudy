@@ -99,7 +99,7 @@ import org.springframework.web.util.WebUtils;
 
 import com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter;
 
-/**
+/**RequestMappingHandlerAdapter是个非常庞大的体系，本处我们只关心它对@ModelAttribute也就是对ModelFactory的创建，列出相关源码如下：
  * Extension of {@link AbstractHandlerMethodAdapter} that supports
  * {@link RequestMapping} annotated {@code HandlerMethod}s.
  *
@@ -116,15 +116,24 @@ import com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter;
  * @see HandlerMethodArgumentResolver
  * @see HandlerMethodReturnValueHandler
  */
+//RequestMappingHandlerAdapter这部分处理逻辑：每次请求过来它都会创建一个ModelFactory，
+//从而收集到全局的（来自@ControllerAdvice）+ 本Controller控制器上的所有的标注有@ModelAttribute注解的方法们。
+//@ModelAttribute标注在单独的方法上（木有@RequestMapping注解），它可以在每个控制器方法调用之前，创建出一个ModelFactory从而管理Model数据~
+//
+//ModelFactory管理着Model，提供了@ModelAttribute以及@SessionAttributes等对它的影响
+//
+//同时@ModelAttribute可以标注在入参、方法（返回值）上的，标注在不同地方处理的方式是不一样的，那么接下来又一主菜ModelAttributeMethodProcessor就得登场了。
+ 
 public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 		implements BeanFactoryAware, InitializingBean {
 
 	/**
 	 * MethodFilter that matches {@link InitBinder @InitBinder} methods.
-	 */
+	 */// 该方法不能标注有@RequestMapping注解，只标注了@ModelAttribute才算哦~
 	public static final MethodFilter INIT_BINDER_METHODS = method -> (AnnotationUtils.findAnnotation(method,
 			InitBinder.class) != null);
-
+	// MethodIntrospector.selectMethods的过滤器。
+	// 这里意思是：含有@ModelAttribute，但是但是但是不含有@RequestMapping注解的方法~~~~~
 	/**
 	 * MethodFilter that matches {@link ModelAttribute @ModelAttribute} methods.
 	 */
@@ -139,7 +148,7 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 
 	@Nullable
 	private HandlerMethodArgumentResolverComposite initBinderArgumentResolvers;
-
+	// 这里保存在用户自定义的一些处理器，大部分情况下无需自定义~~~
 	@Nullable
 	private List<HandlerMethodReturnValueHandler> customReturnValueHandlers;
 
@@ -148,15 +157,21 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 
 	@Nullable
 	private List<ModelAndViewResolver> modelAndViewResolvers;
-
+	// 内容协商管理器  默认就是它喽（使用的协商策略是HeaderContentNegotiationStrategy）
 	private ContentNegotiationManager contentNegotiationManager = new ContentNegotiationManager();
-
+	// 消息转换器。使用@Bean定义的时候，记得set进来，否则默认只会有4个（不支持json）
+	// 若@EnableWebMvc后默认是有8个的，一般都够用了
 	private List<HttpMessageConverter<?>> messageConverters;
-
+	// 装载RequestBodyAdvice和ResponseBodyAdvice的实现类们~
 	private List<Object> requestResponseBodyAdvice = new ArrayList<>();
-
+	// 它在数据绑定初始化的时候会被使用到，调用其initBinder()方法
+		// 只不过，现在一般都使用@InitBinder注解来处理了，所以使用较少
+		// 说明：它作用域是全局的，对所有的HandlerMethod都生效~~~~~
 	@Nullable
 	private WebBindingInitializer webBindingInitializer;
+	// 默认使用的SimpleAsyncTaskExecutor：每次执行客户提交给它的任务时，它会启动新的线程
+		// 并允许开发者控制并发线程的上限（concurrencyLimit），从而起到一定的资源节流作用（默认值是-1，表示不限流）
+		// @EnableWebMvc时可通过复写接口的WebMvcConfigurer.getTaskExecutor()自定义提供一个线程池
 
 	private AsyncTaskExecutor taskExecutor = new SimpleAsyncTaskExecutor("MvcAsync");
 
@@ -168,11 +183,14 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 	private DeferredResultProcessingInterceptor[] deferredResultInterceptors = new DeferredResultProcessingInterceptor[0];
 
 	private ReactiveAdapterRegistry reactiveAdapterRegistry = ReactiveAdapterRegistry.getSharedInstance();
-
+	// 对应ModelAndViewContainer.setIgnoreDefaultModelOnRedirect()属性
+		// redirect时,是否忽略defaultModel 默认值是false：不忽略
 	private boolean ignoreDefaultModelOnRedirect = false;
 
 	private int cacheSecondsForSessionAttributeHandlers = 0;
-
+	// 执行目标方法HandlerMethod时是否要在同一个Session内同步执行？？？
+		// 也就是同一个会话时，控制器方法全部同步执行（加互斥锁）
+		// 使用场景：对同一用户同一Session的所有访问，必须串行化~~~~~~
 	private boolean synchronizeOnSession = false;
 
 	private SessionAttributeStore sessionAttributeStore = new DefaultSessionAttributeStore();
@@ -189,9 +207,10 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 	private final Map<ControllerAdviceBean, Set<Method>> initBinderAdviceCache = new LinkedHashMap<>();
 
 	private final Map<Class<?>, Set<Method>> modelAttributeCache = new ConcurrentHashMap<>(64);
-
+	// 从Advice里面分析出来的标注有@ModelAttribute的方法（它是全局的）
 	private final Map<ControllerAdviceBean, Set<Method>> modelAttributeAdviceCache = new LinkedHashMap<>();
-
+	// 唯一构造方法：默认注册一些消息转换器。
+		// 开启@EnableWebMvc后此默认行为会被setMessageConverters()方法覆盖
 	public RequestMappingHandlerAdapter() {
 		StringHttpMessageConverter stringHttpMessageConverter = new StringHttpMessageConverter();
 		stringHttpMessageConverter.setWriteAcceptCharset(false); // see SPR-7316
@@ -606,7 +625,15 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 			this.returnValueHandlers = new HandlerMethodReturnValueHandlerComposite().addHandlers(handlers);
 		}
 	}
-
+//	部分代码调理清晰，有4个作用总结如下：
+//
+//	找到容器内（包括父容器）所有的标注有@ControllerAdvice注解的Bean们缓存起来，然后一个个解析此种Bean
+//	找到该Advice Bean内所有的标注有@ModelAttribute但没标注@RequestMapping的方法们，缓存到modelAttributeAdviceCache里对全局生效
+//	找到该Advice Bean内所有的标注有@InitBinder的方法们，缓存到initBinderAdviceCache里对全局生效
+//	找到该Advice Bean内所有实现了接口RequestBodyAdvice/ResponseBodyAdvice们，最终放入缓存requestResponseBodyAdvice的头部，他们会介入请求body和返回body
+//	————————————————
+//	版权声明：本文为CSDN博主「YourBatman」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//	原文链接：https://blog.csdn.net/f641385712/article/details/102726381
 	private void initControllerAdviceCache() {
 		if (getApplicationContext() == null) {
 			return;
@@ -615,10 +642,25 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 			logger.info("Looking for @ControllerAdvice: " + getApplicationContext());
 		}
 		// 从beanFactory中获取参数@ControllerAdvice的controller
+		// 关键就是在findAnnotatedBeans方法里：传入了容器上下文
+		// 拿到容器内所有的标注有@ControllerAdvice的组件们
+		// BeanFactoryUtils.beanNamesForTypeIncludingAncestors(context, Object.class)
+		// .filter(name -> context.findAnnotationOnBean(name, ControllerAdvice.class) != null)
+		// .map(name -> new ControllerAdviceBean(name, context)) // 使用ControllerAdviceBean包装起来，持有name的引用（还木实例化哟）
+		// .collect(Collectors.toList());
+		
+		// 因为@ControllerAdvice注解可以指定包名等属性，具体可参见HandlerTypePredicate的判断逻辑，是否生效
+		// 注意：@RestControllerAdvice是@ControllerAdvice和@ResponseBody的结合体，所以此处也会被找出来
+		// 最后Ordered排序
+
 		List<ControllerAdviceBean> adviceBeans = ControllerAdviceBean.findAnnotatedBeans(getApplicationContext());
 		AnnotationAwareOrderComparator.sort(adviceBeans);
-
+		// 临时存储RequestBodyAdvice和ResponseBodyAdvice的实现类
+				// 它哥俩是必须配合@ControllerAdvice一起使用的~
 		List<Object> requestResponseBodyAdviceBeans = new ArrayList<>();
+		// 注意：找到这些标注有@ControllerAdvice后并不需要保存下来。
+		// 而是一个一个的找它们里面的@InitBinder/@ModelAttribute 以及 RequestBodyAdvice和ResponseBodyAdvice
+		// 说明：异常注解不在这里解析，而是在`ExceptionHandlerMethodResolver`里~~~
 
 		for (ControllerAdviceBean adviceBean : adviceBeans) {
 			// 从controller中获取有@RequestMapping、@ModelAttribute注解的方法
@@ -626,6 +668,9 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 			if (beanType == null) {
 				throw new IllegalStateException("Unresolvable type for ControllerAdviceBean: " + adviceBean);
 			}
+			// 又见到了这个熟悉的方法selectMethods~~~~过滤器请参照成员变量
+						// 含有@ModelAttribute，但是但是但是不含有@RequestMapping注解的方法~~~~~  找到之后放在全局变量缓存起来
+						// 简单的说就是找到@ControllerAdvice里面所有的@ModelAttribute方法们
 			Set<Method> attrMethods = MethodIntrospector.selectMethods(beanType, MODEL_ATTRIBUTE_METHODS);
 			if (!attrMethods.isEmpty()) {
 				this.modelAttributeAdviceCache.put(adviceBean, attrMethods);
@@ -793,10 +838,18 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 		//方法是返回值是view的返回值解析器
 		handlers.add(new ViewMethodReturnValueHandler());
 		//方法返回值是responseEntity的返回值解析器
+		// 返回值是ResponseBodyEmitter时候，得用reactiveAdapterRegistry看看是Reactive模式还是普通模式
+		// taskExecutor：异步时使用的线程池，使用当前类的  contentNegotiationManager：内容协商管理器
+
 		handlers.add(new ResponseBodyEmitterReturnValueHandler(getMessageConverters(), this.reactiveAdapterRegistry,this.taskExecutor, this.contentNegotiationManager));
 		//方法返回值是流的返回值解析器
 		handlers.add(new StreamingResponseBodyReturnValueHandler());
 		//方法返回值是httpEntity的方法返回值解析器
+		// 此处重要的是getMessageConverters()消息转换器，一般情况下Spring MVC默认会有8个，包括`MappingJackson2HttpMessageConverter`
+				// 参见：WebMvcConfigurationSupport定的@Bean --> RequestMappingHandlerAdapter部分
+				// 若不@EnableWebMvc默认是只有4个消息转换器的哦~（不支持json）
+				// 此处的requestResponseBodyAdvice会介入到请求和响应的body里（消息转换期间）
+
 		handlers.add(new HttpEntityMethodProcessor(getMessageConverters(), this.contentNegotiationManager,this.requestResponseBodyAdvice));
 		//方法返回值是httpHeaders的方法返回值解析器
 		handlers.add(new HttpHeadersReturnValueHandler());
@@ -823,7 +876,10 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 		if (getCustomReturnValueHandlers() != null) {
 			handlers.addAll(getCustomReturnValueHandlers());
 		}
-
+		// 兜底：ModelAndViewResolver是需要你自己实现然后set进来的（一般我们不会自定定义）
+				// 所以绝大部分情况兜底使用的是ModelAttributeMethodProcessor表示，即使你的返回值里木有标注@ModelAttribute
+				// 但你是非简单类型(比如对象类型)的话，返回值都会放进Model里
+ 
 		// Catch-all
 		//基于modelAndView的返回值解析器
 		if (!CollectionUtils.isEmpty(getModelAndViewResolvers())) {
@@ -927,7 +983,11 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 
 		ServletWebRequest webRequest = new ServletWebRequest(request, response);
 		try {
+			// 创建一个WebDataBinderFactory 
+			// Global methods first（放在前面最先执行） 然后再执行本类自己的
+			// 最终创建的是一个ServletRequestDataBinderFactory，持有所有@InitBinder的method方法们
 			WebDataBinderFactory binderFactory = getDataBinderFactory(handlerMethod);
+			// 每调用一次都会生成一个ModelFactory ~~~
 			ModelFactory modelFactory = getModelFactory(handlerMethod, binderFactory);
 
 			ServletInvocableHandlerMethod invocableMethod = createInvocableHandlerMethod(handlerMethod);
@@ -942,7 +1002,7 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 
 			ModelAndViewContainer mavContainer = new ModelAndViewContainer();
 			mavContainer.addAllAttributes(RequestContextUtils.getInputFlashMap(request));
-			// 执行@ModelAttribute注解的方法
+			// 初始化Model
 			modelFactory.initModel(webRequest, mavContainer, invocableMethod);
 			mavContainer.setIgnoreDefaultModelOnRedirect(this.ignoreDefaultModelOnRedirect);
 
@@ -954,7 +1014,8 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 			asyncManager.setAsyncWebRequest(asyncWebRequest);
 			asyncManager.registerCallableInterceptors(this.callableInterceptors);
 			asyncManager.registerDeferredResultInterceptors(this.deferredResultInterceptors);
-
+			// 它不管是不是异步请求都先用AsyncWebRequest 包装了一下，但是若是同步请求
+			// asyncManager.hasConcurrentResult()肯定是为false的~~~
 			if (asyncManager.hasConcurrentResult()) {
 				Object result = asyncManager.getConcurrentResult();
 				mavContainer = (ModelAndViewContainer) asyncManager.getConcurrentResultContext()[0];
@@ -964,7 +1025,11 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 				}
 				invocableMethod = invocableMethod.wrapConcurrentResult(result);
 			}
-
+			// 此处其实就是调用ServletInvocableHandlerMethod#invokeAndHandle()方法喽
+						// 关于它你可以来这里：https://fangshixiang.blog.csdn.net/article/details/98385163
+						// 注意哦：任何HandlerMethod执行完后都是把结果放在了mavContainer里（它可能有Model，可能有View，可能啥都木有~~）
+						// 因此最后的getModelAndView()又得一看
+	 
 			invocableMethod.invokeAndHandle(webRequest, mavContainer);
 			if (asyncManager.isConcurrentHandlingStarted()) {
 				return null;
@@ -988,10 +1053,13 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 	protected ServletInvocableHandlerMethod createInvocableHandlerMethod(HandlerMethod handlerMethod) {
 		return new ServletInvocableHandlerMethod(handlerMethod);
 	}
-
+	// 创建出一个ModelFactory，来管理Model
+	// 显然和Model相关的就会有@ModelAttribute @SessionAttributes等注解啦~
 	private ModelFactory getModelFactory(HandlerMethod handlerMethod, WebDataBinderFactory binderFactory) {
+		// 从缓存中拿到和此Handler相关的SessionAttributesHandler处理器~~处理SessionAttr
 		SessionAttributesHandler sessionAttrHandler = getSessionAttributesHandler(handlerMethod);
 		Class<?> handlerType = handlerMethod.getBeanType();
+		// 找到当前类（Controller）所有的标注的@ModelAttribute注解的方法
 		Set<Method> methods = this.modelAttributeCache.get(handlerType);
 		if (methods == null) {
 			methods = MethodIntrospector.selectMethods(handlerType, MODEL_ATTRIBUTE_METHODS);
@@ -1026,16 +1094,29 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 	}
 
 	private WebDataBinderFactory getDataBinderFactory(HandlerMethod handlerMethod) throws Exception {
+		// handlerType：方法所在的类（控制器方法所在的类，也就是xxxController）
+		// 由此可见，此注解的作用范围是类级别的。会用此作为key来缓存
 		Class<?> handlerType = handlerMethod.getBeanType();
 		Set<Method> methods = this.initBinderCache.get(handlerType);
+		// 缓存没命中，就去selectMethods找到所有标注有@InitBinder的方法们~~~~
 		if (methods == null) {
 			methods = MethodIntrospector.selectMethods(handlerType, INIT_BINDER_METHODS);
 			this.initBinderCache.put(handlerType, methods);
 		}
+		// 此处注意：Method最终都被包装成了InvocableHandlerMethod，从而具有执行的能力
 		List<InvocableHandlerMethod> initBinderMethods = new ArrayList<>();
 		// Global methods first
+		// 上面找了本类的，现在开始看看全局里有木有@InitBinder
+		// Global methods first（先把全局的放进去，再放个性化的~~~~ 所以小细节：有覆盖的效果哟~~~）
+		// initBinderAdviceCache它是一个缓存LinkedHashMap(有序哦~~~)，缓存着作用于全局的类。
+		// 如@ControllerAdvice，注意和`RequestBodyAdvice`、`ResponseBodyAdvice`区分开来
+
+		// methodSet：说明一个类里面是可以定义N多个标注有@InitBinder的方法~~~~~
+ 
 		this.initBinderAdviceCache.forEach((clazz, methodSet) -> {
 			if (clazz.isApplicableToBeanType(handlerType)) {
+				// 这个resolveBean() 有点意思：它持有的Bean若是个BeanName的话，会getBean()一下的
+				// 大多数情况下都是BeanName，这在@ControllerAdvice的初始化时会讲~~~
 				Object bean = clazz.resolveBean();
 				for (Method method : methodSet) {
 					initBinderMethods.add(createInitBinderMethod(bean, method));
@@ -1043,6 +1124,7 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 			}
 		});
 		for (Method method : methods) {
+			
 			Object bean = handlerMethod.getBean();
 			initBinderMethods.add(createInitBinderMethod(bean, method));
 		}
@@ -1078,16 +1160,21 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 	@Nullable
 	private ModelAndView getModelAndView(ModelAndViewContainer mavContainer, ModelFactory modelFactory,
 			NativeWebRequest webRequest) throws Exception {
-
+		// 把session里面的内容写入
+		//// 将列为@SessionAttributes的模型属性提升到会话
 		modelFactory.updateModel(webRequest, mavContainer);
+		// Tips：若已经被处理过，那就返回null喽~~（比如若是@ResponseBody这种，这里就是true）
+		// 真正的View 可见ModelMap/视图名称、状态HttpStatus最终都交给了Veiw去渲染
 		if (mavContainer.isRequestHandled()) {
 			return null;
-		}
+		}// 通过View、Model、Status构造出一个ModelAndView，最终就可以完成渲染了
 		ModelMap model = mavContainer.getModel();
 		ModelAndView mav = new ModelAndView(mavContainer.getViewName(), model, mavContainer.getStatus());
+		// 这个步骤：是Spring MVC对重定向的支持~~~~
+				// 重定向之间传值，使用的RedirectAttributes这种Model~~~~
 		if (!mavContainer.isViewReference()) {
 			mav.setView((View) mavContainer.getView());
-		}
+		}	// 对重定向RedirectAttributes参数的支持（两个请求之间传递参数，使用的是ATTRIBUTE）
 		if (model instanceof RedirectAttributes) {
 			Map<String, ?> flashAttributes = ((RedirectAttributes) model).getFlashAttributes();
 			HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);

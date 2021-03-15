@@ -65,7 +65,10 @@ public class InitBinderDataBinderFactory extends DefaultDataBinderFactory {
 	public void initBinder(WebDataBinder dataBinder, NativeWebRequest request) throws Exception {
 		for (InvocableHandlerMethod binderMethod : this.binderMethods) {
 			if (isBinderMethodApplicable(binderMethod, dataBinder)) {
+				// invokeForRequest这个方法不用多说了，和调用普通控制器方法一样
+				// 方法入参上也可以写格式各样的参数~~~~
 				Object returnValue = binderMethod.invokeForRequest(request, null, dataBinder);
+				// 标注有@InitBinder注解方法必须返回void
 				if (returnValue != null) {
 					throw new IllegalStateException(
 							"@InitBinder methods must not return a value (should be void): " + binderMethod);
@@ -73,6 +76,11 @@ public class InitBinderDataBinderFactory extends DefaultDataBinderFactory {
 			}
 		}
 	}
+	// dataBinder.getObjectName()在此处终于起效果了  通过这个名称来匹配
+		// 也就是说可以做到让@InitBinder注解只作用在指定的入参名字的数据绑定上~~~~~
+		// 而dataBinder的这个ObjectName，一般就是入参的名字（注解指定的value值~~）
+
+		// 形参名字的在dataBinder，所以此处有个简单的过滤~~~~~~~
 
 	/**
 	 * Determine whether the given {@code @InitBinder} method should be used

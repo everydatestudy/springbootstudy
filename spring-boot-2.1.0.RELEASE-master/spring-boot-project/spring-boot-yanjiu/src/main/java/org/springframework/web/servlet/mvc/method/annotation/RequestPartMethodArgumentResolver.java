@@ -86,7 +86,8 @@ public class RequestPartMethodArgumentResolver extends AbstractMessageConverterM
 	}
 
 
-	/**
+	/** 标注了@RequestPart注解的
+	// 没有标注@RequestPart并且也没有标注@RequestParam，但是是Multipart类型的也会处理
 	 * Supports the following:
 	 * <ul>
 	 * <li>annotated with {@code @RequestPart}
@@ -117,10 +118,15 @@ public class RequestPartMethodArgumentResolver extends AbstractMessageConverterM
 
 		RequestPart requestPart = parameter.getParameterAnnotation(RequestPart.class);
 		boolean isRequired = ((requestPart == null || requestPart.required()) && !parameter.isOptional());
-
+		// 如果注解没有指定，就取形参名
 		String name = getPartName(parameter, requestPart);
 		parameter = parameter.nestedIfOptional();
 		Object arg = null;
+		// resolveMultipartArgument这个方法只处理：
+		// MultipartFile类型以及对应的数组/集合类型
+		// Part类型以及对应的数组集合类型
+		// 若形参类型不是以上类型，返回UNRESOLVABLE（空对象）
+		// 最终返回StandardMultipartHttpServletRequest/request.getParts()[0]等~
 
 		Object mpArg = MultipartResolutionDelegate.resolveMultipartArgument(name, parameter, servletRequest);
 		if (mpArg != MultipartResolutionDelegate.UNRESOLVABLE) {

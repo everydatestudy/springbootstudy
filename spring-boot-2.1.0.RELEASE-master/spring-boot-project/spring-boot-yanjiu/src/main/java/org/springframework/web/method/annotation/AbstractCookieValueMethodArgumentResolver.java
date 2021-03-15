@@ -24,7 +24,8 @@ import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.CookieValue;
 
-/**
+/**对解析标注有@CookieValue的做了一层抽象，子类负责从request里拿值（该抽象类不合请求域绑定）。
+
  * A base abstract class to resolve method arguments annotated with
  * {@code @CookieValue}. Subclasses extract the cookie value from the request.
  *

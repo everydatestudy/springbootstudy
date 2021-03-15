@@ -30,7 +30,7 @@ import org.springframework.web.context.request.NativeWebRequest;
  */
 public interface HandlerMethodReturnValueHandler {
 
-	/**
+	/**	// 每种处理器实现类，都对应着它能够处理的返回值类型~~~
 	 * Whether the given {@linkplain MethodParameter method return type} is
 	 * supported by this handler.
 	 * @param returnType the method return type to check

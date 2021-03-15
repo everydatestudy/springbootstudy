@@ -29,7 +29,8 @@ import org.springframework.web.context.support.WebApplicationObjectSupport;
 import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.ViewResolver;
 
-/**
+/**该首相类完成的主要是缓存的相关逻辑~~~
+
  * Convenient base class for {@link org.springframework.web.servlet.ViewResolver}
  * implementations. Caches {@link org.springframework.web.servlet.View} objects
  * once resolved: This means that view resolution won't be a performance problem,
@@ -48,6 +49,7 @@ public abstract class AbstractCachingViewResolver extends WebApplicationObjectSu
 	public static final int DEFAULT_CACHE_LIMIT = 1024;
 
 	/** Dummy marker object for unresolved views in the cache Maps */
+	// 表示没有被解析过的View~~~
 	private static final View UNRESOLVED_VIEW = new View() {
 		@Override
 		@Nullable
@@ -70,6 +72,10 @@ public abstract class AbstractCachingViewResolver extends WebApplicationObjectSu
 	private final Map<Object, View> viewAccessCache = new ConcurrentHashMap<>(DEFAULT_CACHE_LIMIT);
 
 	/** Map from view key to View instance, synchronized for View creation */
+	// 通过它来实现缓存最大值： removeEldestEntry表示当你往里put成为为true的时候，会执行它
+		// 此处可以看到，当size大于1024时，会把Map里面最老的那个值给remove掉~~~viewAccessCache.remove(eldest.getKey());
+
+ 
 	@SuppressWarnings("serial")
 	private final Map<Object, View> viewCreationCache =
 			new LinkedHashMap<Object, View>(DEFAULT_CACHE_LIMIT, 0.75f, true) {

@@ -295,7 +295,7 @@ public class RedirectView extends AbstractUrlBasedView implements SmartView {
 	}
 
 
-	/**
+	/**这个就是吧Model里的数据  转换到 request parameters去~
 	 * Convert model to request parameters and redirect to the given URL.
 	 * @see #appendQueryProperties
 	 * @see #sendRedirect
@@ -303,11 +303,22 @@ public class RedirectView extends AbstractUrlBasedView implements SmartView {
 	@Override
 	protected void renderMergedOutputModel(Map<String, Object> model, HttpServletRequest request,
 			HttpServletResponse response) throws IOException {
+		// 构建目标URL，若以/开头并且contextRelative=true，那就自动会拼上getContextPath(request)前缀 否则不拼
+				// encoding以自己set的为准，否则以request的为准，若都为null。那就取值：WebUtils.DEFAULT_CHARACTER_ENCODING
+				// 2、从当前request里面拿到UriVariables,然后fill到新的url里面去~
+				// 3、把当前request的url后的参数追加到新的url后面（默认是不会追加的~~~）  把propagateQueryParams属性值set为true就会追加了~~
+				// 4、exposeModelAttributes默认值是true，会吧model里的参数都合理的拼接到URL后面去~~~（这步非常重要，处理逻辑也是较为复杂的）
+				// 注意Bean的名字必须叫RequestContextUtils.REQUEST_DATA_VALUE_PROCESSOR_BEAN_NAME  否则此处也不会执行的~~~
 
 		String targetUrl = createTargetUrl(model, request);
+		// 它主要是找Spring容器里是否有`RequestDataValueProcessor`的实现类，然后`processUrl`处理一下
+		// 备注Spring环境默认没有它的实现，但是`Spring Security`对他是有实现的。比如大名鼎鼎的：`CsrfRequestDataValueProcessor`
 		targetUrl = updateTargetUrl(targetUrl, model, request, response);
 
+ 
 		// Save flash attributes
+		// 此处因为request.getAttribute(DispatcherServlet.OUTPUT_FLASH_MAP_ATTRIBUTE)拿到的Map都是空的，所以此处也不会像里放了
+		// FlashMap主要是用来解决`post/redrect/get`问题的，而现在都是ajax所以用得很少了~但Spring3.1之后提出了这个方案还是很优秀的
 		RequestContextUtils.saveOutputFlashMap(targetUrl, request, response);
 
 		// Redirect
@@ -611,7 +622,11 @@ public class RedirectView extends AbstractUrlBasedView implements SmartView {
 	 */
 	protected void sendRedirect(HttpServletRequest request, HttpServletResponse response,
 			String targetUrl, boolean http10Compatible) throws IOException {
-
+		// 这个isRemoteHost很有意思。若getHosts()为空，就直接返回false了
+				// 然后看它是否有host，若没有host（相对路径）那就直接返回false
+				// 若有host再看看这个host是否在我们自己的getHosts()里面，若在里面也返回fasle（表示还是内部的嘛）
+				// 只有上面都没有return  就返回true
+				// 比如此处值为：/demo_war_war/index.jsp
 		String encodedURL = (isRemoteHost(targetUrl) ? targetUrl : response.encodeRedirectURL(targetUrl));
 		if (http10Compatible) {
 			HttpStatus attributeStatusCode = (HttpStatus) request.getAttribute(View.RESPONSE_STATUS_ATTRIBUTE);
@@ -625,10 +640,16 @@ public class RedirectView extends AbstractUrlBasedView implements SmartView {
 			}
 			else {
 				// Send status code 302 by default.
+				// Send status code 302 by default.
+				// 大部分情况下我们都会走这里，所以我们看到的Http状态码都是302~~~~
 				response.sendRedirect(encodedURL);
 			}
 		}
 		else {
+			// getHttp11StatusCode：若我们自己指定了status就以指定的为准
+			// 否则看这里有没有：request.getAttribute(View.RESPONSE_STATUS_ATTRIBUTE)
+			// 最后都没有，就是默认值HttpStatus.SEE_OTHER  303
+
 			HttpStatus statusCode = getHttp11StatusCode(request, response, targetUrl);
 			response.setStatus(statusCode.value());
 			response.setHeader("Location", encodedURL);

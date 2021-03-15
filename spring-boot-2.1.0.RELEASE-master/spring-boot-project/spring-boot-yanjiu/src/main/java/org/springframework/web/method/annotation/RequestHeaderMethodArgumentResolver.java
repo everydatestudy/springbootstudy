@@ -53,6 +53,9 @@ public class RequestHeaderMethodArgumentResolver extends AbstractNamedValueMetho
 	public RequestHeaderMethodArgumentResolver(@Nullable ConfigurableBeanFactory beanFactory) {
 		super(beanFactory);
 	}
+	// 必须标注@RequestHeader注解，并且不能，不能，不能是Map类型
+	// 有的小伙伴会说：`@RequestHeader Map headers`这样可以接收到所有的请求头啊
+	// 其实不是本类的功劳，是`RequestHeaderMapMethodArgumentResolver`的作用
 
 
 	@Override

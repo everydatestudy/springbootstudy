@@ -107,7 +107,7 @@ public class HandlerMethodArgumentResolverComposite implements HandlerMethodArgu
 		this.argumentResolvers.clear();
 	}
 
-	/**	//判断参数解析器是否支持参数解析
+	/**	//判断参数解析器是否支持参数解析getArgumentResolver()方法是本文的核心
 	 * Whether the given {@linkplain MethodParameter method parameter} is supported
 	 * by any registered {@link HandlerMethodArgumentResolver}.
 	 */
@@ -137,7 +137,8 @@ public class HandlerMethodArgumentResolverComposite implements HandlerMethodArgu
 		return resolver.resolveArgument(parameter, mavContainer, webRequest, binderFactory);
 	}
 
-	/**
+	/** 这块逻辑保证了每个parameter参数最多只会被一个处理器处理
+	// 这个从缓存的数据结构中也能够看出来的
 	 * Find a registered {@link HandlerMethodArgumentResolver} that supports the
 	 * given method parameter.
 	 */

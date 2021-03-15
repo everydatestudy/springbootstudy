@@ -65,6 +65,8 @@ import org.springframework.ui.Model;
  * @author Rossen Stoyanchev
  * @since 2.5
  */
+//我们知道@ModelAttribute能标注在入参上，也可以标注在方法上。下面就从原理处深入理解，从而掌握它的使用，后面再给出多种使用场景的使用Demo。
+//和它相关的两个类是ModelFactory和ModelAttributeMethodProcessor
 @Target({ElementType.PARAMETER, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented

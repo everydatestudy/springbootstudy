@@ -47,21 +47,30 @@ import org.springframework.util.StringUtils;
  * @since 4.2
  * @see <a href="http://www.w3.org/TR/cors/">CORS spec</a>
  */
+//它代表一个cors配置，记录着各种配置项。它还提供了检查给定请求的实际来源、http方法和头的方法供以调用。用人话说：它就是具体封装跨域配置信息的pojo。
+//默认情况下新创建的CorsConfiguration它是不允许任何跨域请求的，需要你手动去配置，或者调用applyPermitDefaultValues()开启GET、POST、Head的支持~
+//
+//几乎所有场景，创建完CorsConfiguration最后都调用了applyPermitDefaultValues()方法。也就是说你不干预的情况下，一个CorsConfiguration配置一般都是支持GET、POST、Head的
+//————————————————
+//版权声明：本文为CSDN博主「YourBatman」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//原文链接：https://blog.csdn.net/f641385712/article/details/101036506
 public class CorsConfiguration {
 
 	/** Wildcard representing <em>all</em> origins, methods, or headers. */
+	// public的通配符：代表所有的源、方法、headers...
+	// 若你需要使用通配符，可以使用此静态常量
 	public static final String ALL = "*";
 
 	private static final List<HttpMethod> DEFAULT_METHODS =
 			Collections.unmodifiableList(Arrays.asList(HttpMethod.GET, HttpMethod.HEAD));
-
+	// 默认许可所有方法
 	private static final List<String> DEFAULT_PERMIT_ALL =
 			Collections.unmodifiableList(Arrays.asList(ALL));
-
+	// 默认许可这三个方法
 	private static final List<String> DEFAULT_PERMIT_METHODS =
 			Collections.unmodifiableList(Arrays.asList(HttpMethod.GET.name(), HttpMethod.HEAD.name(), HttpMethod.POST.name()));
 
-
+	// ==========把这些属性对应上文讲述的响应头们对应，和W3C标注都是对应上的=========
 	@Nullable
 	private List<String> allowedOrigins;
 
@@ -340,6 +349,8 @@ public class CorsConfiguration {
 	 *     <li>Set max age to 1800 seconds (30 minutes).</li>
 	 * </ul>
 	 */
+	// 使用此方法将初始化模型翻转为以允许get、head和post请求的所有跨源请求的打开默认值开始
+	// 注意：此方法不会覆盖前面set进去的值，所以建议此方法可以作为兜底调用。实际上Spring内部也是用它兜底的
 	public CorsConfiguration applyPermitDefaultValues() {
 		if (this.allowedOrigins == null) {
 			this.allowedOrigins = DEFAULT_PERMIT_ALL;
@@ -421,7 +432,8 @@ public class CorsConfiguration {
 		combined.addAll(other);
 		return new ArrayList<>(combined);
 	}
-
+	// 根据配置的允许来源检查请求的来源
+		// 返回值并不是bool值，而是字符串--> 返回可用的origin。若是null表示请求的origin不被支持
 	/**
 	 * Check the origin of the request against the configured allowed origins.
 	 * @param requestOrigin the origin to check
@@ -454,7 +466,7 @@ public class CorsConfiguration {
 		return null;
 	}
 
-	/**
+	/** 检查预检请求的Access-Control-Request-Method这个请求头
 	 * Check the HTTP request method (or the method from the
 	 * {@code Access-Control-Request-Method} header on a pre-flight request)
 	 * against the configured allowed methods.
@@ -473,7 +485,7 @@ public class CorsConfiguration {
 		return (this.resolvedMethods.contains(requestMethod) ? this.resolvedMethods : null);
 	}
 
-	/**
+	/**检查预检请求的Access-Control-Request-Headers
 	 * Check the supplied request headers (or the headers listed in the
 	 * {@code Access-Control-Request-Headers} of a pre-flight request) against
 	 * the configured allowed headers.

@@ -47,12 +47,14 @@ import org.springframework.web.method.HandlerMethod;
  * @since 3.1
  */
 public class InvocableHandlerMethod extends HandlerMethod {
-
+	// 它额外提供的几个属性，可以看到和数据绑定、数据校验就扯上关系了~~~
+	// 用于产生数据绑定器、校验器
 	@Nullable
 	private WebDataBinderFactory dataBinderFactory;
 
+	// HandlerMethodArgumentResolver用于入参的解析
 	private HandlerMethodArgumentResolverComposite argumentResolvers = new HandlerMethodArgumentResolverComposite();
-
+	// 用于获取形参名
 	private ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
 
 
@@ -124,10 +126,22 @@ public class InvocableHandlerMethod extends HandlerMethod {
 	 * @throws Exception raised if no suitable argument resolver can be found,
 	 * or if the method raised an exception
 	 */
+	// 省略构造函数 全部使用super的
+	// 它自己的三大属性都使用set方法设置进来~~~并且没有提供get方法
+	// 也就是说：它自己内部使用就行了~~~
+
+	// 在给定请求的上下文中解析方法的参数值后调用该方法。 也就是说：方法入参里就能够自动使用请求域（包括path里的，requestParam里的、以及常规对象如HttpSession这种）
+	// 解释下providedArgs作用：调用者可以传进来，然后直接doInvoke()的时候原封不动的使用它
+	//（弥补了请求域没有所有对象的不足，毕竟有些对象是用户自定义的嘛~）
+
 	@Nullable
 	public Object invokeForRequest(NativeWebRequest request, @Nullable ModelAndViewContainer mavContainer,
 			Object... providedArgs) throws Exception {
-
+		// 虽然它是最重要的方法，但是此处不讲，因为核心原来还是`HandlerMethodArgumentResolver`
+				// 它只是把解析好的放到对应位置里去~~~
+				// 说明：这里传入了ParameterNameDiscoverer，它是能够获取到形参名的。
+				// 这就是为何注解里我们不写value值，通过形参名字来匹配也是ok的核心原因~
+ 
 		Object[] args = getMethodArgumentValues(request, mavContainer, providedArgs);
 		if (logger.isTraceEnabled()) {
 			logger.trace("Invoking '" + ClassUtils.getQualifiedMethodName(getMethod(), getBeanType()) +

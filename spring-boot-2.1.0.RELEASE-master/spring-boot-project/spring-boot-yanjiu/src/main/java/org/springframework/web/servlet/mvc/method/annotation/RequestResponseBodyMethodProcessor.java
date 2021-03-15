@@ -44,7 +44,7 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.ModelAndViewContainer;
 import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver;
 
-/**
+/**顾名思义，它负责处理@RequestBody这个注解的参数
  * Resolves method arguments annotated with {@code @RequestBody} and handles return
  * values from methods annotated with {@code @ResponseBody} by reading and writing
  * to the body of the request or response with an {@link HttpMessageConverter}.
@@ -109,7 +109,8 @@ public class RequestResponseBodyMethodProcessor extends AbstractMessageConverter
 	public boolean supportsParameter(MethodParameter parameter) {
 		return parameter.hasParameterAnnotation(RequestBody.class);
 	}
-
+	// 显然可以发现，方法上或者类上标注有@ResponseBody都是可以的~~~~
+		// 这也就是为什么现在@RestController可以代替我们的的@Controller + @ResponseBody生效了
 	@Override
 	public boolean supportsReturnType(MethodParameter returnType) {
 		return (AnnotatedElementUtils.hasAnnotation(returnType.getContainingClass(), ResponseBody.class) ||
@@ -127,9 +128,12 @@ public class RequestResponseBodyMethodProcessor extends AbstractMessageConverter
 			NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
 
 		parameter = parameter.nestedIfOptional();
+		// 这个方法就特别重要了，实现就在下面，现在强烈要求吧目光先投入到下面这个方法实现上~~~~
 		Object arg = readWithMessageConverters(webRequest, parameter, parameter.getNestedGenericParameterType());
+		// 拿到入参的形参的名字  比如此处为person
 		String name = Conventions.getVariableNameForParameter(parameter);
-
+		// 下面就是进行参数绑定、数据适配、转换的逻辑了  这个在Spring MVC处理请求参数这一章会详细讲解
+				// 数据校验@Validated也是在此处生效的
 		if (binderFactory != null) {
 			WebDataBinder binder = binderFactory.createBinder(webRequest, arg, name);
 			if (arg != null) {
@@ -145,7 +149,7 @@ public class RequestResponseBodyMethodProcessor extends AbstractMessageConverter
 
 		return adaptArgumentIfNecessary(arg, parameter);
 	}
-
+	// 之前讲过writeWithMessageConverters,这个相当于读的时候进行一个消息转换器的匹配，实现逻辑大体一致~~~
 	@Override
 	protected <T> Object readWithMessageConverters(NativeWebRequest webRequest, MethodParameter parameter,
 			Type paramType) throws IOException, HttpMediaTypeNotSupportedException, HttpMessageNotReadableException {
@@ -153,7 +157,7 @@ public class RequestResponseBodyMethodProcessor extends AbstractMessageConverter
 		HttpServletRequest servletRequest = webRequest.getNativeRequest(HttpServletRequest.class);
 		Assert.state(servletRequest != null, "No HttpServletRequest");
 		ServletServerHttpRequest inputMessage = new ServletServerHttpRequest(servletRequest);
-
+		// 核心是这个方法，它的实现逻辑在父类AbstractMessageConverterMethodArgumentResolver上~~~继续转移目光吧~~~
 		Object arg = readWithMessageConverters(inputMessage, parameter, paramType);
 		if (arg == null && checkRequired(parameter)) {
 			throw new HttpMessageNotReadableException("Required request body is missing: " +
@@ -177,6 +181,8 @@ public class RequestResponseBodyMethodProcessor extends AbstractMessageConverter
 		ServletServerHttpResponse outputMessage = createOutputMessage(webRequest);
 
 		// Try even with null return value. ResponseBodyAdvice could get involved.
+		// 这个方法是核心，也会处理null值~~~  这里面一些Advice会生效~~~~
+		// 会选择到合适的HttpMessageConverter,然后进行消息转换~~~~（这里只指写~~~）  这个方法在父类上，是非常核心关键自然也是非常复杂的~~~
 		writeWithMessageConverters(returnValue, returnType, inputMessage, outputMessage);
 	}
 

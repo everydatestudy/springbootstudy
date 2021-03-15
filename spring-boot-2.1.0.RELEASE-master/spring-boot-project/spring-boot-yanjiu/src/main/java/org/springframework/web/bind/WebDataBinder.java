@@ -28,7 +28,14 @@ import org.springframework.lang.Nullable;
 import org.springframework.validation.DataBinder;
 import org.springframework.web.multipart.MultipartFile;
 
-/**
+/**单从WebDataBinder来说，它对父类进行了增强，提供的增强能力如下：
+
+支持对属性名以_打头的默认值处理（自动挡，能够自动处理所有的Bool、Collection、Map等）
+支持对属性名以!打头的默认值处理（手动档，需要手动给某个属性赋默认值，自己控制的灵活性很高）
+提供方法，支持把MultipartFile绑定到JavaBean的属性上~
+————————————————
+版权声明：本文为CSDN博主「YourBatman」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/f641385712/article/details/96450469
  * Special {@link DataBinder} for data binding from web request parameters
  * to JavaBean objects. Designed for web environments, but not dependent on
  * the Servlet API; serves as base class for more specific DataBinder variants,
@@ -64,6 +71,8 @@ public class WebDataBinder extends DataBinder {
 	 * This is particularly useful for HTML checkboxes and select options.
 	 * @see #setFieldMarkerPrefix
 	 */
+	// 此字段意思是：字段标记  比如name -> _name
+		// 这对于HTML复选框和选择选项特别有用。
 	public static final String DEFAULT_FIELD_MARKER_PREFIX = "_";
 
 	/**
@@ -210,6 +219,12 @@ public class WebDataBinder extends DataBinder {
 		if (fieldDefaultPrefix != null) {
 			PropertyValue[] pvArray = mpvs.getPropertyValues();
 			for (PropertyValue pv : pvArray) {
+				// 若你给定的PropertyValue的属性名确实是以!打头的  那就做处理如下：
+				// 如果JavaBean的该属性可写 && mpvs不存在去掉!后的同名属性，那就添加进来表示后续可以使用了（毕竟是默认值，没有精确匹配的高的）
+				// 然后把带!的给移除掉（因为默认值以已经转正了~~~）
+				// 其实这里就是说你可以使用！来给个默认值。比如!name表示若找不到name这个属性的时，就取它的值~~~
+				// 也就是说你request里若有穿!name保底，也就不怕出现null值啦~
+
 				if (pv.getName().startsWith(fieldDefaultPrefix)) {
 					String field = pv.getName().substring(fieldDefaultPrefix.length());
 					if (getPropertyAccessor().isWritableProperty(field) && !mpvs.contains(field)) {
@@ -220,6 +235,12 @@ public class WebDataBinder extends DataBinder {
 			}
 		}
 	}
+	// 处理_的步骤
+		// 若传入的字段以_打头
+		// JavaBean的这个属性可写 && mpvs木有去掉_后的属性名字
+		// getEmptyValue(field, fieldType)就是根据Type类型给定默认值。
+		// 比如Boolean类型默认给false，数组给空数组[]，集合给空集合，Map给空map  可以参考此类：CollectionFactory
+		// 当然，这一切都是建立在你传的属性值是以_打头的基础上的，Spring才会默认帮你处理这些默认值
 
 	/**
 	 * Check the given property values for field markers,

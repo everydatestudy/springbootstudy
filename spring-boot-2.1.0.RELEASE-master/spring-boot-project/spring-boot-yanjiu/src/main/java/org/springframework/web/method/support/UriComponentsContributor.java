@@ -23,7 +23,7 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
-/**
+/**出现得还是比较晚的
  * Strategy for contributing to the building of a {@link UriComponents} by
  * looking at a method parameter and an argument value and deciding what
  * part of the target URL should be updated.
@@ -34,12 +34,12 @@ import org.springframework.web.util.UriComponentsBuilder;
  */
 public interface UriComponentsContributor {
 
-	/**
+	/** 此方法完全同HandlerMethodArgumentResolver的这个方法~~~
 	 * Whether this contributor supports the given method parameter.
 	 */
 	boolean supportsParameter(MethodParameter parameter);
 
-	/**
+	/** 处理给定的方法参数，然后更新UriComponentsbuilder，或者使用uri变量添加到映射中，以便在处理完所有参数后用于扩展uri~~~
 	 * Process the given method argument and either update the
 	 * {@link UriComponentsBuilder} or add to the map with URI variables
 	 * to use to expand the URI after all arguments are processed.

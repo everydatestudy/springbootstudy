@@ -53,7 +53,11 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
-/**
+/**它的handleReturnValue方法就不详细说了，在RequestResponseBodyMethodProcessor的基础上主要做了如下增强：
+	// 1、对请求中有Vary的进行特殊处理
+	// 2、Http状态码是200的话。如果是get请求或者Head请求，并且内容没有改变isResourceNotModified  那就直接outputMessage.flush()  然后return掉
+	// 3、做Http状态码是3打头（returnStatus / 100 == 3），如果有location的key，就特殊处理
+	// 最终，最终。正常情况下：依然同上调用父类writeWithMessageConverters()方法~~~
  * Resolves {@link HttpEntity} and {@link RequestEntity} method argument values
  * and also handles {@link HttpEntity} and {@link ResponseEntity} return values.
  *
@@ -133,12 +137,13 @@ public class HttpEntityMethodProcessor extends AbstractMessageConverterMethodPro
 			throws IOException, HttpMediaTypeNotSupportedException {
 
 		ServletServerHttpRequest inputMessage = createInputMessage(webRequest);
+		// 拿到HttpEntity的泛型类型
 		Type paramType = getHttpEntityType(parameter);
 		if (paramType == null) {
 			throw new IllegalArgumentException("HttpEntity parameter '" + parameter.getParameterName() +
 					"' in method " + parameter.getMethod() + " is not parameterized");
 		}
-
+		// 调用父类方法拿到body的值(把泛型类型传进去了，所以返回的是个实例)
 		Object body = readWithMessageConverters(webRequest, parameter, paramType);
 		if (RequestEntity.class == parameter.getParameterType()) {
 			return new RequestEntity<>(body, inputMessage.getHeaders(),

@@ -4,7 +4,8 @@ import java.util.Locale;
 
 import reactor.core.publisher.Mono;
 
-/**
+/**这个接口非常简单，就一个方法:把一个逻辑视图viewName解析为一个真正的视图View，Local表示国际化相关内容~
+
  * Contract to resolve a view name to a {@link View} instance. The view name may
  * correspond to an HTML template or be generated dynamically.
  *

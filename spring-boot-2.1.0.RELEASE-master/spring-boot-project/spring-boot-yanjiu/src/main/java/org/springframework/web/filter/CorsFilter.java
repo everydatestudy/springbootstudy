@@ -53,7 +53,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class CorsFilter extends OncePerRequestFilter {
 
 	private final CorsConfigurationSource configSource;
-
+	// 默认使用的DefaultCorsProcessor，当然你也可以自己指定
 	private CorsProcessor processor = new DefaultCorsProcessor();
 
 
@@ -82,8 +82,9 @@ public class CorsFilter extends OncePerRequestFilter {
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
 			FilterChain filterChain) throws ServletException, IOException {
-
+		// 只处理跨域请求
 		if (CorsUtils.isCorsRequest(request)) {
+			// Spring这里有个bug：因为它并不能保证configSource肯定被初始化了
 			CorsConfiguration corsConfiguration = this.configSource.getCorsConfiguration(request);
 			if (corsConfiguration != null) {
 				boolean isValid = this.processor.processRequest(corsConfiguration, request, response);

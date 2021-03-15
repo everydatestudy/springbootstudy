@@ -28,7 +28,8 @@ import org.springframework.validation.support.BindingAwareModelMap;
 import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.bind.support.SimpleSessionStatus;
 
-/**
+/**ModelAndViewContainer：可以把它定义为ModelAndView上下文的容器，它承担着整个请求过程中的数据传递工作–>保存着Model和View。官方doc对它的解释是这句话：
+ * 翻译成"人话"便是：记录HandlerMethodArgumentResolver和 HandlerMethodReturnValueHandler在处理Controller的handler方法时 使用的模型model和视图view相关信息.。
  * Records model and view related decisions made by
  * {@link HandlerMethodArgumentResolver}s and
  * {@link HandlerMethodReturnValueHandler}s during the course of invocation of
@@ -43,22 +44,41 @@ import org.springframework.web.bind.support.SimpleSessionStatus;
  * to {@code true} signalling a redirect scenario, the {@link #getModel()}
  * returns the redirect model instead of the default model.
  *
+ *直观的阅读过源码后，至少我能够得到如下结论，分享给大家：
+	
+	它维护了模型model：包括defaultModle和redirectModel
+	defaultModel是默认使用的Model，redirectModel是用于传递redirect时的Model
+	在Controller处理器入参写了Model或ModelMap类型时候，实际传入的是defaultModel。
+	- defaultModel它实际是BindingAwareModel，是个Map。而且继承了ModelMap又实现了Model接口，所以在处理器中使用Model或ModelMap时，其实都是使用同一个对象~~~
+	- 可参考MapMethodProcessor，它最终调用的都是mavContainer.getModel()方法
+	若处理器入参类型是RedirectAttributes类型，最终传入的是redirectModel。
+	- 至于为何实际传入的是defaultModel？？参考：RedirectAttributesMethodArgumentResolver，使用的是new RedirectAttributesModelMap(dataBinder)。
+	维护视图view（兼容支持逻辑视图名称）
+	维护是否redirect信息,及根据这个判断HandlerAdapter使用的是defaultModel或redirectModel
+	维护@SessionAttributes注解信息状态
+	维护handler是否处理标记（重要）
+
+ *
+ *
  * @author Rossen Stoyanchev
  * @author Juergen Hoeller
  * @since 3.1
  */
 public class ModelAndViewContainer {
-
+	// =================它所持有的这些属性还是蛮重要的=================
+		// redirect时,是否忽略defaultModel 默认值是false：不忽略
 	private boolean ignoreDefaultModelOnRedirect = false;
-
+	// 此视图可能是个View，也可能只是个逻辑视图String
 	@Nullable
 	private Object view;
-
+	// defaultModel默认的Model
+	// 注意：ModelMap 只是个Map而已，但是实现类BindingAwareModelMap它却实现了org.springframework.ui.Model接口
 	private final ModelMap defaultModel = new BindingAwareModelMap();
-
+	// 重定向时使用的模型（提供set方法设置进来）
 	@Nullable
 	private ModelMap redirectModel;
-
+	// 控制器是否返回重定向指令
+		// 如：使用了前缀"redirect:xxx.jsp"这种，这个值就是true。然后最终是个RedirectView
 	private boolean redirectModelScenario = false;
 
 	@Nullable
@@ -131,7 +151,7 @@ public class ModelAndViewContainer {
 		return (this.view instanceof String);
 	}
 
-	/**
+	/** 注意子方法和下面getDefaultModel()方法的区别
 	 * Return the model to use -- either the "default" or the "redirect" model.
 	 * The default model is used if {@code redirectModelScenario=false} or
 	 * there is no redirect model (i.e. RedirectAttributes was not declared as
@@ -206,7 +226,8 @@ public class ModelAndViewContainer {
 		return this.status;
 	}
 
-	/**
+	/**以编程方式注册一个**不应**发生数据绑定的属性，对于随后声明的@ModelAttribute也是不能绑定的
+	// 虽然方法是set 但内部是add哦  ~~~~
 	 * Programmatically register an attribute for which data binding should not occur,
 	 * not even for a subsequent {@code @ModelAttribute} declaration.
 	 * @param attributeName the name of the attribute
@@ -249,7 +270,10 @@ public class ModelAndViewContainer {
 		return this.sessionStatus;
 	}
 
-	/**
+	/** 这个方法需要重点说一下：请求是否已在处理程序中完全处理
+	// 举个例子：比如@ResponseBody标注的方法返回值，无需View继续去处理，所以就可以设置此值为true了
+	// 说明：这个属性也就是可通过源生的ServletResponse、OutputStream来达到同样效果的
+
 	 * Whether the request has been handled fully within the handler, e.g.
 	 * {@code @ResponseBody} method, and therefore view resolution is not
 	 * necessary. This flag can also be set when controller methods declare an
@@ -260,7 +284,8 @@ public class ModelAndViewContainer {
 		this.requestHandled = requestHandled;
 	}
 
-	/**
+	/**1、首先看看isRequestHandled()方法的使用：
+		RequestMappingHandlerAdapter对mavContainer.isRequestHandled()方法的使用，或许你就能悟出点啥了：
 	 * Whether the request has been handled fully within the handler.
 	 */
 	public boolean isRequestHandled() {

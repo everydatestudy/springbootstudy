@@ -53,7 +53,7 @@ import org.springframework.web.multipart.support.MissingServletRequestPartExcept
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.util.WebUtils;
 
-/**
+/**它对这些异常的处理，亦可参考内置的ResponseEntityExceptionHandler实现，它提供了基于@ExceptionHandler的很多异常类型的处理。
  * A convenient base class for {@link ControllerAdvice @ControllerAdvice} classes
  * that wish to provide centralized exception handling across all
  * {@code @RequestMapping} methods through {@code @ExceptionHandler} methods.

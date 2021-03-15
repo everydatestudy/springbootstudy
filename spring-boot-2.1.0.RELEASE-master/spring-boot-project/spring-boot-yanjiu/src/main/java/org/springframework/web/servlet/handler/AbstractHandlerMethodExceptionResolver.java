@@ -23,7 +23,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.ModelAndView;
 
-/**
+/**专门处理HandlerMethod类型是HandlerMethod类型的异常
  * Abstract base class for
  * {@link org.springframework.web.servlet.HandlerExceptionResolver HandlerExceptionResolver}
  * implementations that support handling exceptions from handlers of type {@link HandlerMethod}.
@@ -33,7 +33,7 @@ import org.springframework.web.servlet.ModelAndView;
  */
 public abstract class AbstractHandlerMethodExceptionResolver extends AbstractHandlerExceptionResolver {
 
-	/**
+	/**只处理HandlerMethod这种类型的处理器抛出的异常~~~~~~
 	 * Checks if the handler is a {@link HandlerMethod} and then delegates to the
 	 * base class implementation of {@code #shouldApplyTo(HttpServletRequest, Object)}
 	 * passing the bean of the {@code HandlerMethod}. Otherwise returns {@code false}.
@@ -45,6 +45,8 @@ public abstract class AbstractHandlerMethodExceptionResolver extends AbstractHan
 		}
 		else if (handler instanceof HandlerMethod) {
 			HandlerMethod handlerMethod = (HandlerMethod) handler;
+			// 可以看到最终getBean表示最终哪去验证的是它所在的Bean类，而不是方法本身
+			// 所以异常的控制是针对于Controller这个类的~
 			handler = handlerMethod.getBean();
 			return super.shouldApplyTo(request, handler);
 		}

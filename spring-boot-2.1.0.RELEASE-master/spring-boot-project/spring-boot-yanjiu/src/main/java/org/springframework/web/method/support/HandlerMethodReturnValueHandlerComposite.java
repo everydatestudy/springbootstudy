@@ -34,6 +34,8 @@ import org.springframework.web.context.request.NativeWebRequest;
  * @author Rossen Stoyanchev
  * @since 3.1
  */
+//首先发现，它也实现了接口HandlerMethodReturnValueHandler 
+//它会缓存以前解析的返回类型以加快查找速度
 public class HandlerMethodReturnValueHandlerComposite implements HandlerMethodReturnValueHandler {
 
 	protected final Log logger = LogFactory.getLog(getClass());
@@ -41,7 +43,7 @@ public class HandlerMethodReturnValueHandlerComposite implements HandlerMethodRe
 	private final List<HandlerMethodReturnValueHandler> returnValueHandlers = new ArrayList<>();
 
 
-	/**
+	/**返回的是一个只读视图
 	 * Return a read-only list with the registered handlers, or an empty list.
 	 */
 	public List<HandlerMethodReturnValueHandler> getHandlers() {
@@ -67,7 +69,7 @@ public class HandlerMethodReturnValueHandlerComposite implements HandlerMethodRe
 		return null;
 	}
 
-	/**
+	/**这里就是处理返回值的核心内容~~~~~
 	 * Iterate over registered {@link HandlerMethodReturnValueHandler}s and invoke the one that supports it.
 	 * @throws IllegalStateException if no suitable {@link HandlerMethodReturnValueHandler} is found.
 	 */
@@ -75,15 +77,18 @@ public class HandlerMethodReturnValueHandlerComposite implements HandlerMethodRe
 	public void handleReturnValue(@Nullable Object returnValue, MethodParameter returnType,
 			ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
 		//这里判断是否存在reponsebody
+		// selectHandler选择收个匹配的Handler来处理这个返回值~~~~ 若一个都木有找到  抛出异常吧~~~~
+		// 所有很重要的一个方法是它：selectHandler()  它来匹配，以及确定优先级
 		HandlerMethodReturnValueHandler handler = selectHandler(returnValue, returnType);
 		if (handler == null) {
 			throw new IllegalArgumentException("Unknown return value type: " + returnType.getParameterType().getName());
 		}
 		handler.handleReturnValue(returnValue, returnType, mavContainer, webRequest);
 	}
-
+	// 根据返回值，以及返回类型  来找到一个最为合适的HandlerMethodReturnValueHandler
 	@Nullable
 	private HandlerMethodReturnValueHandler selectHandler(@Nullable Object value, MethodParameter returnType) {
+		// 这个和我们上面的就对应上了  第一步去判断这个返回值是不是一个异步的value（AsyncHandlerMethodReturnValueHandler实现类只能我们自己来写~）
 		boolean isAsyncValue = isAsyncReturnValue(value, returnType);
 //		org.springframework.web.servlet.mvc.method.annotation.ModelAndViewMethodReturnValueHandler@fa87b1f
 //		org.springframework.web.method.annotation.ModelMethodProcessor@16f949a

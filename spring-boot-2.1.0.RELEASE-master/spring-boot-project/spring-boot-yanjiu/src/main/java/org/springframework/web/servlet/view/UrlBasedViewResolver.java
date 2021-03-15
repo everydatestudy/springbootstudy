@@ -122,6 +122,8 @@ public class UrlBasedViewResolver extends AbstractCachingViewResolver implements
 	 * will not be resolved in the configured default way but rather be treated as
 	 * special shortcut.
 	 */
+	//  ”redirect:” 前缀 包装成一个RedirectView  最终调用 HttpServletResponse 对象的 sendRedirect 方法进行重定向
+
 	public static final String REDIRECT_URL_PREFIX = "redirect:";
 
 	/**
@@ -130,6 +132,8 @@ public class UrlBasedViewResolver extends AbstractCachingViewResolver implements
 	 * will not be resolved in the configured default way but rather be treated as
 	 * special shortcut.
 	 */
+	//  forword: 前缀的视图名称将会被封装成一个 InternalResourceView 对象  服务器端利用 `RequestDispatcher`的forword方式跳转到指定的地址
+
 	public static final String FORWARD_URL_PREFIX = "forward:";
 
 	@Nullable
@@ -141,7 +145,8 @@ public class UrlBasedViewResolver extends AbstractCachingViewResolver implements
 
 	@Nullable
 	private String contentType;
-
+	//重定向的时候，是否把/解释为相对当前ServletContext的路径
+		// 直接关系RedirectView#setContextRelative这个值
 	private boolean redirectContextRelative = true;
 
 	private boolean redirectHttp10Compatible = true;
@@ -532,11 +537,13 @@ public class UrlBasedViewResolver extends AbstractCachingViewResolver implements
 	protected View createView(String viewName, Locale locale) throws Exception {
 		// If this resolver is not supposed to handle the given view,
 		// return null to pass on to the next resolver in the chain.
+		// canHandle表示：viewNames没配置  或者  匹配上了 就返回true
 		if (!canHandle(viewName, locale)) {
 			return null;
 		}
 
 		// Check for special "redirect:" prefix.
+		// 最终被转换成一个RedirectView，可以看到这里很多属性都是为它而准备的~~~比如getRedirectHosts这种属性值~~~
 		if (viewName.startsWith(REDIRECT_URL_PREFIX)) {
 			String redirectUrl = viewName.substring(REDIRECT_URL_PREFIX.length());
 			RedirectView view = new RedirectView(redirectUrl, isRedirectContextRelative(),
@@ -547,7 +554,7 @@ public class UrlBasedViewResolver extends AbstractCachingViewResolver implements
 			}
 			return applyLifecycleMethods(REDIRECT_URL_PREFIX, view);
 		}
-
+		// forward打头的用的就是`InternalResourceView `
 		// Check for special "forward:" prefix.
 		if (viewName.startsWith(FORWARD_URL_PREFIX)) {
 			String forwardUrl = viewName.substring(FORWARD_URL_PREFIX.length());
@@ -575,7 +582,7 @@ public class UrlBasedViewResolver extends AbstractCachingViewResolver implements
 		return (viewNames == null || PatternMatchUtils.simpleMatch(viewNames, viewName));
 	}
 
-	/**
+	/** 实现了父类的loadView方法~
 	 * Delegates to {@code buildView} for creating a new instance of the specified
 	 * view class. Applies the following Spring lifecycle methods (as supported by
 	 * the generic Spring bean factory):
@@ -595,10 +602,14 @@ public class UrlBasedViewResolver extends AbstractCachingViewResolver implements
 	protected View loadView(String viewName, Locale locale) throws Exception {
 		AbstractUrlBasedView view = buildView(viewName);
 		View result = applyLifecycleMethods(viewName, view);
+		// 这一步非常关键，它调用了view的checkResource方法，而这个方法的默认实现是永远返回true的
+		// 所以请注意：特别是在你自定义视图的时候，注意重写此方法。只有资源真的存在的时候，你才去返回，否则让返回null，交给别的视图解析器继续去处理~~~
+		// 自己处理不了的，自己就不要勉强了~~~~
+
 		return (view.checkResource(locale) ? result : null);
 	}
 
-	/**
+	/** 构建一个View，注意此处的返回值为AbstractUrlBasedView~~ 合理主要工作就是把属性都设置进去~~~
 	 * Creates a new View instance of the specified view class and configures it.
 	 * Does <i>not</i> perform any lookup for pre-defined View instances.
 	 * <p>
@@ -646,7 +657,8 @@ public class UrlBasedViewResolver extends AbstractCachingViewResolver implements
 		return view;
 	}
 
-	/**
+	/** 执行容器内此Bean的声明周期方法，也就是view的声明周期方法。比如@Postconstruct、XXXAware这种方法
+	// 可议看到它调用的是initializeBean，可议知道我们的View并不需要交给容器管理，但我们却能够享受它的一些声明周期方法~~~~~
 	 * Apply the containing {@link ApplicationContext}'s lifecycle methods to the
 	 * given {@link View} instance, if such a context is available.
 	 * 

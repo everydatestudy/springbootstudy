@@ -42,7 +42,7 @@ import org.springframework.web.reactive.HandlerResult;
 import org.springframework.web.reactive.result.method.InvocableHandlerMethod;
 import org.springframework.web.server.ServerWebExchange;
 
-/**
+/**RequestMappingHandlerAdapter是个非常庞大的体系，本处我们只关心它对@ModelAttribute也就是对ModelFactory的创建，列出相关源码如下：
  * Supports the invocation of
  * {@link org.springframework.web.bind.annotation.RequestMapping @RequestMapping}
  * handler methods.
@@ -54,7 +54,7 @@ public class RequestMappingHandlerAdapter implements HandlerAdapter, Application
 
 	private static final Log logger = LogFactory.getLog(RequestMappingHandlerAdapter.class);
 
-
+	// 该方法不能标注有@RequestMapping注解，只标注了@ModelAttribute才算哦~
 	private List<HttpMessageReader<?>> messageReaders = Collections.emptyList();
 
 	@Nullable

@@ -62,7 +62,7 @@ public abstract class AbstractJackson2View extends AbstractView {
 
 	protected boolean updateContentLength = false;
 
-
+	// 唯一构造函数，并且还是protected的~~
 	protected AbstractJackson2View(ObjectMapper objectMapper, String contentType) {
 		this.objectMapper = objectMapper;
 		configurePrettyPrint();
@@ -151,7 +151,7 @@ public abstract class AbstractJackson2View extends AbstractView {
 			response.addHeader("Cache-Control", "no-store");
 		}
 	}
-
+	// 实现了父类的渲染方法~~~~
 	@Override
 	protected void renderMergedOutputModel(Map<String, Object> model, HttpServletRequest request,
 			HttpServletResponse response) throws Exception {
@@ -168,6 +168,11 @@ public abstract class AbstractJackson2View extends AbstractView {
 		}
 
 		Object value = filterAndWrapModel(model, request);
+		// value是最终的从model中出来的~~~~这里就是把value值写进去~~~~
+				// 先通过stream得到一个JsonGenerator，然后先writePrefix(generator, object)
+				// 然后objectMapper.writerWithView
+				// 最后writeSuffix(generator, object);  然后flush即可~
+
 		writeContent(stream, value);
 
 		if (temporaryStream != null) {
@@ -175,13 +180,14 @@ public abstract class AbstractJackson2View extends AbstractView {
 		}
 	}
 
-	/**
+	/** 筛选Model并可选地将其包装在@link mappingjacksonvalue容器中
 	 * Filter and optionally wrap the model in {@link MappingJacksonValue} container.
 	 * @param model the model, as passed on to {@link #renderMergedOutputModel}
 	 * @param request current HTTP request
 	 * @return the wrapped or unwrapped value to be rendered
 	 */
 	protected Object filterAndWrapModel(Map<String, Object> model, HttpServletRequest request) {
+		// filterModel抽象方法，从指定的model中筛选出不需要的属性值~~~~~
 		Object value = filterModel(model);
 		Class<?> serializationView = (Class<?>) model.get(JsonView.class.getName());
 		FilterProvider filters = (FilterProvider) model.get(FilterProvider.class.getName());

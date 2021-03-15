@@ -68,6 +68,9 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
  */
 public abstract class AbstractMessageConverterMethodArgumentResolver implements HandlerMethodArgumentResolver {
 
+	// 默认支持的方法（没有Deleted方法）
+	// httpMethod为null 或者方法不属于这集中 或者没有contendType且没有body 那就返回null
+	// 也就是说如果是Deleted请求，即使body里有值也是返回null的。（因为它不是SUPPORTED_METHODS ）
 	private static final Set<HttpMethod> SUPPORTED_METHODS =
 			EnumSet.of(HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH);
 
@@ -79,11 +82,12 @@ public abstract class AbstractMessageConverterMethodArgumentResolver implements 
 	protected final List<HttpMessageConverter<?>> messageConverters;
 
 	protected final List<MediaType> allSupportedMediaTypes;
-
+	// 和RequestBodyAdvice和ResponseBodyAdvice有关的
 	private final RequestResponseBodyAdviceChain advice;
 
 
-	/**
+	/**构造函数里指定HttpMessageConverter
+	// 此一个参数的构造函数木人调用
 	 * Basic constructor with converters only.
 	 */
 	public AbstractMessageConverterMethodArgumentResolver(List<HttpMessageConverter<?>> converters) {
@@ -99,6 +103,7 @@ public abstract class AbstractMessageConverterMethodArgumentResolver implements 
 
 		Assert.notEmpty(converters, "'messageConverters' must not be empty");
 		this.messageConverters = converters;
+		// 它会把所有的消息转换器里支持的MediaType都全部拿出来汇聚起来~
 		this.allSupportedMediaTypes = getAllSupportedMediaTypes(converters);
 		this.advice = new RequestResponseBodyAdviceChain(requestResponseBodyAdvice);
 	}
@@ -119,7 +124,7 @@ public abstract class AbstractMessageConverterMethodArgumentResolver implements 
 	}
 
 
-	/**
+	/**提供一个defualt方法访问
 	 * Return the configured {@link RequestBodyAdvice} and
 	 * {@link RequestBodyAdvice} where each instance may be wrapped as a
 	 * {@link org.springframework.web.method.ControllerAdviceBean ControllerAdviceBean}.
@@ -129,7 +134,7 @@ public abstract class AbstractMessageConverterMethodArgumentResolver implements 
 	}
 
 	/**在父类AbstractMessageConverterMethodArgumentResolver的方法readWithMessageConverters中的处理如下：简单来说就是根据提供的实现的HttpMessageConverter来对提交的RequestBody中的数据进行转换处理。
-
+	      子类RequestResponseBodyMethodProcessor有复写此方法
 	 * Create the method argument value of the expected parameter type by
 	 * reading from the given request.
 	 * @param <T> the expected type of the argument value to be created
@@ -192,6 +197,7 @@ public abstract class AbstractMessageConverterMethodArgumentResolver implements 
 		try {
 			message = new EmptyBodyCheckingHttpInputMessage(inputMessage);
 			//选择适合的消息处理器来处理参数
+			// 这里就是匹配消息转换器的的逻辑~~~ 还是一样的  优先以GenericHttpMessageConverter这种类型的转换器为准
 			for (HttpMessageConverter<?> converter : this.messageConverters) {
 				Class<HttpMessageConverter<?>> converterType = (Class<HttpMessageConverter<?>>) converter.getClass();
 				GenericHttpMessageConverter<?> genericConverter =
@@ -202,14 +208,19 @@ public abstract class AbstractMessageConverterMethodArgumentResolver implements 
 					if (logger.isDebugEnabled()) {
 						logger.debug("Read [" + targetType + "] as \"" + contentType + "\" with [" + converter + "]");
 					}
+					// 因为它是一个EmptyBodyCheckingHttpInputMessage，所以它有这个判断方法  body != null表示有body内容
+					// 注意此处的判断，若有body的时候，会执行我们配置的`RequestBodyAdvice` 进行事前、时候进行处理~~~  后面我会示范
 					if (message.hasBody()) {
 						HttpInputMessage msgToUse =
 								getAdvice().beforeBodyRead(message, parameter, targetType, converterType);
+						// 执行消息转换器的read方法，从inputStream里面读出一个body出来~
 						body = (genericConverter != null ? genericConverter.read(targetType, contextClass, msgToUse) :
 								((HttpMessageConverter<T>) converter).read(targetClass, msgToUse));
 						body = getAdvice().afterBodyRead(body, msgToUse, parameter, targetType, converterType);
 					}
 					else {
+						// 如果没有body体，就交给handleEmptyBody来处理~~~~  第一个参数永远为null
+						// 这个处理器可以让我们给默认值，比如body为null时，我们返回一个默认的body之类的吧
 						body = getAdvice().handleEmptyBody(null, message, parameter, targetType, converterType);
 					}
 					break;
@@ -219,12 +230,16 @@ public abstract class AbstractMessageConverterMethodArgumentResolver implements 
 		catch (IOException ex) {
 			throw new HttpMessageNotReadableException("I/O error while reading input message", ex);
 		}
-
+		// 到此处，如果body还没有被赋值过~~~~ 此处千万不能直接报错，因为很多请求它可以不用body体的
+				// 比如post请求，body里有数据。但是Content-type确实text/html 就会走这里（因为匹配不到消息转换器）
 		if (body == NO_VALUE) {
 			if (httpMethod == null || !SUPPORTED_METHODS.contains(httpMethod) ||
 					(noContentType && !message.hasBody())) {
 				return null;
 			}
+			// 比如你是post方法，并且还指定了ContentType 你有body但是却没有找到支持你这种contentType的消息转换器，那肯定就报错了~~~
+			// 这个异常会被InvocableHandlerMethod catch住，虽然不会终止程序。但是会打印一个warn日志~~~
+			// 并不是所有的类型都能read的，从上篇博文可议看出，消息转换器它支持的可以read的类型还是有限的
 			throw new HttpMediaTypeNotSupportedException(contentType, this.allSupportedMediaTypes);
 		}
 

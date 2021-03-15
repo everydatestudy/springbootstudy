@@ -38,7 +38,7 @@ import org.springframework.web.util.UrlPathHelper;
  * @since 4.2
  */
 public class UrlBasedCorsConfigurationSource implements CorsConfigurationSource {
-
+	// 请务必注意：这里使用的是LinkedHashMap
 	private final Map<String, CorsConfiguration> corsConfigurations = new LinkedHashMap<>();
 
 	private PathMatcher pathMatcher = new AntPathMatcher();
@@ -99,7 +99,7 @@ public class UrlBasedCorsConfigurationSource implements CorsConfigurationSource 
 		}
 	}
 
-	/**
+	/**这里的path匹配用到的是AntPathMatcher.match()，默认是按照ant风格进行匹配的
 	 * Get the CORS configuration.
 	 */
 	public Map<String, CorsConfiguration> getCorsConfigurations() {

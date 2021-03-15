@@ -40,7 +40,7 @@ class SessionAttributesHandler {
 	private final Set<String> attributeNames = new HashSet<>();
 
 	private final Set<Class<?>> attributeTypes = new HashSet<>();
-
+	
 	private final Set<String> knownAttributeNames = Collections.newSetFromMap(new ConcurrentHashMap<>(4));
 
 

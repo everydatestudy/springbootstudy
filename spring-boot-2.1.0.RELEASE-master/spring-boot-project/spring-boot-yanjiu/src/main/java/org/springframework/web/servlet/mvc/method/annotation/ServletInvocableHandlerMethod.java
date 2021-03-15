@@ -60,7 +60,7 @@ import org.springframework.web.util.NestedServletException;
 public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
 
 	private static final Method CALLABLE_METHOD = ClassUtils.getMethod(Callable.class, "call");
-
+	// 处理方法返回值
 	@Nullable
 	private HandlerMethodReturnValueHandlerComposite returnValueHandlers;
 
@@ -80,7 +80,7 @@ public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
 	}
 
 
-	/**
+	/**设置处理返回值的HandlerMethodReturnValueHandler
 	 * Register {@link HandlerMethodReturnValueHandler} instances to use to
 	 * handle return values.
 	 */
@@ -89,7 +89,8 @@ public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
 	}
 
 
-	/**
+	/** 它不是复写，但是是对invokeForRequest方法的进一步增强  因为调用目标方法还是靠invokeForRequest
+	// 本处是把方法的返回值拿来进一步处理~~~比如状态码之类的
 	 * Invoke the method and handle the return value through one of the
 	 * configured {@link HandlerMethodReturnValueHandler}s.
 	 * @param webRequest the current request
@@ -100,22 +101,28 @@ public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
 			Object... providedArgs) throws Exception {
 		 // 执行请求
 		Object returnValue = invokeForRequest(webRequest, mavContainer, providedArgs);
+		// 设置HttpServletResponse返回状态码 这里面还是有点意思的  因为@ResponseStatus#code()在父类已经解析了  但是子类才用
 		setResponseStatus(webRequest);
-
+		// 重点是这一句话：mavContainer.setRequestHandled(true); 表示该请求已经被处理过了
 		if (returnValue == null) {
+			// Request的NotModified为true 有@ResponseStatus注解标注 RequestHandled=true 三个条件有一个成立,则设置请求处理完成并返回
 			if (isRequestNotModified(webRequest) || getResponseStatus() != null || mavContainer.isRequestHandled()) {
 				mavContainer.setRequestHandled(true);
 				return;
 			}
 		}
+		// 返回值不为null,@ResponseStatus存在reason 同样设置请求处理完成并返回
 		else if (StringUtils.hasText(getResponseStatusReason())) {
 			mavContainer.setRequestHandled(true);
 			return;
 		}
-
+		// 前边都不成立,则设置RequestHandled=false即请求未完成
+		// 继续交给HandlerMethodReturnValueHandlerComposite处理
+		// 可见@ResponseStatus的优先级还是蛮高的~~~~~
 		mavContainer.setRequestHandled(false);
 		Assert.state(this.returnValueHandlers != null, "No return value handlers");
 		try {
+			// 关于对方法返回值的处理，参见：https://blog.csdn.net/f641385712/article/details/90370542
 			this.returnValueHandlers.handleReturnValue(
 					returnValue, getReturnValueType(returnValue), mavContainer, webRequest);
 		}
@@ -127,7 +134,7 @@ public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
 		}
 	}
 
-	/**
+	/** 设置返回的状态码到HttpServletResponse 里面去
 	 * Set the response status according to the {@link ResponseStatus} annotation.
 	 */
 	private void setResponseStatus(ServletWebRequest webRequest) throws IOException {
@@ -146,7 +153,8 @@ public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
 				response.setStatus(status.value());
 			}
 		}
-
+		// 设置到request的属性，把响应码给过去。为了在redirect中使用
+		
 		// To be picked up by RedirectView
 		webRequest.getRequest().setAttribute(View.RESPONSE_STATUS_ATTRIBUTE, status);
 	}

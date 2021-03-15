@@ -28,7 +28,7 @@ import java.beans.PropertyDescriptor;
 该接口支持嵌套属性，可将子属性上的属性设置为无限深度.
 BeanWrapper的“ extractOldValueForEditor”默认值为false，以避免由getter方法调用引起的副作用。 将此选项设置为true，即自定义编辑器公开当前属性值。
  * 
- * 
+ * BeanWrapper相当于一个代理器，Spring委托BeanWrapper完成Bean属性的填充工作。关于此接口的实现类，简单的说它只有唯一实现类：BeanWrapperImpl
  * The central interface of Spring's low-level JavaBeans infrastructure.
  *
  * <p>Typically not used directly but rather implicitly via a

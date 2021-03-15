@@ -59,6 +59,8 @@ import org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMappi
  * @author Sam Brannen
  * @since 3.1
  */
+//  它也实现了MatchableHandlerMapping分支的接口
+//EmbeddedValueResolverAware接口：说明要支持解析Spring的表达式~
 public class RequestMappingHandlerMapping extends RequestMappingInfoHandlerMapping
 		implements MatchableHandlerMapping, EmbeddedValueResolverAware {
 
@@ -179,7 +181,9 @@ public class RequestMappingHandlerMapping extends RequestMappingInfoHandlerMappi
 		return this.config.getFileExtensions();
 	}
 
-
+	// 判断该类，是否是一个handler（此处就体现出@Controller注解的特殊性了）
+		// 这也是为何我们的XXXController用@Bean申明是无效的原因（前提是类上木有@RequestMapping注解，否则也是阔仪的哦~~~）
+		// 因此我个人建议：为了普适性，类上的@RequestMapping也统一要求加上，即使你不写@Value也木关系，这样是最好的
 	/**
 	 * {@inheritDoc}
 	 * <p>Expects a handler to have either a type-level @{@link Controller}
@@ -205,11 +209,20 @@ public class RequestMappingHandlerMapping extends RequestMappingInfoHandlerMappi
 	protected RequestMappingInfo getMappingForMethod(Method method, Class<?> handlerType) {
 		// 转换成 RequestMappingInfo ，如果方法没有被  @RequestMapping 注解修饰，则会返回null
 		// 解析出来方法上  @RequestMapping  注解的各种信息
+		// 第一步：先拿到方法上的info
 		RequestMappingInfo info = createRequestMappingInfo(method);
 		if (info != null) {
 			// 解析出来 bean 上  @RequestMapping  注解的各种信息
+			// 方法上有。在第二步：拿到类上的info
 			RequestMappingInfo typeInfo = createRequestMappingInfo(handlerType);
 			if (typeInfo != null) {
+				// 倘若类上面也有，那就combine把两者结合
+				// combile的逻辑基如下：
+				// names：name1+#+name2
+				// path：路径拼接起来作为全路径(容错了方法里没有/的情况)
+				// method、params、headers：取并集
+				// consumes、produces：以方法的为准，没有指定再取类上的
+				// custom：谁有取谁的。若都有：那就看custom具体实现的.combine方法去决定把  简单的说就是交给调用者了~~~
 				info = typeInfo.combine(info);
 			}
 		}
@@ -226,11 +239,16 @@ public class RequestMappingHandlerMapping extends RequestMappingInfoHandlerMappi
 	@Nullable
 	private RequestMappingInfo createRequestMappingInfo(AnnotatedElement element) {
 		// 获取当前方法上的  @RequestMapping 注解
+		// 注意：此处使用的是findMergedAnnotation  这也就是为什么虽然@RequestMapping它并不具有继承的特性，但是你子类仍然有继承的效果的原因~~~~
 		RequestMapping requestMapping = AnnotatedElementUtils.findMergedAnnotation(element, RequestMapping.class);
 		// 获取自定义的方法条件
+		// 请注意：这里进行了区分处理  如果是Class的话  如果是Method的话
+				// 这里返回的是一个condition 也就是看看要不要处理这个请求的条件~~~~
 		RequestCondition<?> condition = (element instanceof Class ?
 				getCustomTypeCondition((Class<?>) element) : getCustomMethodCondition((Method) element));
 		// 这里可以看到 如果 requestMapping  = null，则会直接返回null，否则会封装成一个 RequestMappingInfo (包含 @RequestMapping 注解的各种参数) 返回。
+		// 这个createRequestMappingInfo就是根据一个@RequestMapping以及一个condition创建一个
+		// 显然如果没有找到此注解，这里就返回null了，表面这个方法啥的就不是一个info~~~~
 		return (requestMapping != null ? createRequestMappingInfo(requestMapping, condition) : null);
 	}
 

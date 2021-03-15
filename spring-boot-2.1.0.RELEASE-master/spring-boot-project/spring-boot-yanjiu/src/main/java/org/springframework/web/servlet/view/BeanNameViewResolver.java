@@ -26,7 +26,10 @@ import org.springframework.web.context.support.WebApplicationObjectSupport;
 import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.ViewResolver;
 
-/**这个视图解析器跟XmlViewResolver有点类似，也是通过把返回的逻辑视图名称去匹配定义好的视图bean对象。不同点有二，一是BeanNameViewResolver要求视图bean对象都定义在Spring的application context中，而XmlViewResolver是在指定的配置文件中寻找视图bean对象，二是BeanNameViewResolver不会进行视图缓存。看一个例子，在SpringMVC的配置文件中定义了一个BeanNameViewResolver视图解析器和一个id为test的InternalResourceview bean对象。
+/**这个视图解析器跟XmlViewResolver有点类似，也是通过把返回的逻辑视图名称去匹配定义好的视图bean对象。
+ * 不同点有二，一是BeanNameViewResolver要求视图bean对象都定义在Spring的application context中，
+ * 而XmlViewResolver是在指定的配置文件中寻找视图bean对象，二是BeanNameViewResolver不会进行视图缓存。
+ * 看一个例子，在SpringMVC的配置文件中定义了一个BeanNameViewResolver视图解析器和一个id为test的InternalResourceview bean对象。
 ————————————————
 版权声明：本文为CSDN博主「归田」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
 原文链接：https://blog.csdn.net/qq924862077/article/details/54345494
@@ -78,6 +81,7 @@ public class BeanNameViewResolver extends WebApplicationObjectSupport implements
 	@Override
 	@Nullable
 	public View resolveViewName(String viewName, Locale locale) throws BeansException {
+		// 可见它和容器强关联，若容器里没有这个Bean，他就直接返回null了~~~
 		ApplicationContext context = obtainApplicationContext();
 		if (!context.containsBean(viewName)) {
 			if (logger.isDebugEnabled()) {
@@ -95,6 +99,7 @@ public class BeanNameViewResolver extends WebApplicationObjectSupport implements
 			// let's accept this as a non-match and allow for chaining as well...
 			return null;
 		}
+		// 拿出这个View就这直接返回了~~~
 		return context.getBean(viewName, View.class);
 	}
 

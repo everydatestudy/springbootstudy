@@ -808,7 +808,11 @@ public class DispatcherServlet extends FrameworkServlet {
 		}
 	}
 
-	/**
+	/**	// 寻找逻辑（detectAllHandlerExceptionResolvers默认值是true表示回去容器里寻找）：
+	// 1、若detect = true（默认是true），去容器里找出所有`HandlerExceptionResolver`类型的Bean们，找到后排序
+	// 2、若detect = false（可手动更改），那就拿名称为`handlerExceptionResolver`这单独的一个Bean（context.getBean()）
+	// 3、如果一个都木有找到，那就走默认策略getDefaultStrategies()，详见下面截图~~~
+开启@EnableWebMvc后，使用的异常处理器是HandlerExceptionResolverComposite。截图如下：
 	 * Initialize the HandlerExceptionResolver used by this class.
 	 * <p>
 	 * If no bean is defined with the given name in the BeanFactory for this
@@ -1259,6 +1263,8 @@ public class DispatcherServlet extends FrameworkServlet {
 				logger.debug("ModelAndViewDefiningException encountered", exception);
 				mv = ((ModelAndViewDefiningException) exception).getModelAndView();
 			} else {
+				// 若是普通异常，就交给方法processHandlerException()去统一处理
+				// 从而得到一个异常视图ModelAndView，并且标注errorView = true（若不为null的话）
 				Object handler = (mappedHandler != null ? mappedHandler.getHandler() : null);
 				mv = processHandlerException(request, response, handler, exception);
 				errorView = (mv != null);
@@ -1268,6 +1274,7 @@ public class DispatcherServlet extends FrameworkServlet {
 		// Did the handler return a view to render?
 		// 如果在Handler实例的处理过程中返回了 view，则需要做页面处理
 		if (mv != null && !mv.wasCleared()) {
+			// 渲染此错误视图（若不为null）
 			render(mv, request, response);
 			if (errorView) {
 				WebUtils.clearErrorRequestAttributes(request);
@@ -1473,6 +1480,7 @@ public class DispatcherServlet extends FrameworkServlet {
 
 		// Check registered HandlerExceptionResolvers...
 		ModelAndView exMv = null;
+		// 核心处理办法就在此处，exMv 只有有一个视图返回了，就立马停止（短路效果）
 		if (this.handlerExceptionResolvers != null) {
 			for (HandlerExceptionResolver handlerExceptionResolver : this.handlerExceptionResolvers) {
 				exMv = handlerExceptionResolver.resolveException(request, response, handler, ex);

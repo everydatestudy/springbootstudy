@@ -61,24 +61,32 @@ public class DefaultCorsProcessor implements CorsProcessor {
 	@SuppressWarnings("resource")
 	public boolean processRequest(@Nullable CorsConfiguration config, HttpServletRequest request,
 			HttpServletResponse response) throws IOException {
-
+		// 若不是跨域请求，不处理
+		// 这个判断极其简单：请求中是否有Origin请求头。有这个头就是跨域请求
 		if (!CorsUtils.isCorsRequest(request)) {
 			return true;
 		}
-
+		// response.getHeaders().getAccessControlAllowOrigin() != null
+		// 若响应头里已经设置好了Access-Control-Allow-Origin这个响应头，此处理器也不管了
 		ServletServerHttpResponse serverResponse = new ServletServerHttpResponse(response);
 		if (responseHasCors(serverResponse)) {
 			logger.debug("Skip CORS processing: response already contains \"Access-Control-Allow-Origin\" header");
 			return true;
 		}
-
+		// 即使你有Origin请求头，但是是同源的请求，那也不处理
 		ServletServerHttpRequest serverRequest = new ServletServerHttpRequest(request);
 		if (WebUtils.isSameOrigin(serverRequest)) {
 			logger.debug("Skip CORS processing: request is from same origin");
 			return true;
 		}
-
+		// 是否是预检请求，判断标准如下：
+		// 是跨域请求 && 是`OPTIONS`请求 && 有Access-Control-Request-Method这个请求头
 		boolean preFlightRequest = CorsUtils.isPreFlightRequest(request);
+		// 若config == null，分两种case：
+		// 是预检请求but木有给config，那就拒绝：给出状态码403
+		//   response.setStatusCode(HttpStatus.FORBIDDEN)
+		//   response.getBody().write("Invalid CORS request".getBytes(StandardCharsets.UTF_8));
+
 		if (config == null) {
 			if (preFlightRequest) {
 				rejectRequest(serverResponse);
@@ -88,7 +96,9 @@ public class DefaultCorsProcessor implements CorsProcessor {
 				return true;
 			}
 		}
-
+		// 真正的跨域处理逻辑~~~~
+		// 它的处理逻辑比较简单，立即了W3C规范理解它起来非常简单，本文略
+		// checkOrigin/checkMethods/checkHeaders等等方法最终都是委托给CorsConfiguration去做的
 		return handleInternal(serverRequest, serverResponse, config, preFlightRequest);
 	}
 

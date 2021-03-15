@@ -65,6 +65,10 @@ import org.springframework.web.method.support.ModelAndViewContainer;
  * @author Sebastien Deleuze
  * @since 3.1
  */
+//从命名上看它是个Processor，所以根据经验它既能处理入参，
+//也能处理方法的返回值：HandlerMethodArgumentResolver + HandlerMethodReturnValueHandler。
+//解析@ModelAttribute注解标注的方法参数，并处理@ModelAttribute标注的方法返回值。
+ 
 public class ModelAttributeMethodProcessor implements HandlerMethodArgumentResolver, HandlerMethodReturnValueHandler {
 
 	private static final ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
@@ -90,13 +94,18 @@ public class ModelAttributeMethodProcessor implements HandlerMethodArgumentResol
 	 * {@link ModelAttribute} or, if in default resolution mode, for any
 	 * method parameter that is not a simple type.
 	 */
+	// 入参里标注了@ModelAttribute 或者（注意这个或者） annotationNotRequired = true并且不是isSimpleProperty()
+	// isSimpleProperty()：八大基本类型/包装类型、Enum、Number等等 Date Class等等等等
+	// 所以划重点：即使你没标注@ModelAttribute  单子还要不是基本类型等类型，都会进入到这里来处理
+	// 当然这个行为是是收到annotationNotRequired属性影响的，具体的具体而论  它既有false的时候  也有true的时候
 	@Override
 	public boolean supportsParameter(MethodParameter parameter) {
 		return (parameter.hasParameterAnnotation(ModelAttribute.class) ||
 				(this.annotationNotRequired && !BeanUtils.isSimpleProperty(parameter.getParameterType())));
 	}
 
-	/**
+	/**说明：能进入到这里来的  证明入参里肯定是有对应注解的？？？
+	// 显然不是，上面有说  这事和属性值annotationNotRequired有关的~~~
 	 * Resolve the argument from the model or if not found instantiate it with
 	 * its default if it is available. The model attribute is then populated
 	 * with request values via data binding and optionally validated
@@ -112,8 +121,9 @@ public class ModelAttributeMethodProcessor implements HandlerMethodArgumentResol
 
 		Assert.state(mavContainer != null, "ModelAttributeMethodProcessor requires ModelAndViewContainer");
 		Assert.state(binderFactory != null, "ModelAttributeMethodProcessor requires WebDataBinderFactory");
-
+		// 拿到ModelKey名称~~~（注解里有写就以注解的为准）
 		String name = ModelFactory.getNameForParameter(parameter);
+		// 拿到参数的注解本身
 		ModelAttribute ann = parameter.getParameterAnnotation(ModelAttribute.class);
 		if (ann != null) {
 			mavContainer.setBinding(name, ann.binding());
@@ -121,13 +131,22 @@ public class ModelAttributeMethodProcessor implements HandlerMethodArgumentResol
 
 		Object attribute = null;
 		BindingResult bindingResult = null;
-
+		// 如果model里有这个属性，那就好说，直接拿出来完事~
 		if (mavContainer.containsAttribute(name)) {
 			attribute = mavContainer.getModel().get(name);
 		}
 		else {
 			// Create attribute instance
 			try {
+				 // 若不存在，也不能让是null呀
+				// Create attribute instance
+				// 这是一个复杂的创建逻辑：
+				// 1、如果是空构造，直接new一个实例出来
+				// 2、若不是空构造，支持@ConstructorProperties解析给构造赋值
+				//   注意:这里就支持fieldDefaultPrefix前缀、fieldMarkerPrefix分隔符等能力了 最终完成获取一个属性
+				// 调用BeanUtils.instantiateClass(ctor, args)来创建实例
+				// 注意：但若是非空构造出来，是立马会执行valid校验的，此步骤若是空构造生成的实例，此步不会进行valid的，但是下一步会哦~
+ 
 				attribute = createAttribute(name, parameter, binderFactory, webRequest);
 			}
 			catch (BindException ex) {
@@ -142,16 +161,20 @@ public class ModelAttributeMethodProcessor implements HandlerMethodArgumentResol
 				bindingResult = ex.getBindingResult();
 			}
 		}
-
+		// 若是空构造创建出来的实例，这里会进行数据校验  此处使用到了((WebRequestDataBinder) binder).bind(request);  bind()方法  唯一一处
 		if (bindingResult == null) {
 			// Bean property binding and validation;
 			// skipped in case of binding failure on construction.
 			WebDataBinder binder = binderFactory.createBinder(webRequest, attribute, name);
 			if (binder.getTarget() != null) {
+				// 绑定request请求数据
 				if (!mavContainer.isBindingDisabled(name)) {
 					bindRequestParameters(binder, webRequest);
 				}
+				// 执行valid校验~~~~
 				validateIfApplicable(binder, parameter);
+				//注意：此处抛出的异常是BindException
+				//RequestResponseBodyMethodProcessor抛出的异常是：MethodArgumentNotValidException
 				if (binder.getBindingResult().hasErrors() && isBindExceptionRequired(binder, parameter)) {
 					throw new BindException(binder.getBindingResult());
 				}
@@ -163,7 +186,11 @@ public class ModelAttributeMethodProcessor implements HandlerMethodArgumentResol
 			bindingResult = binder.getBindingResult();
 		}
 
+		
 		// Add resolved attribute and BindingResult at the end of the model
+		// at the end of the model  把解决好的属性放到Model的末尾~~~
+		 // 可以即使是标注在入参上的@ModelAtrribute的属性值，最终也都是会放进Model里的~~~可怕吧
+	
 		Map<String, Object> bindingResultModel = bindingResult.getModel();
 		mavContainer.removeAttributes(bindingResultModel);
 		mavContainer.addAllAttributes(bindingResultModel);

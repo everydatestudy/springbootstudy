@@ -65,7 +65,14 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 // 当需要参数值时处理缺少的参数值、可选地处理解析值
 
      特别注意的是：默认值可以使用${}占位符，或者SpEL语句#{}是木有问题的
- 
+	该抽象类中定义了解析参数的主逻辑（模版逻辑），子类只需要实现对应的抽象模版方法即可。
+	对此部分的处理步骤，我把它简述如下：
+	基于MethodParameter构建NameValueInfo <-- 主要有name, defaultValue, required（其实主要是解析方法参数上标注的注解~）
+	通过BeanExpressionResolver(${}占位符以及SpEL) 解析name
+	通过模版方法resolveName从 HttpServletRequest, Http Headers, URI template variables 等等中获取对应的属性值（具体由子类去实现）
+	对 arg==null这种情况的处理, 要么使用默认值, 若 required = true && arg == null, 则一般报出异常（boolean类型除外~）
+	通过WebDataBinder将arg转换成Methodparameter.getParameterType()类型（注意：这里仅仅只是用了数据转换而已，并没有用bind()方法）
+
  *
  *
  * @author Arjen Poutsma
@@ -175,14 +182,20 @@ public abstract class AbstractNamedValueMethodArgumentResolver implements Handle
 		return arg;
 	}
 
-	/**	// 此处有缓存，记录下每一个MethodParameter对象   value是NamedValueInfo值
-
+	/**	
+	 *     此处有缓存，记录下每一个MethodParameter对象   value是NamedValueInfo值
 	 * Obtain the named value for the given method parameter.
 	 */
 	private NamedValueInfo getNamedValueInfo(MethodParameter parameter) {
 		NamedValueInfo namedValueInfo = this.namedValueInfoCache.get(parameter);
 		if (namedValueInfo == null) {
+			// createNamedValueInfo是抽象方法，子类必须实现
 			namedValueInfo = createNamedValueInfo(parameter);
+			// updateNamedValueInfo：这一步就是我们之前说过的为何Spring MVC可以根据参数名封装的方法
+			// 如果info.name.isEmpty()的话（注解里没指定名称），就通过`parameter.getParameterName()`去获取参数名~
+			// 它还会处理注解指定的defaultValue：`\n\t\.....`等等都会被当作null处理
+			// 都处理好后：new NamedValueInfo(name, info.required, defaultValue);（相当于吧注解解析成了此对象嘛~~）
+
 			namedValueInfo = updateNamedValueInfo(parameter, namedValueInfo);
 			this.namedValueInfoCache.put(parameter, namedValueInfo);
 		}
@@ -232,6 +245,7 @@ public abstract class AbstractNamedValueMethodArgumentResolver implements Handle
 	}
 
 	/**
+	 * // 由子类根据名称，去把值拿出来
 	 * Resolve the given parameter type and value name into an argument value.
 	 * @param name the name of the value being resolved
 	 * @param parameter the method parameter to resolve to an argument value

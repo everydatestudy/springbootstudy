@@ -59,13 +59,14 @@ public class UrlPathHelper {
 	@Nullable
 	static volatile Boolean websphereComplianceFlag;
 
-
+	// 是否总是按照全路径 默认是false（一般不改~） 
 	private boolean alwaysUseFullPath = false;
+	// 是否对url进行解码（默认都是需要解码的）  解码可以是request.getCharacterEncoding()。若没指定就是下面的defaultEncoding 
 
 	private boolean urlDecode = true;
-
+	// 设置是否应从请求URI中删除“；”（分号）
 	private boolean removeSemicolonContent = true;
-
+	// 默认编码是它：ISO-8859-1
 	private String defaultEncoding = WebUtils.DEFAULT_CHARACTER_ENCODING;
 
 
