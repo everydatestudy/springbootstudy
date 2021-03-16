@@ -32,7 +32,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.util.ErrorHandler;
 
 /**
- * 把所有的事件写在这里：因为spring的源码不能写注释， 初始化allListeners,
+ * 把所有的事件写在这里：
  * listeners,listenerBeans,对于当前场景来说. listeners 中的元素如下:
  * org.springframework.boot.context.config.ConfigFileApplicationListener,
  * org.springframework.boot.context.config.AnsiOutputApplicationListener,

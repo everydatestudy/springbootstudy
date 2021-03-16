@@ -237,7 +237,7 @@ public class Binder {
 			return handleBindError(name, target, handler, context, ex);
 		}
 	}
-
+	
 	private <T> T handleBindResult(ConfigurationPropertyName name, Bindable<T> target,
 								   BindHandler handler, Context context, Object result) throws Exception {
 		if (result != null) { // 若result不为null，则说明之前的绑定结果成功

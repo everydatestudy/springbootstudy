@@ -293,7 +293,6 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		//获取容器中注册的所有bd名字
 		//7个
 		String[] candidateNames = registry.getBeanDefinitionNames();
-
 		/**
 		 * Full
 		 * Lite

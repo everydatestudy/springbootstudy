@@ -1,6 +1,6 @@
 package org.spring.boot.event;
 
-public interface ApplicationEventMulticaster {
+public interface DemoApplicationEventMulticaster {
 	void addContextListener(ContextListener<?> listener);
 
 	void removeContextListener(ContextListener<?> listener);

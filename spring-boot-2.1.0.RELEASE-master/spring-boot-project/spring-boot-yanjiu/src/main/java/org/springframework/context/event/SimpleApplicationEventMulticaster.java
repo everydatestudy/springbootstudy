@@ -16,6 +16,7 @@
 
 package org.springframework.context.event;
 
+import java.util.Collection;
 import java.util.concurrent.Executor;
 
 import org.apache.commons.logging.Log;
@@ -130,8 +131,12 @@ public class SimpleApplicationEventMulticaster extends AbstractApplicationEventM
 
 	@Override
 	public void multicastEvent(final ApplicationEvent event, @Nullable ResolvableType eventType) {
+		//判断得到的事件源
 		ResolvableType type = (eventType != null ? eventType : resolveDefaultEventType(event));
-		for (final ApplicationListener<?> listener : getApplicationListeners(event, type)) {
+		//根据事件源得到所有需要发布的事件，
+		//TODO 非常重要的方法，
+		Collection<ApplicationListener<?>> listeners= getApplicationListeners(event, type);
+		for (final ApplicationListener<?> listener : listeners) {
 			Executor executor = getTaskExecutor();
 			if (executor != null) {
 				executor.execute(() -> invokeListener(listener, event));

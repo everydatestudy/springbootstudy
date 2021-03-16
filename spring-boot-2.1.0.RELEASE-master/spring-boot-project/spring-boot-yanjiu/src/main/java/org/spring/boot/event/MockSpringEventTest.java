@@ -4,7 +4,7 @@ public class MockSpringEventTest {
 
 	public static void main(String[] args) throws InterruptedException {
 		// 新建SimpleApplicationEventMulticaster对象，并添加容器生命周期监听器
-		ApplicationEventMulticaster eventMulticaster = new SimpleApplicationEventMulticaster();
+		DemoApplicationEventMulticaster eventMulticaster = new SimpleApplicationEventMulticaster();
 		eventMulticaster.addContextListener(new ContextStartEventListener());
 		eventMulticaster.addContextListener(new ContextRunningEventListener());
 		eventMulticaster.addContextListener(new ContextDestroyEventListener());

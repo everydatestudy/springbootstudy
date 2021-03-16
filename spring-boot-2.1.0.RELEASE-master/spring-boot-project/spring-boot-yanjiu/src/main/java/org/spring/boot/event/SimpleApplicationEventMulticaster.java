@@ -7,7 +7,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class SimpleApplicationEventMulticaster implements ApplicationEventMulticaster {
+public class SimpleApplicationEventMulticaster implements DemoApplicationEventMulticaster {
     // 是否异步发布事件
     private boolean async = false;
     // 线程池

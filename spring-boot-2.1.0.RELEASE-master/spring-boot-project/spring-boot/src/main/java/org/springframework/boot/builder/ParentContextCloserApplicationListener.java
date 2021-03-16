@@ -28,7 +28,8 @@ import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.core.Ordered;
 import org.springframework.util.ObjectUtils;
 
-/**
+/**在一个应用上下文的双亲应用上下文关闭时关闭该应用上下文。这个监听器监听应用上下文刷新事件并从中取出
+ * 应用上下文，然后监听关闭事件在应用上下文的层级结构中往下层传播该事件。
  * Listener that closes the application context if its parent is closed. It listens for
  * refresh events and grabs the current context from there, and then listens for closed
  * events and propagates it down the hierarchy.
@@ -53,7 +54,9 @@ public class ParentContextCloserApplicationListener
 	public void setApplicationContext(ApplicationContext context) throws BeansException {
 		this.context = context;
 	}
-
+	// 当一个应用上下文中发出ParentContextAvailableEvent 事件时，表明该应用上下文被设定了双亲
+	// 应用上下文并且自己已经可用(refreshed),现在在该应用上下文的双亲上下文中登记一个事件监听器，
+	// 用于监听双亲上下文的关闭事件，从而关闭该子应用上下文。
 	@Override
 	public void onApplicationEvent(ParentContextAvailableEvent event) {
 		maybeInstallListenerInParent(event.getApplicationContext());
@@ -79,7 +82,16 @@ public class ParentContextCloserApplicationListener
 		return new ContextCloserListener(child);
 	}
 
-	/**
+	/** * 定义一个应用事件监听器，关注事件ContextClosedEvent，当该事件发生时，关闭指定的孩子应用上下文。
+	 * 对于指定的孩子应用上下文使用WeakReference弱引用保持。
+	 * 事件ContextClosedEvent发生时，如果弱引用中保持的孩子应用上下文还在(意思就是弱引用尚未释放),
+	 * 并且孩子上下文处于活跃状态，则关闭它。
+	 * 注意 ： 在关闭之前会再次检查当前上下文和孩子上下文之间的父子关系，仅在父子关系成立的情况下才真正
+	 * 做相应的关闭动作。
+	 *  
+	 * 该静态内部类仅被ParentContextCloserApplicationListener用于向双亲应用上下文登记一个关闭孩子
+	 * 引用上下文的ApplicationListener
+
 	 * {@link ApplicationListener} to close the context.
 	 */
 	protected static class ContextCloserListener

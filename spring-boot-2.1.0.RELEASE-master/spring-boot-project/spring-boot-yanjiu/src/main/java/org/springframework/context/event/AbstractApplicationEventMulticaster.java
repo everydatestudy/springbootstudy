@@ -61,9 +61,9 @@ import org.springframework.util.ObjectUtils;
  */
 public abstract class AbstractApplicationEventMulticaster
 		implements ApplicationEventMulticaster, BeanClassLoaderAware, BeanFactoryAware {
-
+	//创建监听器助手类，用于存放应用程序的监听器集合，参数是否是预过滤监听器为false
 	private final ListenerRetriever defaultRetriever = new ListenerRetriever(false);
-
+	//ListenerCacheKey是基于事件类型和源类型的类作为key用来存储监听器助手ListenerRetriever
 	final Map<ListenerCacheKey, ListenerRetriever> retrieverCache = new ConcurrentHashMap<>(64);
 
 	@Nullable
@@ -171,12 +171,15 @@ public abstract class AbstractApplicationEventMulticaster
 	 */
 	protected Collection<ApplicationListener<?>> getApplicationListeners(
 			ApplicationEvent event, ResolvableType eventType) {
-
+		//事件源，事件最初发生在其上的对象
 		Object source = event.getSource();
+		 //事件源class对象
 		Class<?> sourceType = (source != null ? source.getClass() : null);
+		//创建基于事件源，和源类型的监听器助手cacheKey
 		ListenerCacheKey cacheKey = new ListenerCacheKey(eventType, sourceType);
 
 		// Quick check for existing entry on ConcurrentHashMap...
+		//快速检测监听器助手缓存ConcurrentHashMap中是否存在指定的cacheKey
 		ListenerRetriever retriever = this.retrieverCache.get(cacheKey);
 		if (retriever != null) {
 			return retriever.getApplicationListeners();
@@ -192,8 +195,7 @@ public abstract class AbstractApplicationEventMulticaster
 					return retriever.getApplicationListeners();
 				}
 				retriever = new ListenerRetriever(true);
-				Collection<ApplicationListener<?>> listeners =
-						retrieveApplicationListeners(eventType, sourceType, retriever);
+				Collection<ApplicationListener<?>> listeners =retrieveApplicationListeners(eventType, sourceType, retriever);
 				this.retrieverCache.put(cacheKey, retriever);
 				return listeners;
 			}
