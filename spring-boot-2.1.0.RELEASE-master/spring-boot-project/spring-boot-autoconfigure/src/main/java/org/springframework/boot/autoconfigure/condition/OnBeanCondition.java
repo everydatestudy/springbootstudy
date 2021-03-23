@@ -172,7 +172,7 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 	}
 
 	protected final MatchResult getMatchingBeans(ConditionContext context, BeanSearchSpec beans) {
-		// 获得Spring容器的beanFactory
+		// // 1. 如果搜索策略为PARENTS或者ANCESTORS,则beanFactory为当前容器的父容器中获取.否则beanFactory从当前容器获取
 		ConfigurableListableBeanFactory beanFactory = context.getBeanFactory();
 		// 判断bean的搜索策略是否是SearchStrategy.ANCESTORS策略
 		if (beans.getStrategy() == SearchStrategy.ANCESTORS) {
@@ -223,7 +223,7 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 			if (!beansIgnoredByType.contains(beanName) && containsBean(beanFactory, beanName, considerHierarchy)) {
 				matchResult.recordMatchedName(beanName);
 			}
-			// 否则，不陪陪
+			// 否则，不匹配
 			else {
 				matchResult.recordUnmatchedName(beanName);
 			}
@@ -386,7 +386,7 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 	}
 
 	protected static class BeanSearchSpec {
-
+	  
 		private final Class<?> annotationType;
 
 		private final List<String> names = new ArrayList<>();
@@ -407,9 +407,12 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 
 		public BeanSearchSpec(ConditionContext context, AnnotatedTypeMetadata metadata, Class<?> annotationType,
 				Class<?> genericContainer) {
+			  // 1. 对annotationType进行赋值
 			this.annotationType = annotationType;
+		    // 获得metadata所有的属性所对应的值,封装为MultiValueMap,key-->属性名,value-->所对应的值,class 转换为String
 			MultiValueMap<String, Object> attributes = metadata.getAllAnnotationAttributes(annotationType.getName(),
 					true);
+		    // 从attributes中提取出name的值,赋值为names
 			collect(attributes, "name", this.names);
 			collect(attributes, "value", this.types);
 			collect(attributes, "type", this.types);
@@ -421,11 +424,14 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 			BeanTypeDeductionException deductionException = null;
 			try {
 				if (this.types.isEmpty() && this.names.isEmpty()) {
+					 // 2. 如果types没有设置并且names也没有设置,则如果该metadata是MethodMetadata的实例并且该metadata被@Bean注解
+		            // 则将该方法的返回值类型作为types
 					addDeducedBeanType(context, metadata, this.types);
 				}
 			} catch (BeanTypeDeductionException ex) {
 				deductionException = ex;
 			}
+		    // 3. 检验,如果types,names,annotations 都为空,则抛出IllegalStateException异常
 			validate(deductionException);
 		}
 
@@ -446,7 +452,9 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 		protected final String getAnnotationName() {
 			return "@" + ClassUtils.getShortName(this.annotationType);
 		}
-
+		//调用collect方法对names,types,annotations,ignoredTypes,ignoredTypes进行赋值.
+		//collect方法从attributes中取出所给定的key的value,进行赋值即可,如果值为String[],则将其强转为String[]后添加.代码如下:
+	
 		protected void collect(MultiValueMap<String, Object> attributes, String key, List<String> destination) {
 			List<?> values = attributes.get(key);
 			if (values != null) {
@@ -578,7 +586,10 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 		}
 
 	}
-
+//	实例化SingleCandidateBeanSearchSpec,SingleCandidateBeanSearchSpec继承了BeanSearchSpec.其复写了validate方法,在该方法中校验types只能指定一个.同时,复写了collect方法,这样在实例化的时候,会去除”“, Object类型的bean.即 @ConditionalOnSingleCandidate 必须指定type,value中的一个,且不能使用默认值 代码如下:
+//		————————————————
+//		版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//		原文链接：https://blog.csdn.net/qq_26000415/article/details/79008745
 	private static class SingleCandidateBeanSearchSpec extends BeanSearchSpec {
 
 		SingleCandidateBeanSearchSpec(ConditionContext context, AnnotatedTypeMetadata metadata,

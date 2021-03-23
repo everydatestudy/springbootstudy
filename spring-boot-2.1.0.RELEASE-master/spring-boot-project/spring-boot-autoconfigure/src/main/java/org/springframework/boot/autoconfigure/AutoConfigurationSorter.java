@@ -85,16 +85,20 @@ class AutoConfigurationSorter {
 			List<String> toSort, Set<String> sorted, Set<String> processing,
 			String current) {
 		if (current == null) {
+			 //从要排序集合删除第一个排序类
 			current = toSort.remove(0);
 		}
 		processing.add(current);
+	    //getClassesRequestedAfter方法获取指定类的after、before集合的并集
 		for (String after : classes.getClassesRequestedAfter(current)) {
 			Assert.state(!processing.contains(after),
 					"AutoConfigure cycle detected between " + current + " and " + after);
+		      //通过递归的方式将当前类的after、before类添加到已排序集合
 			if (!sorted.contains(after) && toSort.contains(after)) {
 				doSortByAfterAnnotation(classes, toSort, sorted, processing, after);
 			}
 		}
+		 //将正在处理类添加到集合
 		processing.remove(current);
 		sorted.add(current);
 	}

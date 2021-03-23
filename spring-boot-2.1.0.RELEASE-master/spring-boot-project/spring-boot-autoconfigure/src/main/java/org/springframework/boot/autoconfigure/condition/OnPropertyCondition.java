@@ -145,8 +145,10 @@ class OnPropertyCondition extends SpringBootCondition {
 		private void collectProperties(PropertyResolver resolver, List<String> missing,
 				List<String> nonMatching) {
 			for (String name : this.names) { // 逐个遍历@ConditionalOnProperty注解里的name的值
+				//key等于 如果支持松散匹配,则使用所配置的name,否则等于prefix+name
 				String key = this.prefix + name;
-				if (resolver.containsProperty(key)) { // 这里resolver封装了外部配置的环境变量，判断环境变量中是否包含@ConditionalOnProperty注解里的name的值
+				//// 这里resolver封装了外部配置的环境变量，判断环境变量中是否包含@ConditionalOnProperty注解里的name的值
+				if (resolver.containsProperty(key)) { 
 					// 若定义了havingValue的值，这里判断是否每个配置的属性值均为havingValue（忽略大小写），
 					// 只要有一个属性值不为havingValue，则添加到nonMatching集合中，注意havingValue的值不能为false
 					if (!isMatch(resolver.getProperty(key), this.havingValue)) {

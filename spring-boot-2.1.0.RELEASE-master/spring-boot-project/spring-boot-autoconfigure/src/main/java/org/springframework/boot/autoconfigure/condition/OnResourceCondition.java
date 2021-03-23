@@ -53,13 +53,11 @@ class OnResourceCondition extends SpringBootCondition {
 		MultiValueMap<String, Object> attributes = metadata
 				.getAllAnnotationAttributes(ConditionalOnResource.class.getName(), true);
 		// 获得资源加载器，若ConditionContext中有ResourceLoader则用ConditionContext中的，没有则用默认的
-		ResourceLoader loader = (context.getResourceLoader() != null) ? context.getResourceLoader()
-				: this.defaultResourceLoader;
+		ResourceLoader loader = (context.getResourceLoader() != null) ? context.getResourceLoader()	: this.defaultResourceLoader;
 		List<String> locations = new ArrayList<>();
 		// 将@ConditionalOnResource中定义的resources属性值取出来装进locations集合
 		collectValues(locations, attributes.get("resources"));
-		Assert.isTrue(!locations.isEmpty(),
-				"@ConditionalOnResource annotations must specify at " + "least one resource location");
+		Assert.isTrue(!locations.isEmpty(),	"@ConditionalOnResource annotations must specify at " + "least one resource location");
 		// missing集合是装不存在指定资源的资源路径的
 		List<String> missing = new ArrayList<>();
 		// 遍历所有的资源路径，若指定的路径的资源不存在则将其资源路径存进missing集合中

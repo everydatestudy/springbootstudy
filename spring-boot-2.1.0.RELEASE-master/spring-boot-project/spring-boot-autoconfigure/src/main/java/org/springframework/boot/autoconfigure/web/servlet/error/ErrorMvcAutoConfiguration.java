@@ -101,7 +101,7 @@ public class ErrorMvcAutoConfiguration {
 			ObjectProvider<ErrorViewResolver> errorViewResolvers) {
 		this.serverProperties = serverProperties;
 		this.dispatcherServletPath = dispatcherServletPath;
-		//TODO 不知道为啥报错
+		 
 		this.errorViewResolvers = errorViewResolvers.orderedStream()
 				.collect(Collectors.toList());
 	}

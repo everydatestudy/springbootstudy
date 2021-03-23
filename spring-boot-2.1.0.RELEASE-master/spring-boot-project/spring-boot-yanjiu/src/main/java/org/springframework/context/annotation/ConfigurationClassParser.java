@@ -436,14 +436,18 @@ class ConfigurationClassParser {
 	 * class.
 	 */
 	private void processInterfaces(ConfigurationClass configClass, SourceClass sourceClass) throws IOException {
+		// 1. 遍历sourceClass 的接口
 		for (SourceClass ifc : sourceClass.getInterfaces()) {
+			// 2. 获得被@bean注释的方法
 			Set<MethodMetadata> beanMethods = retrieveBeanMethodMetadata(ifc);
 			for (MethodMetadata methodMetadata : beanMethods) {
 				if (!methodMetadata.isAbstract()) {
 					// A default method or other concrete method on a Java 8+ interface...
+					 // 3. 如果不是抽象方法的话,则加入到configClass的BeanMethod
 					configClass.addBeanMethod(new BeanMethod(methodMetadata, configClass));
 				}
 			}
+		    // 4. 递归处理
 			processInterfaces(configClass, ifc);
 		}
 	}
@@ -492,6 +496,9 @@ class ConfigurationClassParser {
 	 *                       annotation found
 	 * @throws IOException if loading a property source failed
 	 */
+	 //处理@PropertySource.通过遍历该类中的@PropertySource的注解,
+	//如果该类中的environment是ConfigurableEnvironment 子类的话,
+	//则调用processPropertySource进行处理.否则打印警告日志.一般都是ConfigurableEnvironment的子类.代码如下:
 	private void processPropertySource(AnnotationAttributes propertySource) throws IOException {
 		String name = propertySource.getString("name");
 		if (!StringUtils.hasLength(name)) {
@@ -504,18 +511,22 @@ class ConfigurationClassParser {
 		String[] locations = propertySource.getStringArray("value");
 		Assert.isTrue(locations.length > 0, "At least one @PropertySource(value) location is required");
 		boolean ignoreResourceNotFound = propertySource.getBoolean("ignoreResourceNotFound");
-
+		// 3. 解析factory，如果该值没有配置，默认为PropertySourceFactory则直接实例化DefaultPropertySourceFactory类，否则开始实例化自定义的类
 		Class<? extends PropertySourceFactory> factoryClass = propertySource.getClass("factory");
 		PropertySourceFactory factory = (factoryClass == PropertySourceFactory.class ? DEFAULT_PROPERTY_SOURCE_FACTORY
 				: BeanUtils.instantiateClass(factoryClass));
 
 		for (String location : locations) {
 			try {
+		        // 4.1 对location进行SPEL表达式的解析。比如当前的配置环境中有一个属性为app=shareniu，我们配置的location为${app}最终值为shareniu。通过这里的处理逻辑可以知道location支持多环境的切换以及表达式的配置
 				String resolvedLocation = this.environment.resolveRequiredPlaceholders(location);
+		        // 4.2 使用资源加载器resourceLoader将resolvedLocation抽象为Resource
 				Resource resource = this.resourceLoader.getResource(resolvedLocation);
+		        // 4.3 调用addPropertySource属性进行处理。将指定的资源处理之后，添加到当前springboot运行的环境中
 				addPropertySource(factory.createPropertySource(name, new EncodedResource(resource, encoding)));
 			} catch (IllegalArgumentException | FileNotFoundException | UnknownHostException ex) {
 				// Placeholders not resolvable or resource not found when trying to open it
+		        // 5. 如果上述的任意步骤报错，则开始查找ignoreResourceNotFound的值，如果该值为treu，则忽略异常，否则直接报错
 				if (ignoreResourceNotFound) {
 					if (logger.isInfoEnabled()) {
 						logger.info("Properties location [" + location + "] not resolvable: " + ex.getMessage());
@@ -610,15 +621,19 @@ class ConfigurationClassParser {
 		if (deferredImports == null) {
 			return;
 		}
-
+		// 排序：注意这个比较器。它是按照PriorityOrdered、Ordered等进行优先级排序的
+		// 因此我们可以看到一大特性：DeferredImportSelector是支持Order排序的
 		deferredImports.sort(DEFERRED_IMPORT_COMPARATOR);
 		Map<Object, DeferredImportSelectorGrouping> groupings = new LinkedHashMap<>();
 		Map<AnnotationMetadata, ConfigurationClass> configurationClasses = new HashMap<>();
+		// 对这些个DeferredImportSelector一个个处理吧
+		//遍历DeferredImportSelector接口集合，获取Group集合类，默认为DefaultDeferredImportSelectorGroup
 		for (DeferredImportSelectorHolder deferredImport : deferredImports) {
+			// getImportGroup()方法是DeferredImportSelector接口的default方法，若不复写，默认return null
+			// 该接口的作用是：子类可以对一些Import的类进行分类 
+			//Group 为DeferredImportSelector的一个内部接口~~~~~~~~~~~
 			Class<? extends Group> group = deferredImport.getImportSelector().getImportGroup();
-			DeferredImportSelectorGrouping grouping = groupings.computeIfAbsent(
-					(group != null ? group : deferredImport),
-					key -> new DeferredImportSelectorGrouping(createGroup(group)));
+			DeferredImportSelectorGrouping grouping = groupings.computeIfAbsent((group != null ? group : deferredImport),key -> new DeferredImportSelectorGrouping(createGroup(group)));
 			grouping.add(deferredImport);
 			configurationClasses.put(deferredImport.getConfigurationClass().getMetadata(),
 					deferredImport.getConfigurationClass());
@@ -661,17 +676,20 @@ class ConfigurationClassParser {
 		} else {
 			this.importStack.push(configClass);
 			try {
+				// 3. 如果不存在循环依赖,则依次遍历处理之
 				for (SourceClass candidate : importCandidates) {
 					if (candidate.isAssignable(ImportSelector.class)) {
 						// Candidate class is an ImportSelector -> delegate to it to determine imports
+						  // 3.1 如果是ImportSelector的子类
 						Class<?> candidateClass = candidate.loadClass();
 						// 反射实现一个对象
 						ImportSelector selector = BeanUtils.instantiateClass(candidateClass, ImportSelector.class);
+						// 则实例化后,调用ParserStrategyUtils#invokeAwareMethods
 						ParserStrategyUtils.invokeAwareMethods(selector, this.environment, this.resourceLoader,
 								this.registry);
 						if (this.deferredImportSelectors != null && selector instanceof DeferredImportSelector) {
-							this.deferredImportSelectors.add(
-									new DeferredImportSelectorHolder(configClass, (DeferredImportSelector) selector));
+		                    // 3.2 如果当前类是DeferredImportSelector 的实现,则加入到deferredImportSelectors
+							this.deferredImportSelectors.add(new DeferredImportSelectorHolder(configClass, (DeferredImportSelector) selector));
 						} else {
 							// 回调
 							String[] importClassNames = selector.selectImports(currentSourceClass.getMetadata());

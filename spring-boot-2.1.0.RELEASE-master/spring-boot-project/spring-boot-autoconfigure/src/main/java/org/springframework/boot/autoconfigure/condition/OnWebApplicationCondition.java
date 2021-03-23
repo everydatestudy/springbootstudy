@@ -121,8 +121,7 @@ class OnWebApplicationCondition extends FilteringSpringBootCondition {
 		if (!required && outcome.isMatch()) {
 			return ConditionOutcome.noMatch(outcome.getConditionMessage());
 		}
-		// 这里返回匹配的情况，TODO
-		// 不过有个疑问：如果没有标注@ConditionalOnWebApplication注解，又不符合条件的话，也会执行到这里，返回匹配？
+	    // 5. 如果被@ConditionalOnWebApplication 注解,并且是WebApplication环境,则返回不匹配
 		return ConditionOutcome.match(outcome.getConditionMessage());
 	}
 

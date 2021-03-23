@@ -64,6 +64,7 @@ public abstract class AbstractApplicationEventMulticaster
 	//创建监听器助手类，用于存放应用程序的监听器集合，参数是否是预过滤监听器为false
 	private final ListenerRetriever defaultRetriever = new ListenerRetriever(false);
 	//ListenerCacheKey是基于事件类型和源类型的类作为key用来存储监听器助手ListenerRetriever
+	   //根据事件类型对事件监听器做了分组同时起到缓存的作用
 	final Map<ListenerCacheKey, ListenerRetriever> retrieverCache = new ConcurrentHashMap<>(64);
 
 	@Nullable
@@ -236,6 +237,7 @@ public abstract class AbstractApplicationEventMulticaster
 			for (String listenerBeanName : listenerBeans) {
 				try {
 					Class<?> listenerType = beanFactory.getType(listenerBeanName);
+					//判断支持事件
 					if (listenerType == null || supportsEvent(listenerType, eventType)) {
 						ApplicationListener<?> listener =
 								beanFactory.getBean(listenerBeanName, ApplicationListener.class);

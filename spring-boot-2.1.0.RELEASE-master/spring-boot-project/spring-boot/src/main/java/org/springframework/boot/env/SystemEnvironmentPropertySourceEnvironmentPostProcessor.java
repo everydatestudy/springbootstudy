@@ -62,8 +62,8 @@ public class SystemEnvironmentPropertySourceEnvironmentPostProcessor
 	@SuppressWarnings("unchecked")
 	private void replacePropertySource(ConfigurableEnvironment environment,
 			String sourceName, PropertySource<?> propertySource) {
-		Map<String, Object> originalSource = (Map<String, Object>) propertySource
-				.getSource();
+		Map<String, Object> originalSource = (Map<String, Object>) propertySource.getSource();
+
 		SystemEnvironmentPropertySource source = new OriginAwareSystemEnvironmentPropertySource(
 				sourceName, originalSource);
 		environment.getPropertySources().replace(sourceName, source);

@@ -37,6 +37,7 @@ import event.TestEvent;
 
 //https://my.oschina.net/zhangxufeng?tab=newest&catalogId=3608352 这个讲解的非常详细
 //@EnableAspectJAutoProxy
+//AnnotationAttributesReadingVisitor 处理所有注解的类
 @EnableTransactionManagement
 public class TestMain {
 

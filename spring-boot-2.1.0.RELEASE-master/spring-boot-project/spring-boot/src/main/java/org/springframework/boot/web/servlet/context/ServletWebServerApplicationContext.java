@@ -185,6 +185,7 @@ public class ServletWebServerApplicationContext extends GenericWebApplicationCon
 		WebServer webServer = this.webServer;
 		// 1. 获得ServletContext
 		ServletContext servletContext = getServletContext();
+	   // 2 内置Servlet容器和ServletContext都还没初始化的时候执行
 		if (webServer == null && servletContext == null) {
 			// 还记得EmbeddedTomcat 配置类中注册了一个TomcatServletWebServerFactory类型的bean吗？
 			// getWebServerFactory方法就是从容器中获取到TomcatServletWebServerFactory类型的bean

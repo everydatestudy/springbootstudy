@@ -72,8 +72,7 @@ class EnableConfigurationPropertiesImportSelector implements ImportSelector {
 			// （1）得到@EnableConfigurationProperties注解的所有属性值,
 			// 比如@EnableConfigurationProperties(ServerProperties.class),那么得到的值是ServerProperties.class
 			// （2）然后再将得到的@EnableConfigurationProperties注解的所有属性值注册到容器中
-			getTypes(metadata).forEach((type) -> register(registry,
-					(ConfigurableListableBeanFactory) registry, type));
+			getTypes(metadata).forEach((type) -> register(registry,	(ConfigurableListableBeanFactory) registry, type));
 		}
 
 		private List<Class<?>> getTypes(AnnotationMetadata metadata) {

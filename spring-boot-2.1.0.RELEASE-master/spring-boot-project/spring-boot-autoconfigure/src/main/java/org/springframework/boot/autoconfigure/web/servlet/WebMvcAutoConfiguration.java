@@ -222,9 +222,8 @@ public class WebMvcAutoConfiguration {
 //    @Configuration–>配置类
 //    @Import(EnableWebMvcConfiguration.class)–> 导入 EnableWebMvcConfiguration配置,当加载该类时,会首先加载EnableWebMvcConfiguration
 //    @EnableConfigurationProperties({ WebMvcProperties.class, ResourceProperties.class })–>可通过spring.mvc.xx,spring.resources.xx进行配置 
-//
-//WebMvcAutoConfigurationAdapter中有一个内部类–>FaviconConfiguration,当spring.mvc.favicon.enabled等于true时生效(默认生效).其声明了2个bean.
-
+//	  WebMvcAutoConfigurationAdapter声明在WebMvcAutoConfiguration中,是为了确保当该类不在类路径下时不会被读取到.
+//    WebMvcAutoConfigurationAdapter中有一个内部类–>FaviconConfiguration,当spring.mvc.favicon.enabled等于true时生效(默认生效).其声明了2个bean.
 	@Configuration
 	@Import(EnableWebMvcConfiguration.class)
 	@EnableConfigurationProperties({ WebMvcProperties.class, ResourceProperties.class })
@@ -504,7 +503,7 @@ public class WebMvcAutoConfiguration {
 
 	}
 
-	/**
+	/**EnableWebMvcConfiguration 该配置类 相当于@EnableWebMvc的功能
 	 * 通过查看源码可知,真正生效的配置是在WebMvcConfigurationSupport中, Configuration equivalent to
 	 * {@code @EnableWebMvc}.
 	 */

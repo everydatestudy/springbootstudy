@@ -76,6 +76,12 @@ public class ServletWebServerFactoryAutoConfiguration {
 	/**
 	 * Registers a {@link WebServerFactoryCustomizerBeanPostProcessor}. Registered
 	 * via {@link ImportBeanDefinitionRegistrar} for early registration.
+	 * 在EmbeddedServletContainerAutoConfiguration自动化配置类中被导入，
+ * 实现了BeanFactoryAware接口(BeanFactory会被自动注入进来)和ImportBeanDefinitionRegistrar接口
+ * (会被ConfigurationClassBeanDefinitionReader解析并注册到Spring容器中)
+————————————————
+版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/qq_26000415/article/details/78917684
 	 */
 	public static class BeanPostProcessorsRegistrar implements ImportBeanDefinitionRegistrar, BeanFactoryAware {
 

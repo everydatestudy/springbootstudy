@@ -51,7 +51,16 @@ class SpringApplicationRunListeners {
 			listener.starting();
 		}
 	}
-
+//	org.springframework.boot.context.config.ConfigFileApplicationListener, 
+//	org.springframework.boot.context.config.AnsiOutputApplicationListener, 
+//	org.springframework.boot.logging.LoggingApplicationListener, 
+//	org.springframework.boot.logging.ClasspathLoggingApplicationListener, 
+//	org.springframework.boot.autoconfigure.BackgroundPreinitializer, 
+//	org.springframework.boot.context.config.DelegatingApplicationListener, 
+//	org.springframework.boot.context.FileEncodingApplicationListener
+//	————————————————
+//	版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//	原文链接：https://blog.csdn.net/qq_26000415/article/details/78914944
 	public void environmentPrepared(ConfigurableEnvironment environment) {
 		for (SpringApplicationRunListener listener : this.listeners) {
 			listener.environmentPrepared(environment);

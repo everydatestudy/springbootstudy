@@ -36,7 +36,7 @@ import org.springframework.context.annotation.Conditional;
 @Conditional(OnResourceCondition.class)
 public @interface ConditionalOnResource {
 
-	/**
+	/**指定的资源必须存在,否则返回不匹配
 	 * The resources that must be present.
 	 * @return the resource paths that must be present.
 	 */

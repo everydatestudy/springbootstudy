@@ -61,21 +61,21 @@ import org.springframework.context.annotation.Conditional;
 @Conditional(OnBeanCondition.class)
 public @interface ConditionalOnBean {
 
-	/**
+	/** bean的类型,当ApplicationContext包含给定类的bean时返回true
 	 * The class types of beans that should be checked. The condition matches when beans
 	 * of all classes specified are contained in the {@link BeanFactory}.
 	 * @return the class types of beans to check
 	 */
 	Class<?>[] value() default {};
 
-	/**
+	/**bean的类型名,当ApplicationContext包含给定的id时返回true   
 	 * The class type names of beans that should be checked. The condition matches when
 	 * beans of all classes specified are contained in the {@link BeanFactory}.
 	 * @return the class type names of beans to check
 	 */
 	String[] type() default {};
 
-	/**
+	/**bean所声明的注解,当ApplicationContext中存在声明该注解的bean时返回true
 	 * The annotation type decorating a bean that should be checked. The condition matches
 	 * when all of the annotations specified are defined on beans in the
 	 * {@link BeanFactory}.
@@ -83,14 +83,14 @@ public @interface ConditionalOnBean {
 	 */
 	Class<? extends Annotation>[] annotation() default {};
 
-	/**
+	/**bean的id,,当ApplicationContext中存在给定id的bean时返回true
 	 * The names of beans to check. The condition matches when all of the bean names
 	 * specified are contained in the {@link BeanFactory}.
 	 * @return the names of beans to check
 	 */
 	String[] name() default {};
 
-	/**
+	/**默认是所有上下文搜索
 	 * Strategy to decide if the application context hierarchy (parent contexts) should be
 	 * considered.
 	 * @return the search strategy

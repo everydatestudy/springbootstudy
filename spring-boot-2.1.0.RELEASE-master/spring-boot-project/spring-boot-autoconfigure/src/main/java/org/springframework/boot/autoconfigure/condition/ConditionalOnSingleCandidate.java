@@ -26,6 +26,11 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.annotation.Conditional;
 
 /**
+ * 获得给定type的beanNames
+如果不存在,则返回不匹配
+如果给定类型的bean存在多个但是指定为Primary的不存在,则返回不匹配
+返回匹配
+ * 
  * {@link Conditional} that only matches when a bean of the specified class is already
  * contained in the {@link BeanFactory} and a single candidate can be determined.
  * <p>
@@ -47,7 +52,8 @@ import org.springframework.context.annotation.Conditional;
 @Conditional(OnBeanCondition.class)
 public @interface ConditionalOnSingleCandidate {
 
-	/**
+	/**bean的类型,当ApplicationContext包含给定类的bean时并且如果有多个该类型的bean并且指定为primary的
+ * 存在则返回true.
 	 * The class type of bean that should be checked. The condition matches if a bean of
 	 * the class specified is contained in the {@link BeanFactory} and a primary candidate
 	 * exists in case of multiple instances.
@@ -58,7 +64,8 @@ public @interface ConditionalOnSingleCandidate {
 	 */
 	Class<?> value() default Object.class;
 
-	/**
+	/** bean的类型名,当ApplicationContext包含给定的id并且如果有多个该类型的bean并且指定为primary的
+ * 存在则返回true.
 	 * The class type name of bean that should be checked. The condition matches if a bean
 	 * of the class specified is contained in the {@link BeanFactory} and a primary
 	 * candidate exists in case of multiple instances.
@@ -69,7 +76,7 @@ public @interface ConditionalOnSingleCandidate {
 	 */
 	String type() default "";
 
-	/**
+	/** * 默认是所有上下文搜索
 	 * Strategy to decide if the application context hierarchy (parent contexts) should be
 	 * considered.
 	 * @return the search strategy

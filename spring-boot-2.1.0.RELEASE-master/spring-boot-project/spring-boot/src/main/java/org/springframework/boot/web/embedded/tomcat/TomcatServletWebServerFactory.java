@@ -134,6 +134,7 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 	 * Create a new {@link TomcatServletWebServerFactory} instance.
 	 */
 	public TomcatServletWebServerFactory() {
+		System.out.println("tomcatWebServerFactory");
 	}
 
 	/**
@@ -166,7 +167,7 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 		// 3. 添加Connector
 		Connector connector = new Connector(this.protocol);
 		tomcat.getService().addConnector(connector);
-		  // 4. 个性化设置
+		  // 4. 自定义设置
 		customizeConnector(connector);
 		tomcat.setConnector(connector);
 		tomcat.getHost().setAutoDeploy(false);

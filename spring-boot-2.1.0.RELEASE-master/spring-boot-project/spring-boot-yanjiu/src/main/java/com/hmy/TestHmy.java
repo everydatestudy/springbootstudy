@@ -36,12 +36,8 @@ public class TestHmy {
 //	setSource(original.getSource());
 //	copyAttributesFrom(original);
 //	AnnotationConfigApplicationContext extends GenericApplicationContext extends AbstractApplicationContext
-//GenericApplicationContext这个类实例化了超级工厂方法 DefaultListableBeanFactory	
-	
+//GenericApplicationContext这个类实例化了超级工厂方法 DefaultListableBeanFactory		
 	//早期引用
-
- 
-	
 	public static void main(String[] args) {
 
 		// ClassPathXmlApplicationContext默认是加载src目录下的xml文件

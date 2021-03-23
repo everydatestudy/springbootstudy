@@ -104,11 +104,22 @@ public abstract class SpringBootServletInitializer implements WebApplicationInit
 					+ "return an application context");
 		}
 	}
-
+//	2件事:
+//
+//	    初始化logger
+//	    调用createRootApplicationContext,创建WebApplicationContext,如果创建成功,
+//    则添加一个ContextLoaderListener,该Listener在contextInitialized中没有做任何事,
+     //因为ApplicationContext在创建的过程中已经初始化了.否则,打印日志. createRootApplicationContext代码如下:
+//	————————————————
+//	版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//	原文链接：https://blog.csdn.net/qq_26000415/article/details/78981592
 	protected WebApplicationContext createRootApplicationContext(
 			ServletContext servletContext) {
+		 // 1. 初始化SpringApplicationBuilder
 		SpringApplicationBuilder builder = createSpringApplicationBuilder();
+		//设置启动类为当前类
 		builder.main(getClass());
+		//4. 如果存在父容器,则添加一个ParentContextApplicationContextInitializer
 		ApplicationContext parent = getExistingRootWebApplicationContext(servletContext);
 		if (parent != null) {
 			this.logger.info("Root context already created (using as parent).");
@@ -116,12 +127,15 @@ public abstract class SpringBootServletInitializer implements WebApplicationInit
 					WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, null);
 			builder.initializers(new ParentContextApplicationContextInitializer(parent));
 		}
-		builder.initializers(
-				new ServletContextApplicationContextInitializer(servletContext));
+	    // 5. 添加ServletContextApplicationContextInitializer
+		builder.initializers(new ServletContextApplicationContextInitializer(servletContext));
+	    // 6. 设置contextClass 为 AnnotationConfigEmbeddedWebApplicationContext
 		builder.contextClass(AnnotationConfigServletWebServerApplicationContext.class);
 		builder = configure(builder);
 		builder.listeners(new WebEnvironmentPropertySourceInitializer(servletContext));
 		SpringApplication application = builder.build();
+		//构建出SpringApplication,如果SpringApplication 中的sources 为空,并且启动类有@Configuration 注解,则添加当前类到sources中,对于当前,由于我们在第7步已经加入了ServletInitializer.class,因此这步是不会执行的.
+	
 		if (application.getAllSources().isEmpty() && AnnotationUtils
 				.findAnnotation(getClass(), Configuration.class) != null) {
 			application.addPrimarySources(Collections.singleton(getClass()));
@@ -188,7 +202,18 @@ public abstract class SpringBootServletInitializer implements WebApplicationInit
 		private WebEnvironmentPropertySourceInitializer(ServletContext servletContext) {
 			this.servletContext = servletContext;
 		}
-
+//		实例化StandardServletEnvironment. StandardServletEnvironment初始化的过程我们之前的文章有分析过,其构造器会向其内部持有的propertySources 添加如下Source:
+//
+//		    名为servletConfigInitParams 的StubPropertySource
+//		    名为servletContextInitParams 的StubPropertySource
+//		    如果jndi存在的话,则添加名为jndiProperties 的StubPropertySource,这个默认是会添加的
+//		    名为systemProperties,值为System#getProperties的返回值 的MapPropertySource
+//		    名为systemEnvironment,值为System#getenv的返回值 的SystemEnvironmentPropertySource
+//
+//		接下来调用StandardServletEnvironment#initPropertySources进行初始化servletConfigInitParams, servletContextInitParams 所对应的Source.代码如下:
+//		————————————————
+//		版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//		原文链接：https://blog.csdn.net/qq_26000415/article/details/78981592
 		@Override
 		public void onApplicationEvent(ApplicationEnvironmentPreparedEvent event) {
 			ConfigurableEnvironment environment = event.getEnvironment();

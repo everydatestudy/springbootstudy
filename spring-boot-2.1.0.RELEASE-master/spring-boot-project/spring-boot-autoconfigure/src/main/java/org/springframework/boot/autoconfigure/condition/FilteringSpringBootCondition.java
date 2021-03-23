@@ -30,7 +30,10 @@ import org.springframework.boot.autoconfigure.AutoConfigurationMetadata;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 
-/**
+/**AutoConfigurationImportFilter的作用是将在spring.factories中定义的auto-configuration 的类名进行过滤.该接口的目标是快速去除不需要的类在对其配置解析前.一个AutoConfigurationImportFilter接口的实现可能需要实现EnvironmentAware,BeanFactoryAware,BeanClassLoaderAware,ResourceLoaderAware接口中的任意个.这些接口会在调用match方法前进行注入.该方法的调用链如下:
+————————————————
+版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/qq_26000415/article/details/79008745
  * Abstract base class for a {@link SpringBootCondition} that also implements
  * {@link AutoConfigurationImportFilter}.
  *

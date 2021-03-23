@@ -416,6 +416,7 @@ public class SpringApplication {
 //			那么就注册一个 class 为 org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor 的bean. 一般都会进行注册的.
 //			9.如果registry 不包含org.springframework.context.event.internalEventListenerProcessor的 定义.就注册一个bean class 为 EventListenerMethodProcessor 的定义
 //			10.如果registry 不包含org.springframework.context.event.internalEventListenerFactory的 定义. 就注册一个 class 为 DefaultEventListenerFactory 的定义
+			//实例化了工厂方法，
 			context = createApplicationContext();
 			// 【5】从spring.factories配置文件中加载异常报告期实例，这里加载的是FailureAnalyzers
 			// 注意FailureAnalyzers的构造器要传入ConfigurableApplicationContext，因为要从context中获取beanFactory和environment
@@ -515,6 +516,7 @@ public class SpringApplication {
 		// Create and configure the environment
 		ConfigurableEnvironment environment = getOrCreateEnvironment();
 		// 这里为之前创建的environment配置一些命令行参数形式的环境变量
+		// 2. 配置环境的信息
 		configureEnvironment(environment, applicationArguments.getSourceArgs()); 
 		//利用事件监听机制来为environment环境变量配置application.properties中的环境变量或@{}形式的环境变量
 		//这里有很多的事件，来处理数据对什么事件感兴趣
@@ -548,7 +550,8 @@ public class SpringApplication {
 	//	    往上下文的beanFactory中注册一个singleton的bean，bean的名字是springApplicationArguments，bean的实例是之前实例化的ApplicationArguments对象,
 	//	    如果之前获取的printedBanner不为空，那么往上下文的beanFactory中注册一个singleton的bean，bean的名字是springBootBanner，bean的实例就是这个printedBanner.这里默认是SpringBootBanner.
 	//	    调用load方法注册启动类的bean定义，也就是调用SpringApplication.run(Application.class, args);的类，SpringApplication的load方法内会创建BeanDefinitionLoader的对象，并调用它的load()方法
-	//	    调用listeners的contextLoaded方法，说明上下文已经加载，该方法先找到所有的ApplicationListener，遍历这些listener，如果该listener继承了ApplicationContextAware类，那么在这一步会调用它的setApplicationContext方法，设置context
+	//	    调用listeners的contextLoaded方法，说明上下文已经加载，该方法先找到所有的ApplicationListener，遍历这些listener，
+	//    如果该listener继承了ApplicationContextAware类，那么在这一步会调用它的setApplicationContext方法，设置context
  
 	private void prepareContext(ConfigurableApplicationContext context,
 			ConfigurableEnvironment environment, SpringApplicationRunListeners listeners,
@@ -703,6 +706,7 @@ public class SpringApplication {
 	protected void configureEnvironment(ConfigurableEnvironment environment,
 			String[] args) {
 		if (this.addConversionService) {
+			//增加spring类型转换和springboot的类型转换，非常重要，
 			ConversionService conversionService = ApplicationConversionService
 					.getSharedInstance();
 			environment.setConversionService(
@@ -731,13 +735,22 @@ public class SpringApplication {
 			String[] args) {
 		//这个是在上面增加了org.springframework.core.env.MutablePropertySources
 		//应该总共有5个值的数据，defaultProperties的值好像是空的，没有数据。
+		//[StubPropertySource {name='servletConfigInitParams'}, 
+		//StubPropertySource {name='servletContextInitParams'},
+		//MapPropertySource {name='systemProperties'}, 
+		//SystemEnvironmentPropertySource {name='systemEnvironment'}]
 		MutablePropertySources sources = environment.getPropertySources();
 		if (this.defaultProperties != null && !this.defaultProperties.isEmpty()) {
-			sources.addLast(
-					new MapPropertySource("defaultProperties", this.defaultProperties));
+			sources.addLast(new MapPropertySource("defaultProperties", this.defaultProperties));
 		}
 		//addCommandLineProperties解析命令行数据，
 		if (this.addCommandLineProperties && args.length > 0) {
+//			如果addCommandLineProperties为true并且有命令参数，
+//			分两步骤走：第一步存在commandLineArgs则继续设置属性；第二步commandLineArgs不存在则在头部添加commandLineArgs
+//			那么该方法执行完毕后,MutablePropertySources类中propertySourceList已经存在的属性为:
+//			————————————————
+//			版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//			原文链接：https://blog.csdn.net/qq_26000415/article/details/78914944
 			String name = CommandLinePropertySource.COMMAND_LINE_PROPERTY_SOURCE_NAME;
 			if (sources.contains(name)) {
 				PropertySource<?> source = sources.get(name);
@@ -798,10 +811,12 @@ public class SpringApplication {
 		if (this.bannerMode == Banner.Mode.OFF) {
 			return null;
 		}
+		 // 2. 获取资源加载器ResourceLoader
 		ResourceLoader resourceLoader = (this.resourceLoader != null)
 				? this.resourceLoader : new DefaultResourceLoader(getClassLoader());
-		SpringApplicationBannerPrinter bannerPrinter = new SpringApplicationBannerPrinter(
-				resourceLoader, this.banner);
+		  // 3. 实例化SpringApplicationBannerPrinter类
+		SpringApplicationBannerPrinter bannerPrinter = new SpringApplicationBannerPrinter(resourceLoader, this.banner);
+        // 如果banner的输出模式是Mode.LOG，则直接将其信息输出到logger日志中，否则将其输出到控制台，也就是System.out
 		if (this.bannerMode == Mode.LOG) {
 			return bannerPrinter.print(environment, this.mainApplicationClass, logger);
 		}

@@ -36,10 +36,33 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
+ * 通过之前的内容可知,当spring boot 中出现错误时,并且在没有模板引擎配置错误模板时,则会在以下路径下查找对应的错误页面进行渲染:
+
+    classpath:/META-INF/resources/error
+    classpath:/resources/error
+    classpath:/static/error
+    classpath:/public/error
+
  * Basic global error {@link Controller}, rendering {@link ErrorAttributes}. More specific
  * errors can be handled either using Spring MVC abstractions (e.g.
  * {@code @ExceptionHandler}) or by adding servlet
  * {@link AbstractServletWebServerFactory#setErrorPages server error pages}.
+ *
+ *第一步：
+通过mappedHandler = getHandler(processedRequest);这一步查找数据的得到他：
+这一步是通过第四个，核心是urlMAP里面的参数不一样处理的
+HandlerExecutionChain with handler [ResourceHttpRequestHandler 
+[locations=[class path resource [META-INF/resources/], class path resource [resources/], 
+class path resource [static/], class path resource [public/], ServletContext resource [/]],
+ resolvers=[org.springframework.web.servlet.resource.PathResourceResolver@164e816a]]] and 3 interceptors
+
+第二步：解析
+DefaultResourceResolverChain
+第三步是：返回是null，程序处理 
+第四步是：Tomcat转发 404给应用程序访问，ApplicationDispatcher(这个类是Tomcat的类)处理404的转发
+第五步是：springboot处理异常信息
+这时候是通过第二个处理的，因为请求的是/error，所有找到了BasicErrorController，会通过请求头来判断是HTML还是json
+ *
  *
  * @author Dave Syer
  * @author Phillip Webb
@@ -86,10 +109,12 @@ public class BasicErrorController extends AbstractErrorController {
 	public ModelAndView errorHtml(HttpServletRequest request,
 			HttpServletResponse response) {
 		HttpStatus status = getStatus(request);
+	    // 设置一些信息，比如timestamp、statusCode、错误message等
 		Map<String, Object> model = Collections.unmodifiableMap(getErrorAttributes(
 				request, isIncludeStackTrace(request, MediaType.TEXT_HTML)));
 		response.setStatus(status.value());
 		ModelAndView modelAndView = resolveErrorView(request, response, status, model);
+		// 返回error视图
 		return (modelAndView != null) ? modelAndView : new ModelAndView("error", model);
 	}
 

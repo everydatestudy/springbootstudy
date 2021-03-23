@@ -55,6 +55,7 @@ public class StandardServletEnvironment extends StandardEnvironment implements C
 
 
 	/**
+	 * 在StandardServletEnvironment实例化时,会触发AbstractEnvironment实例化.而在AbstractEnvironment的构造器中会调用customizePropertySources方法.代码如下:
 	 * Customize the set of property sources with those contributed by superclasses as
 	 * well as those appropriate for standard servlet-based environments:
 	 * <ul>
@@ -82,6 +83,7 @@ public class StandardServletEnvironment extends StandardEnvironment implements C
 	 */
 	@Override
 	protected void customizePropertySources(MutablePropertySources propertySources) {
+		System.err.println("这里会创建两次么！--------------------------------------");
 		propertySources.addLast(new StubPropertySource(SERVLET_CONFIG_PROPERTY_SOURCE_NAME));
 		propertySources.addLast(new StubPropertySource(SERVLET_CONTEXT_PROPERTY_SOURCE_NAME));
 		if (JndiLocatorDelegate.isDefaultJndiEnvironmentAvailable()) {

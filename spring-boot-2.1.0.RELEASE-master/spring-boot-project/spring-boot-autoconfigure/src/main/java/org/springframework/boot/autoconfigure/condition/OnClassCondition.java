@@ -94,6 +94,7 @@ class OnClassCondition extends FilteringSpringBootCondition {
 			AnnotatedTypeMetadata metadata) {
 		ClassLoader classLoader = context.getClassLoader();
 		ConditionMessage matchMessage = ConditionMessage.empty();
+		// 1.1 得到@ConditionalOnClass注解的属性
 		List<String> onClasses = getCandidates(metadata, ConditionalOnClass.class);
 		if (onClasses != null) {
 			List<String> missing = filter(onClasses, ClassNameFilter.MISSING,
@@ -104,10 +105,12 @@ class OnClassCondition extends FilteringSpringBootCondition {
 								.didNotFind("required class", "required classes")
 								.items(Style.QUOTE, missing));
 			}
+			 // 1.3 如果类加载器中存在对应的类的话，匹配信息进行记录
 			matchMessage = matchMessage.andCondition(ConditionalOnClass.class)
 					.found("required class", "required classes").items(Style.QUOTE,
 							filter(onClasses, ClassNameFilter.PRESENT, classLoader));
 		}
+		// 对@ConditionalOnMissingClass注解做相同的逻辑处理(说明@ConditionalOnClass和@ConditionalOnMissingClass可以一起使用)
 		List<String> onMissingClasses = getCandidates(metadata,
 				ConditionalOnMissingClass.class);
 		if (onMissingClasses != null) {
@@ -185,15 +188,15 @@ class OnClassCondition extends FilteringSpringBootCondition {
 	}
 
 	private final class StandardOutcomesResolver implements OutcomesResolver {
-
+		// 在META-INFspring.factories/中配置的org.springframework.boot.autoconfigure.EnableAutoConfiguration的类名
 		private final String[] autoConfigurationClasses;
-
+		// 处理开始的下标
 		private final int start;
-
+		// 处理结束的下标
 		private final int end;
-
+		// 自动配置的元数据类,从 META-INF/spring-autoconfigure-metadata.properties
 		private final AutoConfigurationMetadata autoConfigurationMetadata;
-
+		// 类加载器
 		private final ClassLoader beanClassLoader;
 
 		private StandardOutcomesResolver(String[] autoConfigurationClasses, int start,
@@ -219,7 +222,8 @@ class OnClassCondition extends FilteringSpringBootCondition {
 			// 遍历每一个自动配置类
 			for (int i = start; i < end; i++) {
 				String autoConfigurationClass = autoConfigurationClasses[i];
-				// TODO 对于autoConfigurationMetadata有个疑问：为何有些自动配置类的条件注解能被加载到autoConfigurationMetadata，而有些又不能，比如自己定义的一个自动配置类HelloWorldEnableAutoConfiguration就没有被存到autoConfigurationMetadata中
+				// TODO 对于autoConfigurationMetadata有个疑问：为何有些自动配置类的条件注解能被加载到autoConfigurationMetadata，
+				//而有些又不能，比如自己定义的一个自动配置类HelloWorldEnableAutoConfiguration就没有被存到autoConfigurationMetadata中
 				if (autoConfigurationClass != null) {
 					// 这里取出注解在AutoConfiguration自动配置类类的@ConditionalOnClass注解的指定类的全限定名，
 					// 举个栗子，看下面的KafkaStreamsAnnotationDrivenConfiguration这个自动配置类
@@ -230,8 +234,8 @@ class OnClassCondition extends FilteringSpringBootCondition {
 					 * }
 					 */
 					// 那么取出的就是StreamsBuilder类的全限定名即candidates = org.apache.kafka.streams.StreamsBuilder
-					String candidates = autoConfigurationMetadata
-							.get(autoConfigurationClass, "ConditionalOnClass"); // 因为这里是处理某个类是否存在于classpath中，所以传入的key是ConditionalOnClass
+					// 因为这里是处理某个类是否存在于classpath中，所以传入的key是ConditionalOnClass
+					String candidates = autoConfigurationMetadata.get(autoConfigurationClass, "ConditionalOnClass"); 
 					// 若自动配置类标有ConditionalOnClass注解且有值，此时调用getOutcome判断是否存在于类路径中
 					if (candidates != null) {
 						// 拿到自动配置类注解@ConditionalOnClass的值后，再调用getOutcome方法去判断匹配结果,若该类存在于类路径，则getOutcome返回null，否则非null
@@ -244,7 +248,8 @@ class OnClassCondition extends FilteringSpringBootCondition {
 		}
 		// 这里只要outcome记录的是不匹配的情况，只要不为null，则说明不匹配；为null，则说明匹配
 		private ConditionOutcome getOutcome(String candidates) {
-			// candidates的形式为“org.springframework.boot.autoconfigure.aop.AopAutoConfiguration.ConditionalOnClass=org.aspectj.lang.annotation.Aspect,org.aspectj.lang.reflect.Advice,org.aspectj.weaver.AnnotatedElement”
+			// candidates的形式为“org.springframework.boot.autoconfigure.aop.AopAutoConfiguration.ConditionalOnClass
+			//=org.aspectj.lang.annotation.Aspect,org.aspectj.lang.reflect.Advice,org.aspectj.weaver.AnnotatedElement”
 			try {// 自动配置类上@ConditionalOnClass的值只有一个的话，直接调用getOutcome方法判断是否匹配
 				if (!candidates.contains(",")) {
 					// 看到因为传入的参数是 ClassNameFilter.MISSING，因此可以猜测这里应该是得到不匹配的结果

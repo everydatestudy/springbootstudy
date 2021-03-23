@@ -304,7 +304,11 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 		boolean skipped = false;
 		// getAutoConfigurationImportFilters方法：拿到OnBeanCondition，OnClassCondition和OnWebApplicationCondition
 		// 然后遍历这三个条件类去过滤从spring.factories加载的大量配置类
-		for (AutoConfigurationImportFilter filter : getAutoConfigurationImportFilters()) {
+		//[org.springframework.boot.autoconfigure.condition.OnClassCondition@41200e0c,
+		//org.springframework.boot.autoconfigure.condition.OnWebApplicationCondition@40f33492,
+		//org.springframework.boot.autoconfigure.condition.OnBeanCondition@4fbdc0f0]
+		List<AutoConfigurationImportFilter> filters = getAutoConfigurationImportFilters();
+		for (AutoConfigurationImportFilter filter : filters) {
 			// 调用各种aware方法，将beanClassLoader,beanFactory等注入到filter对象中，
 			// 这里的filter对象即OnBeanCondition，OnClassCondition或OnWebApplicationCondition
 			invokeAwareMethods(filter);
@@ -318,7 +322,7 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 				// 若有不匹配的话
 				if (!match[i]) {
 					// 不匹配的将记录在skip数组，标志skip[i]为true，也与candidates数组一一对应
-					skip[i] = true;
+					skip[i] = true; 
 					// 因为不匹配，将相应的自动配置类置空
 					candidates[i] = null;
 					// 标注skipped为true

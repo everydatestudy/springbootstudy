@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 public class MyMath implements Calc{
 
    public Integer add(int num1,int num2){
+	   javax.servlet.http.HttpServletMapping fdsa;
         return num1+num2;
     }
 }

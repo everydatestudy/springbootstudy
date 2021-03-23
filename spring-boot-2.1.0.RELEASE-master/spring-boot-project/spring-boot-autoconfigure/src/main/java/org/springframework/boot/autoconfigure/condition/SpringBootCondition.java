@@ -29,6 +29,27 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 /**
+ * 
+ * 注解								处理类						处理逻辑															实例
+@Conditional						OnBeanCondition				当给定的类型、类名、注解、昵称在beanFactory中存在时返回true.各类型间是or的关系	@ConditionalOnBean
+(CacheManager.class)
+@ConditionalOnSingleCandidate		OnBeanCondition				当给定类型的bean存在并且指定为Primary的给定类型存在时,返回true				@ConditionalOnSingleCandidate
+(DataSource.class)
+@ConditionalOnMissingBean			OnBeanCondition				当给定的类型、类名、注解、昵称在beanFactory中不存在时返回true.各类型间是or的关系	@ConditionalOnMissingBean
+@ConditionalOnClass					OnClassCondition			当给定的类型、类名在类路径上存在时返回true,各类型间是and的关系					@ConditionalOnClass({ EnableAspectJAutoProxy.class, Aspect.class, Advice.class })
+@ ConditionalOnMissingClass			OnClassCondition			当给定的类名在类路径上不存在时返回true,各类型间是and的关系					@ConditionalOnMissingClass(“org.thymeleaf.templatemode.TemplateMode”)
+@ConditionalOnCloudPlatform			OnCloudPlatformCondition	当所配置的CloudPlatform为激活时返回true								@ConditionalOnCloudPlatform(CloudPlatform.CLOUD_FOUNDRY)
+@ConditionalOnExpression			OnExpressionCondition		如果该表达式返回true则代表匹配,否则返回不匹配								@ConditionalOnExpression(“true”)
+@ConditionalOnJava					OnJavaCondition				运行时的java版本号是否包含给定的版本号.如果包含,返回匹配,否则,返回不匹配			@ConditionalOnJava(ConditionalOnJava.JavaVersion.EIGHT)
+@ConditionalOnJndi					OnJndiCondition				给定的jndi的Location 必须存在一个.否则,返回不匹配							@ConditionalOnJndi({ “java:comp/TransactionManager”})
+@ConditionalOnNotWebApplication		OnWebApplicationCondition	不在web环境时返回匹配												@ConditionalOnNotWebApplication
+@ConditionalOnWebApplication		OnWebApplicationCondition	不在web环境时返回匹配												@ConditionalOnWebApplication
+@ConditionalOnProperty				OnPropertyCondition			配置的属性存在时匹配													@ConditionalOnProperty(prefix = “spring.aop”, name = “auto”, havingValue = “true”, matchIfMissing = true)
+@ConditionalOnResource				OnResourceCondition			指定的资源必须存在,否则返回不匹配											@ConditionalOnResource(resources = “classpath:META-INF/build-info.properties”)
+————————————————
+版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/qq_26000415/article/details/79008745
+ * 
  * 我们知道了SpringBootCondition抽象了所有其具体实现类OnXXXCondition的共有逻辑--condition评估信息打印，
  * 最重要的是封装了一个模板方法getMatchOutcome(context,
  * metadata)，留给各个OnXXXCondition具体子类去覆盖实现属于自己的判断逻辑，
@@ -80,7 +101,7 @@ public abstract class SpringBootCondition implements Condition {
 	}
 
 	private static String getClassOrMethodName(AnnotatedTypeMetadata metadata) {
-		// 如果metadata是类，则返回类名
+		// // 1. 如果metadata 是ClassMetadata的实例,则返回类名,否则返回全类名#方法名
 		if (metadata instanceof ClassMetadata) {
 			ClassMetadata classMetadata = (ClassMetadata) metadata;
 			return classMetadata.getClassName();

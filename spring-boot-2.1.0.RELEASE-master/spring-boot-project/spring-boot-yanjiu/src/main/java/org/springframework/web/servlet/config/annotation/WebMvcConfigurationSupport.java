@@ -281,12 +281,14 @@ public class WebMvcConfigurationSupport implements ApplicationContextAware, Serv
 		RequestMappingHandlerMapping mapping = createRequestMappingHandlerMapping();
 		mapping.setOrder(0);
 		// 初始化拦截器 -》
+		// 2. 设置拦截器,默认注册的有ConversionServiceExposingInterceptor,ResourceUrlProviderExposingInterceptor
 		mapping.setInterceptors(getInterceptors());
 		// 设置媒体类型管理器 -》
 		mapping.setContentNegotiationManager(mvcContentNegotiationManager());
 		// 跨域配置 -》
 		mapping.setCorsConfigurations(getCorsConfigurations());
 		// 获取路径匹配配置器 -》
+		//获得PathMatchConfigurer,该类是用来配置路径匹配的,可通过configurePathMatch来个性化配置.
 		PathMatchConfigurer configurer = getPathMatchConfigurer();
 		// 开启前缀匹配
 		Boolean useSuffixPatternMatch = configurer.isUseSuffixPatternMatch();
@@ -412,7 +414,9 @@ public class WebMvcConfigurationSupport implements ApplicationContextAware, Serv
 	}
 
 	/** 请注意是BeanName为：mvcContentNegotiationManager
-	   *    若实在有需要，你是可以覆盖的~~~~
+	   *  若实在有需要，你是可以覆盖的~~~~
+	   *ContentNegotiationManager,该类的作用是根据请求规则决定返回什么样的内容类型。
+	   * 后缀规则、参数规则、Accept头规则、固定的内容类型等。注意，这里只是决定，不是具体提供内容类型的地方.代码如下:
 	 * Return a {@link ContentNegotiationManager} instance to use to determine
 	 * requested {@linkplain MediaType media types} in a given request.
 	 */
@@ -958,6 +962,14 @@ public class WebMvcConfigurationSupport implements ApplicationContextAware, Serv
 	}
 
 	/**
+	 *通过调用configureHandlerExceptionResolvers进行个性化配置
+	      如果exceptionResolvers为空,也就是意味着第1步没有进行注册,
+              则调用addDefaultHandlerExceptionResolvers添加默认的ExceptionHandlerExceptionResolver
+              –>ExceptionHandlerExceptionResolver,ResponseStatusExceptionResolver
+              实例化HandlerExceptionResolverComposite
+	  ————————————————
+	   版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+	    原文链接：https://blog.csdn.net/qq_26000415/article/details/78957026
 	 * Returns a {@link HandlerExceptionResolverComposite} containing a list of
 	 * exception resolvers obtained either through
 	 * {@link #configureHandlerExceptionResolvers} or through
@@ -1029,6 +1041,7 @@ public class WebMvcConfigurationSupport implements ApplicationContextAware, Serv
 	 */
 	protected final void addDefaultHandlerExceptionResolvers(List<HandlerExceptionResolver> exceptionResolvers) {
 		// 创建ExceptionHandlerExceptionResolver
+		//ExceptionHandlerExceptionResolver,处理通过被@ExceptionHandler注解的方法抛出的异常
 		ExceptionHandlerExceptionResolver exceptionHandlerResolver = createExceptionHandlerExceptionResolver();
 		// 设置媒体类型管理器 -》
 		exceptionHandlerResolver.setContentNegotiationManager(mvcContentNegotiationManager());
@@ -1048,6 +1061,7 @@ public class WebMvcConfigurationSupport implements ApplicationContextAware, Serv
 		exceptionHandlerResolver.afterPropertiesSet();
 		exceptionResolvers.add(exceptionHandlerResolver);
 		// 创建ResponseStatusExceptionResolver
+		//ResponseStatusExceptionResolver,用来处理被@ResponseStatus注解的所抛出的异常
 		ResponseStatusExceptionResolver responseStatusResolver = new ResponseStatusExceptionResolver();
 		responseStatusResolver.setMessageSource(this.applicationContext);
 		exceptionResolvers.add(responseStatusResolver);

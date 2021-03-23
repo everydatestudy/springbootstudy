@@ -62,28 +62,28 @@ import org.springframework.context.annotation.Conditional;
 @Conditional(OnBeanCondition.class)
 public @interface ConditionalOnMissingBean {
 
-	/**
+	/**bean的类型,当ApplicationContext不包含给定类的bean时返回true
 	 * The class types of beans that should be checked. The condition matches when no bean
 	 * of each class specified is contained in the {@link BeanFactory}.
 	 * @return the class types of beans to check
 	 */
 	Class<?>[] value() default {};
 
-	/**
+	/**bean的类型名,当ApplicationContext不包含给定的id时返回true
 	 * The class type names of beans that should be checked. The condition matches when no
 	 * bean of each class specified is contained in the {@link BeanFactory}.
 	 * @return the class type names of beans to check
 	 */
 	String[] type() default {};
 
-	/**
+	/**给定的类型当进行匹配时进行忽略
 	 * The class types of beans that should be ignored when identifying matching beans.
 	 * @return the class types of beans to ignore
 	 * @since 1.2.5
 	 */
 	Class<?>[] ignored() default {};
 
-	/**
+	/**给定的类型名当进行匹配时进行忽略
 	 * The class type names of beans that should be ignored when identifying matching
 	 * beans.
 	 * @return the class type names of beans to ignore
@@ -91,7 +91,7 @@ public @interface ConditionalOnMissingBean {
 	 */
 	String[] ignoredType() default {};
 
-	/**
+	/**bean所声明的注解,当ApplicationContext中不存在声明该注解的bean时返回true
 	 * The annotation type decorating a bean that should be checked. The condition matches
 	 * when each annotation specified is missing from all beans in the
 	 * {@link BeanFactory}.
@@ -99,14 +99,14 @@ public @interface ConditionalOnMissingBean {
 	 */
 	Class<? extends Annotation>[] annotation() default {};
 
-	/**
+	/**bean的id,,当ApplicationContext中不存在给定id的bean时返回true
 	 * The names of beans to check. The condition matches when each bean name specified is
 	 * missing in the {@link BeanFactory}.
 	 * @return the names of beans to check
 	 */
 	String[] name() default {};
 
-	/**
+	/**默认是所有上下文搜索
 	 * Strategy to decide if the application context hierarchy (parent contexts) should be
 	 * considered.
 	 * @return the search strategy
