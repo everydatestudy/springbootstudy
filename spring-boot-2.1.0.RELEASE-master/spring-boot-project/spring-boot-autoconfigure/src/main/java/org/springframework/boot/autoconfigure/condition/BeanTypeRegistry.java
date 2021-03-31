@@ -129,7 +129,7 @@ final class BeanTypeRegistry implements SmartInitializingSingleton {
 		this.beanTypes.clear();
 		this.beanDefinitions.clear();
 	}
-
+	//得到遍历所有一个类型的子类，判断一个接口是否有实现他，
 	private void updateTypesIfNecessary() {
 		this.beanFactory.getBeanNamesIterator()
 				.forEachRemaining(this::updateTypesIfNecessary);

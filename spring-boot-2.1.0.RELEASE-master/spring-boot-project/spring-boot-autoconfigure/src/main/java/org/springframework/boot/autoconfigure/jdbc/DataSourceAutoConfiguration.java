@@ -39,7 +39,11 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 
-/**
+/**@Configuration–> 配置类
+@ConditionalOnClass({ DataSource.class, EmbeddedDatabaseType.class })–> 在当前类路径下存在DataSource.class,EmbeddedDatabaseType.class 时生效
+@EnableConfigurationProperties(DataSourceProperties.class) –> 可以通过spring.datasource.xxx 进行配置,同时导入了EnableConfigurationPropertiesImportSelector
+@Import({ Registrar.class, DataSourcePoolMetadataProvidersConfiguration.class })–> 导入了Registrar, DataSourcePoolMetadataProvidersConfiguration
+
  * {@link EnableAutoConfiguration Auto-configuration} for {@link DataSource}.
  *
  * @author Dave Syer

@@ -28,6 +28,15 @@ import javax.sql.DataSource;
 public interface DataSourcePoolMetadata {
 
 	/**
+	 * 返回当前数据库连接池的使用量,返回值在0至1之间(或者是-1,如果当前数据库连接池没有限制的话)
+	 * <li>1 --> 该数据库连接池的链接数已达到最大数目</li>
+	 * <li>0 --> 该数据库连接池的链接数</li>
+	 * <li>-1 -->该数据库连接池的链接数没有限制 </li>
+	 * </li>
+	 * </ul>
+	 * 还有可能返回null，如果当前的数据库链接池不提供必要的信息进行计算的话
+	 */
+	/**
 	 * Return the usage of the pool as value between 0 and 1 (or -1 if the pool is not
 	 * limited).
 	 * <ul>
@@ -42,14 +51,14 @@ public interface DataSourcePoolMetadata {
 	 */
 	Float getUsage();
 
-	/**
+	/**返回当前数据库连接池中已经在使用中的(激活)链接或者返回null,如果该信息不可用的话
 	 * Return the current number of active connections that have been allocated from the
 	 * data source or {@code null} if that information is not available.
 	 * @return the number of active connections or {@code null}
 	 */
 	Integer getActive();
 
-	/**
+	/**返回当前数据库连接池可分配的最大链接数, 返回-1 意味着没有限制,返回null,意味着当前信息不可用
 	 * Return the maximum number of active connections that can be allocated at the same
 	 * time or {@code -1} if there is no limit. Can also return {@code null} if that
 	 * information is not available.
@@ -57,14 +66,14 @@ public interface DataSourcePoolMetadata {
 	 */
 	Integer getMax();
 
-	/**
+	/**返回当前数据库连接池可分配的最小链接数, 返回null,意味着当前信息不可用
 	 * Return the minimum number of idle connections in the pool or {@code null} if that
 	 * information is not available.
 	 * @return the minimum number of active connections or {@code null}
 	 */
 	Integer getMin();
 
-	/**
+	/**返回用来检查当前链接是否可以的sql,返回null-->当前信息不可用
 	 * Return the query to use to validate that a connection is valid or {@code null} if
 	 * that information is not available.
 	 * @return the validation query or {@code null}

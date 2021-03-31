@@ -34,6 +34,13 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
+ * @Configuration –> 配置类
+ * @ConditionalOnClass({ JdbcTemplate.class, PlatformTransactionManager.class })–> 
+ * 在当前类路径下存在JdbcTemplate.class, PlatformTransactionManager.class时生效
+ * @AutoConfigureOrder(Ordered.LOWEST_PRECEDENCE) –> 自动配置优先级为Integer.MAX_VALUE.
+ * @EnableConfigurationProperties(DataSourceProperties.class)–> 可通过spring.datasource.xxx进行配置
+
+ * 
  * {@link EnableAutoConfiguration Auto-configuration} for
  * {@link DataSourceTransactionManager}.
  *
@@ -47,7 +54,11 @@ import org.springframework.transaction.PlatformTransactionManager;
 @AutoConfigureOrder(Ordered.LOWEST_PRECEDENCE)
 @EnableConfigurationProperties(DataSourceProperties.class)
 public class DataSourceTransactionManagerAutoConfiguration {
-
+//	@Configuration –> 配置类
+//	@ConditionalOnSingleCandidate(DataSource.class)–>当beanFactory中存在DataSource类型的bean并且当存在多个DataSource时,声明为@Primary的DataSource存在时生效
+//	————————————————
+//	版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//	原文链接：https://blog.csdn.net/qq_26000415/article/details/79027165
 	@Configuration
 	@ConditionalOnSingleCandidate(DataSource.class)
 	static class DataSourceTransactionManagerConfiguration {

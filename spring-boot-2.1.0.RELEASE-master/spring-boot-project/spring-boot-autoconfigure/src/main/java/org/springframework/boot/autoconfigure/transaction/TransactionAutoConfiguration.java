@@ -59,6 +59,10 @@ public class TransactionAutoConfiguration {
 		return new TransactionManagerCustomizers(
 				customizers.orderedStream().collect(Collectors.toList()));
 	}
+	//	ConditionalOnSingleCandidate(PlatformTransactionManager.class)–> 
+	//当PlatformTransactionManager类型的bean存在并且当存在多个bean时指定为Primary的PlatformTransactionManager存在时,该配置类才进行解析
+	//	由于TransactionAutoConfiguration是在DataSourceTransactionManagerAutoConfiguration之后
+	//才被解析处理的,而在DataSourceTransactionManagerAutoConfiguration中配置了transactionManager,因此, TransactionTemplateConfiguration 会被处理.
 
 	@Configuration
 	@ConditionalOnSingleCandidate(PlatformTransactionManager.class)
@@ -83,14 +87,24 @@ public class TransactionAutoConfiguration {
 	@ConditionalOnBean(PlatformTransactionManager.class)
 	@ConditionalOnMissingBean(AbstractTransactionManagementConfiguration.class)
 	public static class EnableTransactionManagementConfiguration {
-
+//		@Configuration–> 配置类
+//		@EnableTransactionManagement(proxyTargetClass = false)–>启用TransactionManagement, proxyTargetClass = false,表示是面向接口代理.关于这个注解,我们后面会分析.
+//		@ConditionalOnProperty(prefix = “spring.aop”, name = “proxy-target-class”, havingValue = “false”, matchIfMissing = false)–> 配置有spring.aop.proxy-target-class = false时生效,如果没配置,则不生效
+//		————————————————
+//		版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//		原文链接：https://blog.csdn.net/qq_26000415/article/details/79021958
 		@Configuration
 		@EnableTransactionManagement(proxyTargetClass = false)
 		@ConditionalOnProperty(prefix = "spring.aop", name = "proxy-target-class", havingValue = "false", matchIfMissing = false)
 		public static class JdkDynamicAutoProxyConfiguration {
 
 		}
-
+//		@Configuration–> 配置类
+//		@EnableTransactionManagement(proxyTargetClass = false)–>启用TransactionManagement, proxyTargetClass = false,表示是面向接口代理.关于这个注解,我们后面会分析.
+//		@ConditionalOnProperty(prefix = “spring.aop”, name = “proxy-target-class”, havingValue = “false”, matchIfMissing = false)–> 配置有spring.aop.proxy-target-class = false时生效,如果没配置,则不生效
+//		————————————————
+//		版权声明：本文为CSDN博主「一个努力的码农」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//		原文链接：https://blog.csdn.net/qq_26000415/article/details/79021958
 		@Configuration
 		@EnableTransactionManagement(proxyTargetClass = true)
 		@ConditionalOnProperty(prefix = "spring.aop", name = "proxy-target-class", havingValue = "true", matchIfMissing = true)
