@@ -1,4 +1,4 @@
-package com.alibaba.nacos.example.spring.cloud;
+package com.hmy;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
