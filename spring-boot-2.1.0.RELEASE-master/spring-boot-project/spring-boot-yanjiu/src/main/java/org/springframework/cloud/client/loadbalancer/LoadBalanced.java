@@ -25,7 +25,11 @@ import java.lang.annotation.Target;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 
-/**
+/** IPing：客户端用于快速检查服务器当时是否处于活动状态（心跳检测）
+	IRule：负载均衡策略，用于确定从服务器列表返回哪个服务器
+    ServerList：可以响应客户端的特定服务的服务器列表
+    ServerListFilter：可以动态获得的具有所需特征的候选服务器列表的过滤器
+    ServerListUpdater：用于执行动态服务器列表更新
  * Annotation to mark a RestTemplate bean to be configured to use a LoadBalancerClient.
  * @author Spencer Gibb
  */

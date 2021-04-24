@@ -47,9 +47,10 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author nkorange
  */
-@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
+@SuppressWarnings({"PMD.ServiceOrDaoClassShouldEndWithImplRule","unused"})
 public class NacosNamingService implements NamingService {
-    private static final String DEFAULT_PORT = "8080";
+  
+	private static final String DEFAULT_PORT = "8080";
     private static final long DEFAULT_HEART_BEAT_INTERVAL = TimeUnit.SECONDS.toMillis(5);
 
     /**
@@ -83,18 +84,32 @@ public class NacosNamingService implements NamingService {
     public NacosNamingService(Properties properties) {
         init(properties);
     }
-
+//    主要是初始化namespace、序列化、注册中心服务地址、WebRootContext上下文、缓存路径、日志名称、EventDispatcher、NamingProxy、BeatReactor、HostReactor。
+//    EventDispatcher负责处理服务监听相关。
+//    NamingProxy负责和Nacos服务的通信，比如服务注册、服务取消注册、心跳等。
+//    BeatReactor负责检测心跳。
+//    HostReactor负责获取、更新并保存服务信息。
     private void init(Properties properties) {
+    	 // namespace默认public
         namespace = InitUtils.initNamespaceForNaming(properties);
+        // 注册中心服务地址初始化，这个从配置文件取
         initServerAddr(properties);
+        //初始化WebRootContext上下文
         InitUtils.initWebRootContext();
+        // 初始化缓存路径 System.getProperty("user.home") + "/nacos/naming/" + namespace
         initCacheDir();
+        // 初始化日志名称naming.log
         initLogName(properties);
-
+        // 初始化EventDispatcher当客户端订阅了某个服务信息后，会以Listener的方式注册到EventDispatcher的队列中，当有服务变化的时候，便会通知订阅者
         eventDispatcher = new EventDispatcher();
+        // 初始化NamingProxy用于客户端与服务端的通信
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
         serverProxy.setProperties(properties);
+        // 初始化BeatReactor用于维持与服务器之间的心跳通信，上报客户端注册到服务端的服务信息
         beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
+        // 初始化HostReactor
+        //用于客户端服务的订阅，以及从服务端更新服务信息。
+        //也就是说客户端会使用HostReactor进行订阅操作，订阅了之后，上面说到的事件分发监听器EventDispatcher会将服务信息通知给订阅者咯~
         hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties), initPollingThreadCount(properties));
     }
 

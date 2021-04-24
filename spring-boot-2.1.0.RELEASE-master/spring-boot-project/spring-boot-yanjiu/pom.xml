@@ -55,7 +55,11 @@
 			<artifactId>spring-tx</artifactId>
 			<version>5.1.1.RELEASE</version>
 		</dependency>
-
+		<dependency>
+			<groupId>com.netflix.netflix-commons</groupId>
+			<artifactId>netflix-commons-util</artifactId>
+			<version>0.1.1</version>
+		</dependency>
 		<dependency>
 			<groupId>org.codehaus.groovy</groupId>
 			<artifactId>groovy-all</artifactId>

@@ -66,7 +66,7 @@ public class LoadBalancerAutoConfiguration {
 			}
 		});
 	}
-
+	//LoadBalancerRequestFactory，用来拦截后重新创建请求。
 	@Bean
 	@ConditionalOnMissingBean
 	public LoadBalancerRequestFactory loadBalancerRequestFactory(
@@ -77,7 +77,7 @@ public class LoadBalancerAutoConfiguration {
 	@Configuration
 	@ConditionalOnMissingClass("org.springframework.retry.support.RetryTemplate")
 	static class LoadBalancerInterceptorConfig {
-
+		//实现负载均衡，用的是拦截器，在请求之前把服务名根据负载均衡算法替换成相应的服务实例地址，然后就去请求。
 		@Bean
 		public LoadBalancerInterceptor ribbonInterceptor(
 				LoadBalancerClient loadBalancerClient,

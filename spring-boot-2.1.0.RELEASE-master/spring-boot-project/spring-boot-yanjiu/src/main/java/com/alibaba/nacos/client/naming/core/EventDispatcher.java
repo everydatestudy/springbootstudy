@@ -38,8 +38,7 @@ public class EventDispatcher {
 
     private BlockingQueue<ServiceInfo> changedServices = new LinkedBlockingQueue<ServiceInfo>();
 
-    private ConcurrentMap<String, List<EventListener>> observerMap
-        = new ConcurrentHashMap<String, List<EventListener>>();
+    private ConcurrentMap<String, List<EventListener>> observerMap= new ConcurrentHashMap<String, List<EventListener>>();
 
     public EventDispatcher() {
 
