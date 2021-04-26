@@ -1,4 +1,4 @@
-package com.hmy.zhujie;
+package zhujie;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

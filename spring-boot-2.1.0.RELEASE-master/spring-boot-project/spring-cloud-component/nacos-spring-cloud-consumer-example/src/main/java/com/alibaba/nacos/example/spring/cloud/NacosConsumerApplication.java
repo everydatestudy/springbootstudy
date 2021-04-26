@@ -28,7 +28,7 @@ public class NacosConsumerApplication {
     }
 
     public static void main(String[] args) {
-    	FailoverReactor fdsa;
+    	org.springframework.cloud.netflix.ribbon.RibbonAutoConfiguration fdsa;
         SpringApplication.run(NacosConsumerApplication.class, args);
     }
 

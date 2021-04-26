@@ -8,6 +8,7 @@ public class Pub {
 	public static void main(String[] args) throws NacosException, InterruptedException {
 	//	NacosServiceAutoConfiguration ffs;
 		// 发布的服务名
+		com.alibaba.cloud.nacos.ribbon.RibbonNacosAutoConfiguration dd;
 		String serviceName = "helloworld.services";
 		// 构造一个nacos实例，入参是nacos server的ip和服务端口
 		// namingService = NacosFactory.createNamingService(getNacosProperties());
