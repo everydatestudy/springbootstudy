@@ -28,7 +28,8 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
 
-/**
+/**出现得还是很晚的。继承自DefaultResponseErrorHandler 
+// 若你的RestTemplate想使用它，请调用RestTemplate#setErrorHandler(ResponseErrorHandler)设置即可
  * Implementation of {@link ResponseErrorHandler} that uses {@link HttpMessageConverter}s
  * to convert HTTP error responses to {@link RestClientException}.
  *
@@ -54,6 +55,8 @@ import org.springframework.util.CollectionUtils;
  * @since 5.0
  * @see RestTemplate#setErrorHandler(ResponseErrorHandler)
  */
+//它出现得还是很晚的。继承自DefaultResponseErrorHandler 
+//若你的RestTemplate想使用它，请调用RestTemplate#setErrorHandler(ResponseErrorHandler)设置即可
 public class ExtractingResponseErrorHandler extends DefaultResponseErrorHandler {
 
 	private List<HttpMessageConverter<?>> messageConverters = Collections.emptyList();

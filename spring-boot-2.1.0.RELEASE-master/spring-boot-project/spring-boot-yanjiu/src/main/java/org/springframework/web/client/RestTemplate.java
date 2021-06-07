@@ -58,7 +58,11 @@ import org.springframework.util.ClassUtils;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriTemplateHandler;
 
-/**
+/**RestTemplate简化了与http服务的通信，程序代码可以给它提供URL，并提取结果。它默认使用的JDK 的HttpURLConnection进行通信，
+ * 然而我们是可以通过RestTemplate.setRequestFactory切换到不同的HTTP源：如Apache HttpComponents、Netty、OkHttp等等。
+————————————————
+版权声明：本文为CSDN博主「YourBatman」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/f641385712/article/details/100753981
  * Synchronous client to perform HTTP requests, exposing a simple, template
  * method API over underlying HTTP client libraries such as the JDK
  * {@code HttpURLConnection}, Apache HttpComponents, and others.
@@ -74,6 +78,13 @@ import org.springframework.web.util.UriTemplateHandler;
  * will be deprecated in a future version and will not have major new features
  * added going forward.
  *
+ *xxxForObject：返回响应体（也就直接是body体力的内容） （T）
+xxxForEntity：返回的相应行、响应头、响应码、响应体等等 （ResponseEntity）
+xxxForLocation：提交成功之后，返回新资源的URI。这个只需要服务提供者返回一个 URI 即可，该 URI 表示新资源的位置，可谓非常轻量。 （URI）
+————————————————
+版权声明：本文为CSDN博主「YourBatman」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/f641385712/article/details/100753981
+ *
  * @author Arjen Poutsma
  * @author Brian Clozel
  * @author Roy Clarkson
@@ -85,7 +96,7 @@ import org.springframework.web.util.UriTemplateHandler;
  * @see ResponseErrorHandler
  */
 public class RestTemplate extends InterceptingHttpAccessor implements RestOperations {
-
+	// 去classpath探测  是否有这些消息转换器相关的jar~
 	private static boolean romePresent =
 			ClassUtils.isPresent("com.rometools.rome.feed.WireFeed",
 					RestTemplate.class.getClassLoader());
@@ -120,21 +131,23 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 			ClassUtils.isPresent("javax.json.bind.Jsonb",
 					RestTemplate.class.getClassLoader());
 
-
+	// 消息转换器们（显然对JSON格式默认是支持得最好的）
 	private final List<HttpMessageConverter<?>> messageConverters = new ArrayList<>();
-
+	// 默认的请求异常处理器，Spring5.0后其实可以使用它ExtractingResponseErrorHandler
+	// 它能够利用消息换换气提取你的错误内容。并且还支持自定义错误码、错误序列等等~
 	private ResponseErrorHandler errorHandler = new DefaultResponseErrorHandler();
-
+	// 用于URL的构建
 	private UriTemplateHandler uriTemplateHandler = new DefaultUriBuilderFactory();
-
+	// 默认的返回值提取器~~~~
 	private final ResponseExtractor<HttpHeaders> headersExtractor = new HeadersExtractor();
 
 
-	/**
+	/** 空构造，应该是平时使用得最多的了：一切都使用默认的组件配置Resource等等
 	 * Create a new instance of the {@link RestTemplate} using default settings.
 	 * Default {@link HttpMessageConverter}s are initialized.
 	 */
 	public RestTemplate() {
+		// 这个几个消息转换器是支持的。字节数组、字符串、
 		this.messageConverters.add(new ByteArrayHttpMessageConverter());
 		this.messageConverters.add(new StringHttpMessageConverter());
 		this.messageConverters.add(new ResourceHttpMessageConverter(false));
@@ -149,7 +162,7 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 		else if (jaxb2Present) {
 			this.messageConverters.add(new Jaxb2RootElementHttpMessageConverter());
 		}
-
+		// 接下里便是一些列的判断，若类路径上有才会加进来
 		if (jackson2Present) {
 			this.messageConverters.add(new MappingJackson2HttpMessageConverter());
 		}
@@ -168,7 +181,7 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 		}
 	}
 
-	/**
+	/* 你懂的，若想用OkHttp，也可以在构造时就指定
 	 * Create a new instance of the {@link RestTemplate} based on the given {@link ClientHttpRequestFactory}.
 	 * @param requestFactory the HTTP request factory to use
 	 * @see org.springframework.http.client.SimpleClientHttpRequestFactory
@@ -286,9 +299,14 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 	@Override
 	@Nullable
 	public <T> T getForObject(String url, Class<T> responseType, Object... uriVariables) throws RestClientException {
+		//1、new AcceptHeaderRequestCallback(responseType)  它能在发送请求的之前这样一件事：
+				// request.getHeaders().setAccept(allSupportedMediaTypes)
 		RequestCallback requestCallback = acceptHeaderRequestCallback(responseType);
 		HttpMessageConverterExtractor<T> responseExtractor =
 				new HttpMessageConverterExtractor<>(responseType, getMessageConverters(), logger);
+		// 最终调用的是execute方法，此时URL是个字符串
+		// responseExtractor返回值提取器使用的是消息转换器去读取body哒~
+		// 返回值就是返回的body本身（不含有返回的响应头等等信息~）
 		return execute(url, HttpMethod.GET, requestCallback, responseExtractor, uriVariables);
 	}
 
@@ -309,6 +327,9 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 				new HttpMessageConverterExtractor<>(responseType, getMessageConverters(), logger);
 		return execute(url, HttpMethod.GET, requestCallback, responseExtractor);
 	}
+	// 它返回的是ResponseEntity，不会返回null的  最终调用的依旧是execute方法
+		// 此时候用的就不是消息转换器的提取器了，而是内部类`ResponseEntityResponseExtractor`（底层还是依赖消息转换器）
+		// 但是这个提取器，提取出来的可都是ResponseEntity<T>实例~
 
 	@Override
 	public <T> ResponseEntity<T> getForEntity(String url, Class<T> responseType, Object... uriVariables)
@@ -360,8 +381,10 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 	@Nullable
 	public URI postForLocation(String url, @Nullable Object request, Object... uriVariables)
 			throws RestClientException {
-
+		// 1、HttpEntityRequestCallback  适配：把request适配成一个HttpEntity
+		// 然后执行前，通过消息转换器把头信息、body信息等等都write进去
 		RequestCallback requestCallback = httpEntityCallback(request);
+		// 因为需要拿到URI，所以此处使用headersExtractor提取器先拿到响应的header即可~~~
 		HttpHeaders headers = execute(url, HttpMethod.POST, requestCallback, headersExtractor(), uriVariables);
 		return (headers != null ? headers.getLocation() : null);
 	}
@@ -383,7 +406,7 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 		HttpHeaders headers = execute(url, HttpMethod.POST, requestCallback, headersExtractor());
 		return (headers != null ? headers.getLocation() : null);
 	}
-
+	// 除了httpEntityCallback()不一样，其余和get请求一样
 	@Override
 	@Nullable
 	public <T> T postForObject(String url, @Nullable Object request, Class<T> responseType,
@@ -507,7 +530,9 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 
 
 	// DELETE
-
+	// DELETE请求：也是木有返回值的。
+		// 并且请注意：DELETE请求这里可都是不能接收body的，不能给请求设置请求体的
+		// （虽然可能底层httpCLient支持，但这里不支持，请遵守规范）
 	@Override
 	public void delete(String url, Object... uriVariables) throws RestClientException {
 		execute(url, HttpMethod.DELETE, null, null, uriVariables);
@@ -554,9 +579,11 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 	public <T> ResponseEntity<T> exchange(String url, HttpMethod method,
 			@Nullable HttpEntity<?> requestEntity, Class<T> responseType, Object... uriVariables)
 			throws RestClientException {
-
+		// 把请求体适配为HttpEntity
 		RequestCallback requestCallback = httpEntityCallback(requestEntity, responseType);
+		// 消息提取器使用ResponseEntityResponseExtractor
 		ResponseExtractor<ResponseEntity<T>> responseExtractor = responseEntityExtractor(responseType);
+		// 从上两个部分就能看到：exchange方法的入参、出参都是非常通用的~~~
 		return nonNull(execute(url, method, requestCallback, responseExtractor, uriVariables));
 	}
 
@@ -628,9 +655,10 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 		return nonNull(doExecute(requestEntity.getUrl(), requestEntity.getMethod(), requestCallback, responseExtractor));
 	}
 
-
+	// 3个execute方法。最终调用的都是doExecute方法
+		// 它做的一件事：使用UriTemplateHandler把URL的参数填进去~~~
+		// 底层使用的是我上文介绍的`UriComponentsBuilder`，还是比较简单的
 	// General execution
-
 	@Override
 	@Nullable
 	public <T> T execute(String url, HttpMethod method, @Nullable RequestCallback requestCallback,
@@ -658,7 +686,7 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 		return doExecute(url, method, requestCallback, responseExtractor);
 	}
 
-	/**
+	/** 如果有回调，那就先回调处理一下子请求
 	 * Execute the given method on the provided URI.
 	 * <p>The {@link ClientHttpRequest} is processed using the {@link RequestCallback};
 	 * the response with the {@link ResponseExtractor}.
@@ -680,8 +708,13 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 			if (requestCallback != null) {
 				requestCallback.doWithRequest(request);
 			}
+			// 真正意义上的发送请求。
+			// 请注意：如果这里的request是`InterceptingClientHttpRequest`，那就回执行拦截器的intercept方法哦~~~
+			// 至于什么时候是InterceptingClientHttpRequest呢？这个上面有讲的
 			response = request.execute();
+			// 处理结果（若有错误，那就抛出异常~~~）
 			handleResponse(url, method, response);
+			// 请求正常。那就使用返回值提取器responseExtractor提取出内容即可了~~~
 			return (responseExtractor != null ? responseExtractor.extractData(response) : null);
 		}
 		catch (IOException ex) {
@@ -691,7 +724,7 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 			throw new ResourceAccessException("I/O error on " + method.name() +
 					" request for \"" + resource + "\": " + ex.getMessage(), ex);
 		}
-		finally {
+		finally {// 关闭响应（ClientHttpResponse继承了Closeable接口）
 			if (response != null) {
 				response.close();
 			}

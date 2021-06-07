@@ -49,7 +49,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.client.RestTemplate;
 
-/**
+/**这个配置类最重要的是完成了Ribbon相关组件的自动配置，有了LoadBalancerClient才能做负载均衡（这里使用的是它的唯一实现类RibbonLoadBalancerClient）
  * Auto configuration for Ribbon (client side load balancing).
  *
  * @author Spencer Gibb
@@ -57,26 +57,31 @@ import org.springframework.web.client.RestTemplate;
  * @author Biju Kunjummen
  */
 @Configuration
+//类路径存在com.netflix.client.IClient、RestTemplate等时生效
 @Conditional(RibbonAutoConfiguration.RibbonClassesConditions.class)
 @RibbonClients
+//若有Eureka，那就在Eureka配置好后再配置它~~~（如果是别的注册中心呢，ribbon还能玩吗？）
 @AutoConfigureAfter(name = "org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration")
 @AutoConfigureBefore({ LoadBalancerAutoConfiguration.class,
 		AsyncLoadBalancerAutoConfiguration.class })
 @EnableConfigurationProperties({ RibbonEagerLoadProperties.class,
 		ServerIntrospectorProperties.class })
 public class RibbonAutoConfiguration {
-
+	// Ribbon的配置文件们~~~~~~~（复杂且重要）
 	@Autowired(required = false)
 	private List<RibbonClientSpecification> configurations = new ArrayList<>();
 
 	@Autowired
 	private RibbonEagerLoadProperties ribbonEagerLoadProperties;
-
+	// 特征，FeaturesEndpoint这个端点(`/actuator/features`)会使用它org.springframework.cloud.client.actuator.HasFeatures
 	@Bean
 	public HasFeatures ribbonFeature() {
 		return HasFeatures.namedFeature("Ribbon", Ribbon.class);
 	}
 	//这里有两个比较重要的一个是SpringClientFactory，可以创建各种和负载均衡相关的对象，还有一个是RibbonLoadBalancerClient，做具体的负载均衡算法选择和调用。
+	// 它是最为重要的，是一个org.springframework.cloud.context.named.NamedContextFactory  此工厂用于创建命名的Spring容器
+		// 这里传入配置文件，每个不同命名空间就会创建一个新的容器（和Feign特别像） 设置当前容器为父容器
+
 	@Bean
 	public SpringClientFactory springClientFactory() {
 		SpringClientFactory factory = new SpringClientFactory();

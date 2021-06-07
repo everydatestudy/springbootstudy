@@ -43,7 +43,8 @@ import org.springframework.util.FileCopyUtils;
  */
 public class DefaultResponseErrorHandler implements ResponseErrorHandler {
 
-	/**
+	/**	// 是否有错误是根据响应码来的，所以请严格遵守响应码的规范啊
+	// 简单的说4xx和5xx都会被认为有错，否则是无错的  参考：HttpStatus.Series
 	 * Delegates to {@link #hasError(HttpStatus)} with the response status code.
 	 */
 	@Override

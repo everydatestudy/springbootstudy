@@ -22,7 +22,7 @@ import java.net.URI;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.client.ClientHttpResponse;
 
-/**
+/**用于确定特定响应是否有错误的策略接口
  * Strategy interface used by the {@link RestTemplate} to determine
  * whether a particular response has an error or not.
  *
@@ -31,7 +31,7 @@ import org.springframework.http.client.ClientHttpResponse;
  */
 public interface ResponseErrorHandler {
 
-	/**
+	/**response里是否有错
 	 * Indicate whether the given response has any errors.
 	 * <p>Implementations will typically inspect the
 	 * {@link ClientHttpResponse#getStatusCode() HttpStatus} of the response.
@@ -41,7 +41,7 @@ public interface ResponseErrorHandler {
 	 */
 	boolean hasError(ClientHttpResponse response) throws IOException;
 
-	/**
+	/**只有hasError = true时才会调用此方法
 	 * Handle the error in the given response.
 	 * <p>This method is only called when {@link #hasError(ClientHttpResponse)}
 	 * has returned {@code true}.

@@ -159,7 +159,7 @@ public class QualifierAnnotationAutowireCandidateResolver extends GenericTypeAwa
 	@Override
 	public boolean isAutowireCandidate(BeanDefinitionHolder bdHolder, DependencyDescriptor descriptor) {
 		 // 1.调用父类方法判断此bean是否可以自动注入到其他bean
-		// 1、先看父类：ean定义是否允许依赖注入、泛型类型是否匹配
+		// 1、先看父类：bean定义是否允许依赖注入、泛型类型是否匹配
 		boolean match = super.isAutowireCandidate(bdHolder, descriptor);
 		// 2、若都满足就继续判断@Qualifier注解~~~~
 		if (match) {
@@ -186,6 +186,16 @@ public class QualifierAnnotationAutowireCandidateResolver extends GenericTypeAwa
 		return match;
 	}
 
+//	Tips：限定符不生效的效果不一定是注入失败，而是如果是单个的话还是注入成功的。只是若出现多个Bean它就无法起到区分的效果了，所以才会注入失败了~
+//
+//	它的fallback策略最多只能再向上再找一个层级(多了就不行了)。例如上例子中使用@B标注也是能起到@Qualifier效果的，但是若再加一个@C层级，限定符就不生效了。
+//
+//	注意：Class.isAnnotationPresent(Class<? extends Annotation> annotationClass)表示annotationClass是否标注在此类型上（此类型可以是任意Class类型）。
+//	此方法不具有传递性：比如注解A上标注有@Qualifier，注解B上标注有@A注解，那么你用此方法判断@B上是否有@Qualifier它是返回false的（即使都写了@Inherited注解，因为和它没关系）
+//	————————————————
+//	版权声明：本文为CSDN博主「YourBatman」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//	原文链接：https://blog.csdn.net/f641385712/article/details/100890879
+	
 	/**将给定的限定符注释与候选bean定义匹配。命名中你发现：这里是负数形式，表示多个注解一起匹配
 	// 此处指的限定符，显然默认情况下只有@Qualifier注解
 	 * Match the given qualifier annotations against the candidate bean definition.

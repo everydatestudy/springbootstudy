@@ -30,5 +30,6 @@
 		<module>spring-boot-docs</module>
         <module>spring-boot-yanjiu</module>
         <module>spring-cloud-component</module>
+        <module>spring-study-project</module>
   </modules>
 </project>

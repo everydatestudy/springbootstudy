@@ -25,7 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.lang.Nullable;
 
-/**
+/**它是一个访问权限是default的类，是对其它ClientHttpResponse的一个包装
  * Implementation of {@link ClientHttpResponse} that can not only check if
  * the response has a message body, but also if its length is 0 (i.e. empty)
  * by actually reading the input stream.
@@ -47,7 +47,8 @@ class MessageBodyClientHttpResponseWrapper implements ClientHttpResponse {
 	}
 
 
-	/**
+	/**判断相应里是否有body体
+	 若响应码是1xx 或者是204；或者getHeaders().getContentLength() == 0 那就返回false  否则返回true
 	 * Indicates whether the response has a message body.
 	 * <p>Implementation returns {@code false} for:
 	 * <ul>
@@ -69,7 +70,12 @@ class MessageBodyClientHttpResponseWrapper implements ClientHttpResponse {
 		return true;
 	}
 
-	/**
+	/**上面是完全格局状态码（ContentLength）来判断是否有body体的~~~这里会根据流来判断
+	// 如果response.getBody() == null,返回true
+	// 若流里有内容，最终就用new PushbackInputStream(body)包装起来~~~
+————————————————
+版权声明：本文为CSDN博主「YourBatman」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/f641385712/article/details/100713622
 	 * Indicates whether the response has an empty message body.
 	 * <p>Implementation tries to read the first bytes of the response stream:
 	 * <ul>

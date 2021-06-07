@@ -123,7 +123,9 @@ public class ClientRequest implements Cloneable {
         return this;
     }
     
-    /**
+    /**使用新的URI创建一个**新的**ClientRequest
+	// 它会先用clone方法去克隆一个，若抛错那就new ClientRequest(this) new一个实例
+	// 推荐子类复写此方法，提供更多、更有效的实施。
      * Create a client request using a new URI. This is used by {@code com.netflix.client.AbstractLoadBalancerAwareClient#computeFinalUriWithLoadBalancer(ClientRequest)}.
      * It first tries to clone the request and if that fails it will use the copy constructor {@link #ClientRequest(ClientRequest)}.
      * Sub classes are recommended to override this method to provide more efficient implementation.

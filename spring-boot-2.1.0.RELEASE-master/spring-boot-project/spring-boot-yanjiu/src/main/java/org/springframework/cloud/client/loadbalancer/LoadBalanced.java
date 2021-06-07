@@ -39,6 +39,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
+//它最大的特点：头上标注有@Qualifier注解，这是它生效的最重要因素之一，
 @Qualifier
 public @interface LoadBalanced {
 

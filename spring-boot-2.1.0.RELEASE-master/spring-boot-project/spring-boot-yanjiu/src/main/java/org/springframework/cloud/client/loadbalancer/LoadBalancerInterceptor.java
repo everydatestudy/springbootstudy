@@ -25,12 +25,16 @@ import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.util.Assert;
 
-/**
+/**该类唯一被使用的地方就是LoadBalancerAutoConfiguration里配置上去~
  * @author Spencer Gibb
  * @author Dave Syer
  * @author Ryan Baxter
  * @author William Tran
  */
+//此拦截器拦截请求后把它的serviceName委托给了LoadBalancerClient去执行，
+//根据ServiceName可能对应N多个实际的Server，因此就可以从众多的Server中运用均衡算法，
+//挑选出一个最为合适的Server做最终的请求（它持有真正的请求执行器ClientHttpRequestExecution）。
+
 public class LoadBalancerInterceptor implements ClientHttpRequestInterceptor {
 
 	private LoadBalancerClient loadBalancer;

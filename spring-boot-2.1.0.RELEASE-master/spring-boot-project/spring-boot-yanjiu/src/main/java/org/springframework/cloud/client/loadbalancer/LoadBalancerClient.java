@@ -21,7 +21,8 @@ import java.net.URI;
 
 import org.springframework.cloud.client.ServiceInstance;
 
-/**
+/**它自己定义了三个方法
+
  * Represents a client-side load balancer.
  *
  * @author Spencer Gibb
