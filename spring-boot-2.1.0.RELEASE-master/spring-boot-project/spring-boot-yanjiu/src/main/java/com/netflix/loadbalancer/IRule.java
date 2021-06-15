@@ -42,10 +42,71 @@ public interface IRule{
      * @return choosen Server object. NULL is returned if none
      *  server is available 
      */
-
+	// 最为重要的一个方法：从lb.allServers/lb.upServers根据key找到一台Server
+		// 若没找到返回null
     public Server choose(Object key);
     
     public void setLoadBalancer(ILoadBalancer lb);
     
     public ILoadBalancer getLoadBalancer();    
 }
+//规则名 				 		 父类  	  			xxxxxxxxxxxxxxxxxxxxx 									   	备注
+//RoundRobinRule    		-         			  线性轮询                                                								轮询index，选择index对应位置的server
+//WeightedResponseTimeRule  RoundRobinRule		根据rt分配一个权重值，rt时间越长，weight越小，被选中的可能性就越低			使用一个后台线程默认每30s重新计算一次权重值
+//BestAvailableRule		   ClientConfigEnabled   选择一个活跃请求数最小的Server									忽略已经被熔断的Server
+//PredicateBasedRule         ClientConfigEnabled  基于断言器实现的规则												本类为抽象类，具体过滤规则交给子类
+//AvailabilityFilteringRule  PredicateBasedRule   过滤掉已熔断or活跃请求数太高的Server后，剩下的执行线性轮询            	依赖于AvailabilityPredicate这个断言器实现过滤
+//ZoneAvoidanceRule          PredicateBasedRule   复合判断。先选出可用区，然后在按上规则筛选出复合条件的Server们，执行线性轮询    使用ZoneAvoidancePredicate和AvailabilityPredicate两个主断言器实现过滤
+//RandomRule				   -					完全随机选择													此实现有bug，有bug，有bug
+//RetryRule				   -					对任何IRule包一层重试机制											在一个配置时间段内当选择server不成功，则一直尝试使用subRule的方式选择一个可用的server
+
+						
+				
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

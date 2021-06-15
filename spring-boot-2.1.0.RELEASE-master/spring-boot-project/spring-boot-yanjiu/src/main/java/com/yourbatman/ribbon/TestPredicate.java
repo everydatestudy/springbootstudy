@@ -297,7 +297,7 @@ public class TestPredicate {
                     }
                 })
                 // 我最少要20台机器，但经过主Predicate过滤后只剩12台了，所以不用它的结果，使用fallback的结果
-                .setFallbackThresholdAsMinimalFilteredNumberOfServers(20)
+                .setFallbackThresholdAsMinimalFilteredNumberOfServers(10)
                 .build();
 
         List<Server> servers = compositePredicate.getEligibleServers(serverList);

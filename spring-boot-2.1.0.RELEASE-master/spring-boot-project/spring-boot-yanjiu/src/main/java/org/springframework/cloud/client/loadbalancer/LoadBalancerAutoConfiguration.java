@@ -115,14 +115,12 @@ public class LoadBalancerAutoConfiguration {
 				// 这个匿名实现的逻辑超级简单：向所有的RestTemplate都塞入一个loadBalancerInterceptor 让其具备有负载均衡的能力
 				// Tips：此处有注解@ConditionalOnMissingBean。也就是说如果调用者自己定义过RestTemplateCustomizer类型的Bean，此处是不会执行的
 				// 请务必注意这点：容易让你的负载均衡不生效哦~~~~
-
 		@Bean
 		@ConditionalOnMissingBean
 		public RestTemplateCustomizer restTemplateCustomizer(
 				final LoadBalancerInterceptor loadBalancerInterceptor) {
 			return restTemplate -> {
-				List<ClientHttpRequestInterceptor> list = new ArrayList<>(
-						restTemplate.getInterceptors());
+				List<ClientHttpRequestInterceptor> list = new ArrayList<>(restTemplate.getInterceptors());
 				list.add(loadBalancerInterceptor);
 				restTemplate.setInterceptors(list);
 			};

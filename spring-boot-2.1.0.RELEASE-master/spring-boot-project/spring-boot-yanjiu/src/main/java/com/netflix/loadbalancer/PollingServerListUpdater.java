@@ -15,172 +15,170 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * A default strategy for the dynamic server list updater to update.
- * (refactored and moved here from {@link com.netflix.loadbalancer.DynamicServerListLoadBalancer})
+ * 动态服务器列表更新器要更新的默认实现，使用一个任务调度器ScheduledThreadPoolExecutor完成定时更新。
+ * 它本作为DynamicServerListLoadBalancer的一个内部类，现单独拿出来成为一个public的类了 A default
+ * strategy for the dynamic server list updater to update. (refactored and moved
+ * here from {@link com.netflix.loadbalancer.DynamicServerListLoadBalancer})
  *
  * @author David Liu
  */
 public class PollingServerListUpdater implements ServerListUpdater {
 
-    private static final Logger logger = LoggerFactory.getLogger(PollingServerListUpdater.class);
+	private static final Logger logger = LoggerFactory.getLogger(PollingServerListUpdater.class);
 
-    private static long LISTOFSERVERS_CACHE_UPDATE_DELAY = 1000; // msecs;
-    private static int LISTOFSERVERS_CACHE_REPEAT_INTERVAL = 30 * 1000; // msecs;
+	private static long LISTOFSERVERS_CACHE_UPDATE_DELAY = 1000; // msecs;
+	private static int LISTOFSERVERS_CACHE_REPEAT_INTERVAL = 30 * 1000; // msecs;
+//	初始化任务调度器
+//	该类的任务调度器是通过自己的一个私有静态内部类LazyHolder来内聚实现的：
+	private static class LazyHolder {
+		private final static String CORE_THREAD = "DynamicServerListLoadBalancer.ThreadPoolSize";
+		private final static DynamicIntProperty poolSizeProp = new DynamicIntProperty(CORE_THREAD, 2);
+		private static Thread _shutdownThread;
 
-    private static class LazyHolder {
-        private final static String CORE_THREAD = "DynamicServerListLoadBalancer.ThreadPoolSize";
-        private final static DynamicIntProperty poolSizeProp = new DynamicIntProperty(CORE_THREAD, 2);
-        private static Thread _shutdownThread;
+		static ScheduledThreadPoolExecutor _serverListRefreshExecutor = null;
 
-        static ScheduledThreadPoolExecutor _serverListRefreshExecutor = null;
+		static {
+			int coreSize = poolSizeProp.get();
+			ThreadFactory factory = (new ThreadFactoryBuilder()).setNameFormat("PollingServerListUpdater-%d")
+					.setDaemon(true).build();
+			_serverListRefreshExecutor = new ScheduledThreadPoolExecutor(coreSize, factory);
+			poolSizeProp.addCallback(new Runnable() {
+				@Override
+				public void run() {
+					_serverListRefreshExecutor.setCorePoolSize(poolSizeProp.get());
+				}
 
-        static {
-            int coreSize = poolSizeProp.get();
-            ThreadFactory factory = (new ThreadFactoryBuilder())
-                    .setNameFormat("PollingServerListUpdater-%d")
-                    .setDaemon(true)
-                    .build();
-            _serverListRefreshExecutor = new ScheduledThreadPoolExecutor(coreSize, factory);
-            poolSizeProp.addCallback(new Runnable() {
-                @Override
-                public void run() {
-                    _serverListRefreshExecutor.setCorePoolSize(poolSizeProp.get());
-                }
+			});
+			_shutdownThread = new Thread(new Runnable() {
+				public void run() {
+					logger.info("Shutting down the Executor Pool for PollingServerListUpdater");
+					shutdownExecutorPool();
+				}
+			});
+			Runtime.getRuntime().addShutdownHook(_shutdownThread);
+		}
 
-            });
-            _shutdownThread = new Thread(new Runnable() {
-                public void run() {
-                    logger.info("Shutting down the Executor Pool for PollingServerListUpdater");
-                    shutdownExecutorPool();
-                }
-            });
-            Runtime.getRuntime().addShutdownHook(_shutdownThread);
-        }
+		private static void shutdownExecutorPool() {
+			if (_serverListRefreshExecutor != null) {
+				_serverListRefreshExecutor.shutdown();
 
-        private static void shutdownExecutorPool() {
-            if (_serverListRefreshExecutor != null) {
-                _serverListRefreshExecutor.shutdown();
+				if (_shutdownThread != null) {
+					try {
+						Runtime.getRuntime().removeShutdownHook(_shutdownThread);
+					} catch (IllegalStateException ise) { // NOPMD
+						// this can happen if we're in the middle of a real
+						// shutdown,
+						// and that's 'ok'
+					}
+				}
 
-                if (_shutdownThread != null) {
-                    try {
-                        Runtime.getRuntime().removeShutdownHook(_shutdownThread);
-                    } catch (IllegalStateException ise) { // NOPMD
-                        // this can happen if we're in the middle of a real
-                        // shutdown,
-                        // and that's 'ok'
-                    }
-                }
+			}
+		}
+	}
 
-            }
-        }
-    }
+	private static ScheduledThreadPoolExecutor getRefreshExecutor() {
+		return LazyHolder._serverListRefreshExecutor;
+	}
 
-    private static ScheduledThreadPoolExecutor getRefreshExecutor() {
-        return LazyHolder._serverListRefreshExecutor;
-    }
+	// 标记当前Scheduled任务是否是活跃状态中（已经开启就活跃状态）
+	private final AtomicBoolean isActive = new AtomicBoolean(false);
+	// 任务调用执行一次updateAction.doUpdate()后记录该时刻，表示最新的一次update的时间戳
+	private volatile long lastUpdated = System.currentTimeMillis();
+	// 线程池的initialDelay参数。默认值是
+	private final long initialDelayMs;
+	// 默认值是LISTOFSERVERS_CACHE_REPEAT_INTERVAL也就是30s执行一次
+	// 因为该参数相对重要，所以不仅构造时可以指定其值，还可以通过外部化配置其值，对应的key是
+	private final long refreshIntervalMs;
+	// 继承自Futrue，在Futrue的基础上增加getDelay(TimeUnit unit)方法：还有多久执行任务
+	// ScheduledExecutorService提交任务时返回它
+	// ScheduledThreadPoolExecutor是带有线程池功能的执行器，实现了接口ScheduledExecutorService
+	private volatile ScheduledFuture<?> scheduledFuture;
+	// 构造器，为initialDelayMs/refreshIntervalMs两个参数赋值
+	public PollingServerListUpdater() {
+		this(LISTOFSERVERS_CACHE_UPDATE_DELAY, LISTOFSERVERS_CACHE_REPEAT_INTERVAL);
+	}
+	// 从config里面拿值。对应的key是ServerListRefreshInterval
+	public PollingServerListUpdater(IClientConfig clientConfig) {
+		this(LISTOFSERVERS_CACHE_UPDATE_DELAY, getRefreshIntervalMs(clientConfig));
+	}
 
-    //标记当前Scheduled任务是否是活跃状态中（已经开启就活跃状态）
-    private final AtomicBoolean isActive = new AtomicBoolean(false);
-    //任务调用执行一次updateAction.doUpdate()后记录该时刻，表示最新的一次update的时间戳
-    private volatile long lastUpdated = System.currentTimeMillis();
-    //线程池的initialDelay参数。默认值是
-    private final long initialDelayMs;
-//    默认值是LISTOFSERVERS_CACHE_REPEAT_INTERVAL也就是30s执行一次 
-//    因为该参数相对重要，所以不仅构造时可以指定其值，还可以通过外部化配置其值，对应的key是
-    private final long refreshIntervalMs;
- // 继承自Futrue，在Futrue的基础上增加getDelay(TimeUnit unit)方法：还有多久执行任务
- 	// ScheduledExecutorService提交任务时返回它
- 	// ScheduledThreadPoolExecutor是带有线程池功能的执行器，实现了接口ScheduledExecutorService
-    private volatile ScheduledFuture<?> scheduledFuture;
+	public PollingServerListUpdater(final long initialDelayMs, final long refreshIntervalMs) {
+		this.initialDelayMs = initialDelayMs;
+		this.refreshIntervalMs = refreshIntervalMs;
+	}
 
-    public PollingServerListUpdater() {
-        this(LISTOFSERVERS_CACHE_UPDATE_DELAY, LISTOFSERVERS_CACHE_REPEAT_INTERVAL);
-    }
+	// 启动
+	@Override
+	public synchronized void start(final UpdateAction updateAction) {
+		// 保证原子性。如果已经启动了就啥都不做
+		if (isActive.compareAndSet(false, true)) {
+			// 定时任务每次执行的Task
+			final Runnable wrapperRunnable = new Runnable() {
+				@Override
+				public void run() {
+					if (!isActive.get()) {
+						if (scheduledFuture != null) {
+							scheduledFuture.cancel(true);
+						}
+						return;
+					}
+					try {
+						// 每次执行更新操作时，记录下时间戳
+						updateAction.doUpdate();
+						lastUpdated = System.currentTimeMillis();
+					} catch (Exception e) {
+						logger.warn("Failed one update cycle", e);
+					}
+				}
+			};
+			// 启动任务 默认30s执行一次
+			scheduledFuture = getRefreshExecutor().scheduleWithFixedDelay(wrapperRunnable, initialDelayMs,
+					refreshIntervalMs, TimeUnit.MILLISECONDS);
+		} else {
+			logger.info("Already active, no-op");
+		}
+	}
 
-    public PollingServerListUpdater(IClientConfig clientConfig) {
-        this(LISTOFSERVERS_CACHE_UPDATE_DELAY, getRefreshIntervalMs(clientConfig));
-    }
+	@Override
+	public synchronized void stop() {
+		if (isActive.compareAndSet(true, false)) {
+			if (scheduledFuture != null) {
+				scheduledFuture.cancel(true);
+			}
+		} else {
+			logger.info("Not active, no-op");
+		}
+	}
 
-    public PollingServerListUpdater(final long initialDelayMs, final long refreshIntervalMs) {
-        this.initialDelayMs = initialDelayMs;
-        this.refreshIntervalMs = refreshIntervalMs;
-    }
-    // 启动
-    @Override
-    public synchronized void start(final UpdateAction updateAction) {
-    	// 保证原子性。如果已经启动了就啥都不做
-        if (isActive.compareAndSet(false, true)) {
-        	//定时任务每次执行的Task
-            final Runnable wrapperRunnable = new Runnable() {
-                @Override
-                public void run() {
-                    if (!isActive.get()) {
-                        if (scheduledFuture != null) {
-                            scheduledFuture.cancel(true);
-                        }
-                        return;
-                    }
-                    try {
-                    	// 每次执行更新操作时，记录下时间戳
-                        updateAction.doUpdate();
-                        lastUpdated = System.currentTimeMillis();
-                    } catch (Exception e) {
-                        logger.warn("Failed one update cycle", e);
-                    }
-                }
-            };
-         // 启动任务 默认30s执行一次
-            scheduledFuture = getRefreshExecutor().scheduleWithFixedDelay(
-                    wrapperRunnable,
-                    initialDelayMs,
-                    refreshIntervalMs,
-                    TimeUnit.MILLISECONDS
-            );
-        } else {
-            logger.info("Already active, no-op");
-        }
-    }
+	@Override
+	public String getLastUpdate() {
+		return new Date(lastUpdated).toString();
+	}
 
-    @Override
-    public synchronized void stop() {
-        if (isActive.compareAndSet(true, false)) {
-            if (scheduledFuture != null) {
-                scheduledFuture.cancel(true);
-            }
-        } else {
-            logger.info("Not active, no-op");
-        }
-    }
+	@Override
+	public long getDurationSinceLastUpdateMs() {
+		return System.currentTimeMillis() - lastUpdated;
+	}
 
-    @Override
-    public String getLastUpdate() {
-        return new Date(lastUpdated).toString();
-    }
+	@Override
+	public int getNumberMissedCycles() {
+		if (!isActive.get()) {
+			return 0;
+		}
+		return (int) ((int) (System.currentTimeMillis() - lastUpdated) / refreshIntervalMs);
+	}
 
-    @Override
-    public long getDurationSinceLastUpdateMs() {
-        return System.currentTimeMillis() - lastUpdated;
-    }
+	@Override
+	public int getCoreThreads() {
+		if (isActive.get()) {
+			if (getRefreshExecutor() != null) {
+				return getRefreshExecutor().getCorePoolSize();
+			}
+		}
+		return 0;
+	}
 
-    @Override
-    public int getNumberMissedCycles() {
-        if (!isActive.get()) {
-            return 0;
-        }
-        return (int) ((int) (System.currentTimeMillis() - lastUpdated) / refreshIntervalMs);
-    }
-
-    @Override
-    public int getCoreThreads() {
-        if (isActive.get()) {
-            if (getRefreshExecutor() != null) {
-                return getRefreshExecutor().getCorePoolSize();
-            }
-        }
-        return 0;
-    }
-
-    private static long getRefreshIntervalMs(IClientConfig clientConfig) {
-        return clientConfig.get(CommonClientConfigKey.ServerListRefreshInterval, LISTOFSERVERS_CACHE_REPEAT_INTERVAL);
-    }
+	private static long getRefreshIntervalMs(IClientConfig clientConfig) {
+		return clientConfig.get(CommonClientConfigKey.ServerListRefreshInterval, LISTOFSERVERS_CACHE_REPEAT_INTERVAL);
+	}
 }

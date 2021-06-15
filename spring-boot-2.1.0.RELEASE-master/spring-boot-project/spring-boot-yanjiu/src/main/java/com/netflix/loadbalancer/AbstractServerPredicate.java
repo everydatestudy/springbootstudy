@@ -31,11 +31,9 @@ import com.google.common.collect.Lists;
 import com.netflix.client.config.IClientConfig;
 import com.netflix.loadbalancer.PredicateKey;
 
-/**AvailabilityPredicate可用性过滤器
-这个是用来过滤掉不可用的服务器，不如连接不上，还有并发太多的，他就是获取服务器信息，然后判断一些问题。
+/**它是服务器过滤逻辑的基础组件，可用于rules and server list filters。它传入的是一个PredicateKey，含有一个Server和loadBalancerKey，由此可以通过服务器和负载均衡器来开发过滤服务器的逻辑。
 
-ZoneAvoidancePredicate区域过滤器
-貌似跟亚马逊云有关，我们一般默认就一个区域defaultzone，多个区域就需要有判断了，比如断电情况，负载啊这些，具体可以看ZoneAvoidancePredicate的apply方法，我就不多说了。一般情况只有一个区域，就返回true了：
+它是基于谷歌的Predicate实现的断言逻辑，该接口和JDK8的java.util.function.Predicate一毛一样，可以概念互替。
 ————————————————
 版权声明：本文为CSDN博主「王伟王胖胖」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
 原文链接：https://blog.csdn.net/wangwei19871103/article/details/105651261
@@ -49,14 +47,15 @@ ZoneAvoidancePredicate区域过滤器
  *
  */
 public abstract class AbstractServerPredicate implements Predicate<PredicateKey> {
-    
+    //rule：负载均衡器LoadBalancer规则：能从其获取到ILoadBalancer，从而得到一个对应的LoadBalancerStats实例
     protected IRule rule;
+    // LoadBalancer状态信息。可以通过构造器指定/set方法指定，若没有指定的话将会从IRule里拿
     private volatile LoadBalancerStats lbStats;
-    
+     // ：随机数。当过滤后还剩多台Server将从中随机获取
     private final Random random = new Random();
-    
+    //下一个角标。用于轮询算法的指示
     private final AtomicInteger nextIndex = new AtomicInteger();
-            
+    //一个特殊的Predicate：只有Server参数并无loadBalancerKey参数的PredicateKey，最终也是使用AbstractServerPredicate完成断言
     private final Predicate<Server> serverOnlyPredicate =  new Predicate<Server>() {
         @Override
         public boolean apply( Server input) {                    
@@ -88,10 +87,12 @@ public abstract class AbstractServerPredicate implements Predicate<PredicateKey>
     public AbstractServerPredicate(LoadBalancerStats lbStats, IClientConfig clientConfig) {
         this.lbStats = lbStats;
     }
-    
+    // 得到负载均衡器对应的LoadBalancerStats实例
+ 	// 该方法为protected，在子类中会被调用用于判断
     protected LoadBalancerStats getLBStats() {
         if (lbStats != null) {
             return lbStats;
+			//从rule里面拿到ILoadBalancer，进而拿到LoadBalancerStats
         } else if (rule != null) {
             ILoadBalancer lb = rule.getLoadBalancer();
             if (lb instanceof AbstractLoadBalancer) {
@@ -118,7 +119,9 @@ public abstract class AbstractServerPredicate implements Predicate<PredicateKey>
         return serverOnlyPredicate;
     }
     
-    /**
+    /**Eligible：适合的
+	 * 把servers通过Predicate#apply(PredicateKey)删选一把后，返回符合条件的Server们
+	 * loadBalancerKey非必须的。
      * Get servers filtered by this predicate from list of servers. Load balancer key
      * is presumed to be null. 
      * 
@@ -146,7 +149,7 @@ public abstract class AbstractServerPredicate implements Predicate<PredicateKey>
         }
     }
 
-    /**
+    /** 它是轮询算法的实现。轮询算法，下面会有应用
      * Referenced from RoundRobinRule
      * Inspired by the implementation of {@link AtomicInteger#incrementAndGet()}.
      *
@@ -162,7 +165,7 @@ public abstract class AbstractServerPredicate implements Predicate<PredicateKey>
         }
     }
     
-    /**
+    /* 得到Eligible合适的机器们后，采用随机策略随便选一台
      * Choose a random server after the predicate filters a list of servers. Load balancer key 
      * is presumed to be null.
      *  
