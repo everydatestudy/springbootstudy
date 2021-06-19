@@ -51,7 +51,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
-/**
+/**这个注解是用来处理EnableFeignClients
  * @author Spencer Gibb
  * @author Jakub Narloch
  * @author Venil Noronha
@@ -146,9 +146,11 @@ class FeignClientsRegistrar
 
 	private void registerDefaultConfiguration(AnnotationMetadata metadata,
 			BeanDefinitionRegistry registry) {
-		Map<String, Object> defaultAttrs = metadata
-				.getAnnotationAttributes(EnableFeignClients.class.getName(), true);
-
+		//获取EnableFeignClients注解的defaultConfiguration属性，
+		//注册默认客户端配置类,名字为default.com.ww.XXApplication.FeignClientSpecification，类型为FeignClientSpecification.
+		//获取EnableFeignClients是的属性
+		Map<String, Object> defaultAttrs = metadata.getAnnotationAttributes(EnableFeignClients.class.getName(), true);
+		//注册defaultConfiguration中的配置文件
 		if (defaultAttrs != null && defaultAttrs.containsKey("defaultConfiguration")) {
 			String name;
 			if (metadata.hasEnclosingClass()) {
@@ -225,11 +227,11 @@ class FeignClientsRegistrar
 					Map<String, Object> attributes = annotationMetadata
 							.getAnnotationAttributes(
 									FeignClient.class.getCanonicalName());
-
+					//获得名字
 					String name = getClientName(attributes);
-					registerClientConfiguration(registry, name,
-							attributes.get("configuration"));
-
+					//注册配置类名字.FeignClientSpecification
+					registerClientConfiguration(registry, name,attributes.get("configuration"));
+					//注册客户端，修改一些Bean的定义，类型设置为FeignClientFactoryBean,自动装配autowire_by_type
 					registerFeignClient(registry, annotationMetadata, attributes);
 				}
 			}

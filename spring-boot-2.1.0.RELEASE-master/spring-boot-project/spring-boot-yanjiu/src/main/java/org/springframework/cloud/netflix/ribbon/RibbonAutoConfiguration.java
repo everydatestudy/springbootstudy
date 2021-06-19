@@ -49,7 +49,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.client.RestTemplate;
 
-/**这个配置类最重要的是完成了Ribbon相关组件的自动配置，有了LoadBalancerClient才能做负载均衡（这里使用的是它的唯一实现类RibbonLoadBalancerClient）
+/**
+ *Ribbon的配置将在以上两个步骤起作用，配置信息都存放在SpringClientFactory 中。
+ *SpringClientFactory 是SpringCloud拓展NamedContextFactory，用来整合Ribbon的一个容器工厂类。 
+ * 这个配置类最重要的是完成了Ribbon相关组件的自动配置，有了LoadBalancerClient才能做负载均衡（这里使用的是它的唯一实现类RibbonLoadBalancerClient）
  * Auto configuration for Ribbon (client side load balancing).
  *
  * @author Spencer Gibb
@@ -88,7 +91,7 @@ public class RibbonAutoConfiguration {
 		factory.setConfigurations(this.configurations);
 		return factory;
 	}
-
+	//负载均衡客户端，此Bean会被注入一个HttpRequest的拦截器中，从服务中选择一个服务，使用其IP地址替换之前生成的HttpRequest的服务名称。
 	@Bean
 	@ConditionalOnMissingBean(LoadBalancerClient.class)
 	public LoadBalancerClient loadBalancerClient() {
@@ -130,7 +133,7 @@ public class RibbonAutoConfiguration {
 			return restTemplate -> restTemplate
 					.setRequestFactory(ribbonClientHttpRequestFactory);
 		}
-
+		// Http请求工厂，作用是通过URL和Method生成HttpRequest对象。将此工厂通过RestTemplate的自定义拓展器注入到所有标识了@LoadBalanced的RestTemplate的Bean中
 		@Bean
 		public RibbonClientHttpRequestFactory ribbonClientHttpRequestFactory() {
 			return new RibbonClientHttpRequestFactory(this.springClientFactory);

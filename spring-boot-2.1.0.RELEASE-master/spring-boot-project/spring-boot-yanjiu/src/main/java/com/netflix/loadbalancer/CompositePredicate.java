@@ -35,7 +35,9 @@ import com.google.common.collect.Lists;
  * exceeds certain number threshold or percentage threshold. 
  * 
  * @author awang
- *
+ * 这里增加了，这个预处理
+ *        ZoneAvoidancePredicate zonePredicate = new ZoneAvoidancePredicate(this);
+        AvailabilityPredicate availabilityPredicate = new AvailabilityPredicate(this);
  */
 public class CompositePredicate extends AbstractServerPredicate {
 

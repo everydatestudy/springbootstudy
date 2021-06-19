@@ -141,6 +141,7 @@ public abstract class AbstractServerPredicate implements Predicate<PredicateKey>
         } else {
             List<Server> results = Lists.newArrayList();
             for (Server server: servers) {
+            	//com.netflix.loadbalancer.CompositePredicate@57d5e0c0
                 if (this.apply(new PredicateKey(loadBalancerKey, server))) {
                     results.add(server);
                 }

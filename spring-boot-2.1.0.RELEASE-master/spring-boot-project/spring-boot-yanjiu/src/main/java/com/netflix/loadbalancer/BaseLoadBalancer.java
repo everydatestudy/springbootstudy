@@ -57,7 +57,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
    Pinger#runPinger：基于allServerList对没台Server完成ping操作，
       所以它只会改变upServerList的值（isAlive=true才属于up）
    setServersList()：它会用新set进来的对allServerList全覆盖，并且完成对没台Server的初始化，包括识别出upServerList（这种识别其实依赖也是上面一样的ping操作）
-      综上可知，upServerList的值有且仅是把allServerList经过IPing处理后，若isAlive=true就属于这个行列了。因此若你没指定IPing策略或者是默认的DummyPing，那么它它哥俩就永远相等（认为所有的Server均永远可用~）。
+      综上可知，upServerList的值有且仅是把allServerList经过IPing处理后，
+      若isAlive=true就属于这个行列了。因此若你没指定IPing策略或者是默认的DummyPing，那么它它哥俩就永远相等（认为所有的Server均永远可用~）。
  * 动态服务器列表（因为可用Server可能会重启、停机、新增等，希望被动态发现）
 Server过滤（因为某台Server可能负载偏高、已被熔断，此时希望此些Server被过滤掉）
 zone区域意识（服务之间的调用希望尽量是同区域进行的，减少延迟）

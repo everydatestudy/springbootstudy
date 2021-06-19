@@ -1935,7 +1935,10 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	private interface BeanObjectProvider<T> extends ObjectProvider<T>, Serializable {
 	}
 
-	/**
+	/**这个其实也是一个注入点，你可以要任何类型的对象，只要他能给你注入
+	 * ，原理就是在DefaultListableBeanFactory的resolveDependency，
+	 * 直接给你创建一个DependencyObjectProvider对象返回了，你在要使用他的时候调用getIfAvailable，他相当于进行getBean处理了
+
 	 * Serializable ObjectFactory/ObjectProvider for lazy resolution of a
 	 * dependency.
 	 */
