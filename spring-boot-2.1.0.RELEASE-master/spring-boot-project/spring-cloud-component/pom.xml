@@ -18,7 +18,7 @@
 	<modules>
 		<module>nacos-spring-cloud-provider-example</module>
 		<module>nacos-spring-cloud-consumer-example</module>
-    <module>feign-spring-cloud-demo</module>
+    	<module>feign-spring-cloud-demo</module>
   </modules>
 	<dependencyManagement>
 		<dependencies>
