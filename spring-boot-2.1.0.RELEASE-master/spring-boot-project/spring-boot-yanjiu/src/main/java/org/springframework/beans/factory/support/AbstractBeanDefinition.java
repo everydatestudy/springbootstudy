@@ -62,13 +62,15 @@ import org.springframework.util.StringUtils;
 public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccessor
 		implements BeanDefinition, Cloneable {
 
-	/**
+	/**定义众多常量。这一些常量会直接影响到spring实例化Bean时的策略
+	// 个人觉得这些常量的定义不是必须的，在代码里判断即可。Spring定义这些常量的原因很简单，便于维护，让读代码的人知道每个值的意义(所以以后我们在书写代码时，也可以这么来搞)
+	//默认的SCOPE，默认是单例
 	 * Constant for the default scope name: {@code ""}, equivalent to singleton
 	 * status unless overridden from a parent bean definition (if applicable).
 	 */
 	public static final String SCOPE_DEFAULT = "";
 
-	/**
+	/** 自动装配的一些常量
 	 * Constant that indicates no autowiring at all. 常数，指示没有自动装配。
 	 * 
 	 * @see #setAutowireMode
@@ -110,21 +112,21 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	@Deprecated
 	public static final int AUTOWIRE_AUTODETECT = AutowireCapableBeanFactory.AUTOWIRE_AUTODETECT;
 
-	/**
+	/**检查依赖是否合法，在本类中，默认不进行依赖检查
 	 * Constant that indicates no dependency check at all. 常数，表示为对象引用的依赖检查。
-	 * 
+	 * // 不进行检查
 	 * @see #setDependencyCheck
 	 */
 	public static final int DEPENDENCY_CHECK_NONE = 0;
 
-	/**
+	/**如果依赖类型为对象引用，则需要检查
 	 * Constant that indicates dependency checking for object references.
 	 * 
 	 * @see #setDependencyCheck
 	 */
 	public static final int DEPENDENCY_CHECK_OBJECTS = 1;
 
-	/**
+	/** //对简单属性的依赖进行检查
 	 * Constant that indicates dependency checking for "simple" properties.
 	 * 
 	 * @see #setDependencyCheck
@@ -132,7 +134,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	 */
 	public static final int DEPENDENCY_CHECK_SIMPLE = 2;
 
-	/**
+	/**对所有属性的依赖进行检查
 	 * Constant that indicates dependency checking for all properties (object
 	 * references as well as "simple" properties).
 	 * 
@@ -140,7 +142,8 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	 */
 	public static final int DEPENDENCY_CHECK_ALL = 3;
 
-	/**
+	/**	若Bean未指定销毁方法，容器应该尝试推断Bean的销毁方法的名字，目前来说，推断的销毁方法的名字一般为close或是shutdown
+	//（即未指定Bean的销毁方法，但是内部定义了名为close或是shutdown的方法，则容器推断其为销毁方法）
 	 * Constant that indicates the container should attempt to infer the
 	 * {@link #setDestroyMethodName destroy method name} for a bean as opposed to
 	 * explicit specification of a method name. The value {@value} is specifically
@@ -158,15 +161,19 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	@Nullable
 	private volatile Object beanClass;
 	// 目标 bean 的作用域，初始化为 "", 相当于 singleton
+	////默认的scope是单例
 	@Nullable
 	private String scope = SCOPE_DEFAULT;
 	/**
 	 * 是否是抽象Bean ,对应bean属性abstractFlag
+	 * //默认不为抽象类
 	 */
 	private boolean abstractFlag = false;
 	// 是否延迟加载,对应Bean属性lazy-init
+	////默认不进行自动装配
 	private boolean lazyInit = false;
 	// 自动注入模式,,对应Bean属性autowire
+	////默认不是懒加载
 	private int autowireMode = AUTOWIRE_NO;
 	// 依赖检查 : 初始化为不要做依赖检查
 	private int dependencyCheck = DEPENDENCY_CHECK_NONE;
@@ -175,6 +182,9 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	@Nullable
 	private String[] dependsOn;
 	/**
+	 * // autowire-candidate属性设置为false，这样容器在查找自动装配对象时，将不考虑该bean，
+	// 备注：并不影响本身注入其它的Bean
+	 * 
 	 * autowire-candidate属性设置为false,这样容器在查找自动装配对象时,将不考虑该bean,即它不会被考虑为其他bean自动装配的候选者,
 	 * 但是该bean本身还是可以使用自动装配来注入其他属性,
 	 * 
@@ -184,6 +194,15 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	// 自动装配当出现多个bean候选者,将作为首选者,是默认不是主要候选者,对应Bean属性primary
 	private boolean primary = false;
 	// 用于记录qualifiers ,对应Bean属性qualifier
+	//用于记录Qualifier，对应子元素qualifier=======这个字段有必要解释一下
+		// 唯一向这个字段放值的方法为本类的：public void addQualifier(AutowireCandidateQualifier qualifier)    copyQualifiersFrom这个不算，那属于拷贝
+		// 调用处：AnnotatedBeanDefinitionReader#doRegisterBean  但是Spring所有调用处，qualifiers字段传的都是null~~~~~~~~~尴尬
+		// 通过我多放跟踪发现，此处这个字段目前【永远】不会被赋值（除非我们手动调用对应方法为其赋值）   但是有可能我才疏学浅，若有知道的  请告知，非常非常感谢  我考虑到它可能是预留字段~~~~
+		// 我起初以为这样可以赋值：
+		//@Qualifier("aaa")
+		//@Service
+		//public class HelloServiceImpl   没想到，也是不好使的，Bean定义里面也不会有值
+		// 因此对应的方法getQualifier和getQualifiers 目前应该基本上都返回null或者[]
 	private final Map<String, AutowireCandidateQualifier> qualifiers = new LinkedHashMap<>();
 
 	@Nullable

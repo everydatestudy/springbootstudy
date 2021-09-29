@@ -580,8 +580,9 @@ class ConstructorResolver {
 			// Try all methods with this name to see if they match the given arguments.
 			//判断是否被cglib代理过的，如果代理过，那么就返回其父类
 			factoryClass = ClassUtils.getUserClass(factoryClass);
-
+			//获取factoryClass所有方法，也包括继承来的方法
 			Method[] rawCandidates = getCandidateMethods(factoryClass, mbd);
+			//过滤出factoryClass中factory-method指定的方法
 			List<Method> candidateList = new ArrayList<>();
 			for (Method candidate : rawCandidates) {
 				if (Modifier.isStatic(candidate.getModifiers()) == isStatic && mbd.isFactoryMethod(candidate)) {
@@ -589,13 +590,15 @@ class ConstructorResolver {
 				}
 			}
 			Method[] candidates = candidateList.toArray(new Method[0]);
+			//排序，public构造函数优先参数数量降序、非public构造函数参数数量降序
 			AutowireUtils.sortFactoryMethods(candidates);
 
 			ConstructorArgumentValues resolvedValues = null;
+			//构造器装配，显然我们使用的工厂方法构造，这里autowiring=false
 			boolean autowiring = (mbd.getResolvedAutowireMode() == AutowireCapableBeanFactory.AUTOWIRE_CONSTRUCTOR);
 			int minTypeDiffWeight = Integer.MAX_VALUE;
+			//引起歧义的方法列表
 			Set<Method> ambiguousFactoryMethods = null;
-
 			int minNrOfArgs;
 			if (explicitArgs != null) {
 				minNrOfArgs = explicitArgs.length;
@@ -604,6 +607,7 @@ class ConstructorResolver {
 				// We don't have arguments passed in programmatically, so we need to resolve the
 				// arguments specified in the constructor arguments held in the bean definition.
 				if (mbd.hasConstructorArgumentValues()) {
+					//提取配置文件中定义的构造函数参数（constructor-arg）
 					ConstructorArgumentValues cargs = mbd.getConstructorArgumentValues();
 					resolvedValues = new ConstructorArgumentValues();
 					//解析构造参数，通过BeanDefinitionValueResolver进行解析，解析好后放置到resolvedValues中，这里主要是将beanref的解析好和以下表达式什么的，没有进行参数类型的转换。
@@ -1088,7 +1092,10 @@ class ConstructorResolver {
 	 * Private inner class for holding argument combinations.
 	 */
 	private static class ArgumentsHolder {
-
+		//		args.rawArguments[paramIndex] = autowiredArgument;
+		//		args.arguments[paramIndex] = autowiredArgument;
+		//这两个值是一样的
+		
 		public final Object[] rawArguments;
 
 		public final Object[] arguments;
@@ -1114,8 +1121,11 @@ class ConstructorResolver {
 			// Try type difference weight on both the converted arguments and
 			// the raw arguments. If the raw weight is better, use it.
 			// Decrease raw weight by 1024 to prefer it over equal converted weight.
+			//先与转换后的参数做计算
 			int typeDiffWeight = MethodInvoker.getTypeDifferenceWeight(paramTypes, this.arguments);
+			//先与转换后的参数做计算
 			int rawTypeDiffWeight = MethodInvoker.getTypeDifferenceWeight(paramTypes, this.rawArguments) - 1024;
+		    //返回最小的那个值，值越小越接近本身的类型。
 			return (rawTypeDiffWeight < typeDiffWeight ? rawTypeDiffWeight : typeDiffWeight);
 		}
 
