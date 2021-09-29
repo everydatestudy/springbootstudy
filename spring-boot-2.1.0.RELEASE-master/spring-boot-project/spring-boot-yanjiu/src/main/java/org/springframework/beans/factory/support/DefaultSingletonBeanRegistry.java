@@ -72,14 +72,11 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 
 	/** Cache of singleton objects: bean name --> bean instance */
 	//用于存放完全初始化好的 bean从该缓存中取出的 bean可以直接使用
-	//用于存放完全初始化好的 bean，从该缓存中取出的 bean 可以直接使用
- 
+	// 从上至下 分表代表这“三级缓存”
 	private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
-
 	/** Cache of singleton factories: bean name --> ObjectFactory */
 	//存放 bean工厂对象解决循环依赖
 	private final Map<String, ObjectFactory<?>> singletonFactories = new HashMap<>(16);
-
 	//存放原始的bean对象用于解决循环依赖,注意：存到里面的对象还没有被填充属性
 	/** Cache of early singleton objects: bean name --> bean instance */
 	private final Map<String, Object> earlySingletonObjects = new HashMap<>(16);
@@ -88,6 +85,8 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	private final Set<String> registeredSingletons = new LinkedHashSet<>(256);
 
 	/** Names of beans that are currently in creation */
+	// 这个缓存也十分重要：它表示bean创建过程中都会在里面呆着~
+		// 它在Bean开始创建时放值，创建完成时会将其移出~
 	private final Set<String> singletonsCurrentlyInCreation =
 			Collections.newSetFromMap(new ConcurrentHashMap<>(16));
 
@@ -184,7 +183,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 		//从map中获取bean如果不为空直接返回，不再进行初始化工作
 		//讲道理一个程序员提供的对象这里一般都是为空的
 	    /**
-               * 第一步:我们尝试去一级缓存(单例缓存池中去获取对象,一般情况从该map中获取的对象是直接可以使用的)
+         * 第一步:我们尝试去一级缓存(单例缓存池中去获取对象,一般情况从该map中获取的对象是直接可以使用的)
          * Spring IoC容器初始化加载单实例bean的时候第一次进来的时候 该map中一般返回空
          */
 		Object singletonObject = this.singletonObjects.get(beanName);
@@ -254,9 +253,13 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 				 * 表示beanName对应的bean正在创建中
 				 */
 				/**
-                 * 标记当前的bean马上就要被创建了
+				 * 标记当前的bean马上就要被创建了
                  * singletonsCurrentlyInCreation 在这里会把beanName加入进来，若第二次循环依赖（构造器注入会抛出异常）
-                 */
+                 *  // 在单例对象创建前先做一个标记
+                 // 将beanName放入到singletonsCurrentlyInCreation这个集合中
+                 // 标志着这个单例Bean正在创建
+                 // 如果同一个单例Bean多次被创建，这里会抛出异常
+                  */
 				beforeSingletonCreation(beanName);
 				boolean newSingleton = false;
 				boolean recordSuppressedExceptions = (this.suppressedExceptions == null);
@@ -264,6 +267,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					this.suppressedExceptions = new LinkedHashSet<>();
 				}
 				try {
+					 // 上游传入的lambda在这里会被执行，调用createBean方法创建一个Bean后返回
 					singletonObject = singletonFactory.getObject();
 					newSingleton = true;
 				}

@@ -253,19 +253,21 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	public Constructor<?>[] determineCandidateConstructors(Class<?> beanClass, String beanName) throws BeansException {
 		return null;
 	}
-
+	// 提前暴露代理对象的引用  它肯定在postProcessAfterInitialization之前执行
+		// 所以它并不需要判断啥的~~~~  创建好后放进缓存earlyProxyReferences里  注意此处value是原始Bean
 	@Override
 	public Object getEarlyBeanReference(Object bean, String beanName) throws BeansException {
 		Object cacheKey = getCacheKey(bean.getClass(), beanName);
 		if (!this.earlyProxyReferences.contains(cacheKey)) {
 			this.earlyProxyReferences.add(cacheKey);
 		}
+		//// 如果需要代理，返回一个代理对象，不需要代理，直接返回当前传入的这个bean对象
 		return wrapIfNecessary(bean, beanName, cacheKey);
 	}
 
 	/**
 	 * 在创建Bean的流程中还没调用构造器来实例化Bean的时候进行调用(实例化前后) AOP解析切面以及事务解析事务注解都是在这里完成的
-	 * 
+	 * // 因为它会在getEarlyBeanReference之后执行，所以此处的重要逻辑是下面的判断
 	 * Spring Aop的代理主要分为三个步骤：
 	 * 获取所有的Advisor，
 	 * 过滤可应用到当前bean的Adivsor和使用Advisor为当前bean生成代理对象。
