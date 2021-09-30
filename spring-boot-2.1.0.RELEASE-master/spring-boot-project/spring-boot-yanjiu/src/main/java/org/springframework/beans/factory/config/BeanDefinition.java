@@ -93,7 +93,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 
 	// Modifiable attributes
 
-	/**
+	/**parent definition（若存在父类的话，就设置进去）
 	 * Set the name of the parent definition of this bean definition, if any.
 	 */
 	void setParentName(@Nullable String parentName);
@@ -135,7 +135,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	@Nullable
 	String getBeanClassName();
 
-	/**
+	/**SCOPE_SINGLETON或者SCOPE_PROTOTYPE两种
 	 * Override the target scope of this bean, specifying a new scope name.
 	 *  //ROLE_APPLICATION
     //ROLE_SUPPORT
@@ -205,7 +205,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	 */
 	void setPrimary(boolean primary);
 
-	/**
+	/** 是否是首选的  @Primary
 	 * Return whether this bean is a primary autowire candidate.
 	 */
 	boolean isPrimary();

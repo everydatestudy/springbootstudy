@@ -204,11 +204,12 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 		//public class HelloServiceImpl   没想到，也是不好使的，Bean定义里面也不会有值
 		// 因此对应的方法getQualifier和getQualifiers 目前应该基本上都返回null或者[]
 	private final Map<String, AutowireCandidateQualifier> qualifiers = new LinkedHashMap<>();
-
+	//我理解为通过这个函数的逻辑初始化Bean，而不是构造函数或是工厂方法（相当于自己去实例化，而不是交给Bean工厂）
 	@Nullable
 	private Supplier<?> instanceSupplier;
 	// 是否允许访问非公开构造函数，非公开方法
 	// 该属性主要用于构造函数解析，初始化方法,析构方法解析，bean属性的set/get方法不受该属性影响
+	////我理解为通过这个函数的逻辑初始化Bean，而不是构造函数或是工厂方法（相当于自己去实例化，而不是交给Bean工厂）
 	private boolean nonPublicAccessAllowed = true;
 	// 调用构造函数时，是否采用宽松匹配
 	/**
@@ -239,30 +240,31 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	// 工厂方法名称
 	@Nullable
 	private String factoryMethodName;
-	// 构造函数参数值
+	// //记录构造函数注入属性，对应bean属性constructor-arg
 	@Nullable
 	private ConstructorArgumentValues constructorArgumentValues;
 	/**
-	 * 普通属性的集合
+	 * //Bean属性的名称以及对应的值，这里不会存放构造函数相关的参数值，只会存放通过setter注入的依赖
 	 */
 	@Nullable
 	private MutablePropertyValues propertyValues;
 	/**
 	 * 方法重写的持有者 ,记录 lookup-method,replaced-method元素
+	 * 	//方法重写的持有者，记录lookup-method、replaced-method元素  @Lookup等
 	 */
 	@Nullable
 	private MethodOverrides methodOverrides;
-
+	//init函数的名字
 	@Nullable
 	private String initMethodName;
-
+	//destory函数的名字
 	@Nullable
 	private String destroyMethodName;
 	/**
-	 * 254 * 是否执行 init-method 方法,默认执行初始化方法,程序设置 255
+	 * 254 * 是否执行 init-method 方法,默认执行初始化方法,程序设置 
 	 */
 	private boolean enforceInitMethod = true;
-// 是否执行 destory-method 方法,默认执行销毁方法,程序设置
+   // 是否执行 destory-method 方法,默认执行销毁方法,程序设置
 	private boolean enforceDestroyMethod = true;
 	// 是否是一个合成 BeanDefinition,
 	// 合成 在这里的意思表示这不是一个应用开发人员自己定义的 BeanDefinition, 而是程序
@@ -284,7 +286,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	// 资源描述
 	@Nullable
 	private String description;
-
+	// 这个Bean哪儿来的
 	@Nullable
 	private Resource resource;
 
@@ -1213,14 +1215,14 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 		return (this.resource != null ? this.resource.getDescription() : null);
 	}
 
-	/**
+	/**	// 其实就是给reource赋值了，使用了BeanDefinitionResource
 	 * Set the originating (e.g. decorated) BeanDefinition, if any.
 	 */
 	public void setOriginatingBeanDefinition(BeanDefinition originatingBd) {
 		this.resource = new BeanDefinitionResource(originatingBd);
 	}
 
-	/**
+	/** 上面有赋值，所以get的时候就是返回上面set进来的值
 	 * Return the originating BeanDefinition, or {@code null} if none. Allows for
 	 * retrieving the decorated bean definition, if any.
 	 * <p>
