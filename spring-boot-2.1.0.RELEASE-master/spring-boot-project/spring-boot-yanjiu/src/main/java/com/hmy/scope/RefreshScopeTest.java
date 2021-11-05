@@ -1,4 +1,4 @@
-package org.feign.spring.cloud.demo;
+package com.hmy.scope;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -10,9 +10,9 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
  */
 @SpringBootApplication
 @EnableFeignClients
-public class App {
+public class RefreshScopeTest {
 	public static void main(String[] args) {
-		com.netflix.config.CachedDynamicIntProperty ff;
-		SpringApplication.run(App.class, args);
+
+		SpringApplication.run(RefreshScopeTest.class, args);
 	}
 }
