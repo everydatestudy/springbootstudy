@@ -39,13 +39,13 @@ public abstract class HystrixCommandEvent implements HystrixEvent {
     public HystrixThreadPoolKey getThreadPoolKey() {
         return threadPoolKey;
     }
-
+	// command是否开始
     public abstract boolean isExecutionStart();
-
+    // 是否是在隔离线程里执行的（先线程池模式隔离）
     public abstract boolean isExecutedInThread();
-
+ // 响应被线程池拒绝
     public abstract boolean isResponseThreadPoolRejected();
-
+    // command是否执行完成（包括成功、错误等）
     public abstract boolean isCommandCompletion();
 
     public abstract boolean didCommandExecute();

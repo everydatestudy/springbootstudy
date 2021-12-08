@@ -140,6 +140,7 @@ class FeignClientsRegistrar
 	@Override
 	public void registerBeanDefinitions(AnnotationMetadata metadata,
 			BeanDefinitionRegistry registry) {
+		// 注册@EnableFeignClients的defaultConfiguration全局Feign配置(忽略，无非是转换为BeanDefination，注册到容器)
 		registerDefaultConfiguration(metadata, registry);
 		registerFeignClients(metadata, registry);
 	}
@@ -180,6 +181,7 @@ class FeignClientsRegistrar
 				FeignClient.class);
 		final Class<?>[] clients = attrs == null ? null
 				: (Class<?>[]) attrs.get("clients");
+		//如果不存在clients属性，取value、basePackages、basePackageClasses所在包的并集作为扫描包路径，如果并集为空，取注解所在包路径
 		if (clients == null || clients.length == 0) {
 //			scanner.addIncludeFilter(annotationTypeFilter);
 //			basePackages = getBasePackages(metadata);
@@ -189,6 +191,7 @@ class FeignClientsRegistrar
             basePackages = getBasePackages(metadata);
 		}
 		else {
+			//如果存在clients属性，取clients所在包集合作为扫描路径，并且过滤出和client类名一致的类
 			final Set<String> clientClasses = new HashSet<>();
 			basePackages = new HashSet<>();
 			for (Class<?> clazz : clients) {

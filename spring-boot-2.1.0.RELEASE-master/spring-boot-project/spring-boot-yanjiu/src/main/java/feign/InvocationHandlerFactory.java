@@ -34,9 +34,20 @@ public interface InvocationHandlerFactory {
 
 		Object invoke(Object[] argv) throws Throwable;
 	}
+
 	// 很简单：调用FeignInvocationHandler构造器完成实例的创建
 	static final class Default implements InvocationHandlerFactory {
-		//创建InvocationHandler的实例很简单，直接调用FeignInvocationHandler的构造器完成。但是很有必要细读它的invoke方法，它是对方法完成正调度的核心，是所有方法调用的入口。
+		// 创建InvocationHandler的实例很简单，直接调用FeignInvocationHandler的构造器完成。但是很有必要细读它的invoke方法，它是对方法完成正调度的核心，是所有方法调用的入口。
+		// target：HardCodedTarget（FeignClientFactoryBean#getTarget里new的一个对象，[type=SpecificationStockClient,
+		// name=trade-service, url=http://trade-service]）
+		// dispatch：目标方法和实际方法处理器的一个mapping关系，通过变量名可以看出FeignInvocationHandler并不实际执行代理逻辑，而是根据method分发给不同的MethodHandler处理
+		// 通过method实例可以直接找到MethodHandler，最后通过MethodHandler的invoke方法，实际执行代理逻辑
+
+//	作者：阿越
+//	链接：https://juejin.cn/post/6878861101455376398
+//	来源：稀土掘金
+//	著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+
 		@Override
 		public InvocationHandler create(Target target, Map<Method, MethodHandler> dispatch) {
 			return new ReflectiveFeign.FeignInvocationHandler(target, dispatch);

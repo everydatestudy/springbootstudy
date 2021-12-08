@@ -18,7 +18,7 @@ package org.springframework.boot.web.client;
 
 import org.springframework.web.client.RestTemplate;
 
-/**
+/**为 restTemplate 加上一个拦截器(也可以干点别的, 默认就这一个用处)
  * Callback interface that can be used to customize a {@link RestTemplate}.
  *
  * @author Phillip Webb

@@ -47,7 +47,10 @@ which is aggregated per rest client per zone. It is the
 total outstanding requests in a zone divided by number of available targeted instances (excluding circuit breaker tripped instances).
 This metric is very effective when timeout occurs slowly on a bad zone.
 <p>
-The  LoadBalancer will calculate and examine zone stats of all available zones. If the Average Active Requests for any zone has reached a configured threshold, this zone will be dropped from the active server list. In case more than one zone has reached the threshold, the zone with the most active requests per server will be dropped.
+The  LoadBalancer will calculate and examine zone stats of all available zones.
+ If the Average Active Requests for any zone has reached a configured threshold, 
+ this zone will be dropped from the active server list. 
+ In case more than one zone has reached the threshold, the zone with the most active requests per server will be dropped.
 Once the the worst zone is dropped, a zone will be chosen among the rest with the probability proportional to its number of instances.
 A server will be returned from the chosen zone with a given Rule (A Rule is a load balancing strategy, for example {@link AvailabilityFilteringRule})
 For each request, the steps above will be repeated. That is to say, each zone related load balancing decisions are made at real time with the up-to-date statistics aiding the choice.

@@ -382,7 +382,8 @@ public class SpringApplication {
 			//代码做了3件事:
 			//获取或者创建ConfigurableEnvironment
 			//配置ConfigurableEnvironment
-			//通知所有的观察者,发送ApplicationEnvironmentPreparedEvent事件.			
+			//通知所有的观察者,发送ApplicationEnvironmentPreparedEvent事件.
+			//TODO这里会调用springcloud的实例化过程
 			ConfigurableEnvironment environment = prepareEnvironment(listeners,
 					applicationArguments);
 			// 配置spring.beaninfo.ignore属性，默认为true，即跳过搜索BeanInfo classes.

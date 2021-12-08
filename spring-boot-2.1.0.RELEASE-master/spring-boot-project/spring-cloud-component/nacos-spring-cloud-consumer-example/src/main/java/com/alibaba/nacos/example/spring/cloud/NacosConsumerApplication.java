@@ -12,8 +12,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-import com.alibaba.nacos.client.naming.backups.FailoverReactor;
-
 /**
  * @author xiaojing
  */
@@ -21,28 +19,35 @@ import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 @EnableDiscoveryClient
 public class NacosConsumerApplication {
 
-    @LoadBalanced
-    @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
-    }
+	@LoadBalanced
+	@Bean
+	public RestTemplate restTemplate() {
+		return new RestTemplate();
+	}
 
-    public static void main(String[] args) {
-    	org.springframework.cloud.netflix.ribbon.RibbonAutoConfiguration fdsa;
-        SpringApplication.run(NacosConsumerApplication.class, args);
-    }
+	public static void main(String[] args) {
 
-    @RestController
-    public class TestController {
+		SpringApplication.run(NacosConsumerApplication.class, args);
+	}
 
-        private final RestTemplate restTemplate;
+	@RestController
+	public class TestController {
 
-        @Autowired
-        public TestController(RestTemplate restTemplate) {this.restTemplate = restTemplate;}
+		private final RestTemplate restTemplate;
 
-        @RequestMapping(value = "/echo/{str}", method = RequestMethod.GET)
-        public String echo(@PathVariable String str) {
-            return restTemplate.getForObject("http://service-provider/echo/" + str, String.class);
-        }
-    }
+		@Autowired
+		public TestController(RestTemplate restTemplate) {
+			this.restTemplate = restTemplate;
+		}
+
+		@RequestMapping(value = "/echo/{str}", method = RequestMethod.GET)
+		public String echo(@PathVariable String str) {
+			return restTemplate.getForObject("http://service-provider/echo/" + str, String.class);
+		}
+
+		@RequestMapping(value = "/echo2/{str}", method = RequestMethod.GET)
+		public String echo2(@PathVariable String str) {
+			return restTemplate.getForObject("http://service-provider2/echo/" + str, String.class);
+		}
+	}
 }

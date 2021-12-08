@@ -103,6 +103,7 @@ final class SynchronousMethodHandler implements MethodHandler {
 	@Override
 	public Object invoke(Object[] argv) throws Throwable {
 		// 根据方法入参，结合工厂构建出一个请求模版
+		//	// 1. 创建RequestTemplate
 		RequestTemplate template = buildTemplateFromArgs.create(argv);
 		// 重试机制：注意这里是克隆一个来使用
 		Retryer retryer = this.retryer.clone();
@@ -132,6 +133,7 @@ final class SynchronousMethodHandler implements MethodHandler {
 	}
 
 	Object executeAndDecode(RequestTemplate template) throws Throwable {
+		// 1. 执行所有RequestInterceptor，最后执行Target的apply方法获得Request
 		Request request = targetRequest(template);
 
 		if (logLevel != Logger.Level.NONE) {
@@ -141,6 +143,7 @@ final class SynchronousMethodHandler implements MethodHandler {
 		Response response;
 		long start = System.nanoTime();
 		try {
+			// 2. 执行请求
 			response = client.execute(request, options);
 		} catch (IOException e) {
 			if (logLevel != Logger.Level.NONE) {

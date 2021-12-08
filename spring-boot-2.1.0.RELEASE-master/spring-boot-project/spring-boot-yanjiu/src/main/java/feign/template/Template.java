@@ -60,7 +60,8 @@ public abstract class Template {
     this.parseTemplate();
   }
 
-  /**
+  /**填充参数 表达式可以是个feign.template.Expression对象
+	// 一个{}就是一个Expression对象，根据name（key）进行匹配
    * Expand the template.
    *
    * @param variables containing the values for expansion.

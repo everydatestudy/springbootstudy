@@ -590,7 +590,8 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
                 upServerList = allServerList;
                 // 若Server发生了变化，才需要立马触发ping呗，否则也没有必要
             } else if (listChanged) {
-                forceQuickPing();// 它里面会对upServerList重新赋值（值存储活的）
+
+
             }
         } finally {
             writeLock.unlock();
