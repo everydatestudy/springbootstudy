@@ -131,7 +131,7 @@ public abstract class NamedContextFactory<C extends NamedContextFactory.Specific
 			}
 		}
 		 // 注册默认的配置和环境变量替换器 ， RibbonClientConfiguration 就是在此步骤注册,
-		 //在这里增加RibbonClientConfiguration放到容器里面，通过容器实例化
+		 //在这里增加RibbonClientConfiguration放到容器里面，通过容器实例化,这里nacos是通过ribbonclient的注解
 		context.register(PropertyPlaceholderAutoConfiguration.class,
 				this.defaultConfigType);
 		context.getEnvironment().getPropertySources().addFirst(new MapPropertySource(
