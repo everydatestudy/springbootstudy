@@ -40,7 +40,12 @@ import org.springframework.web.multipart.support.MissingServletRequestPartExcept
 import org.springframework.web.multipart.support.MultipartResolutionDelegate;
 import org.springframework.web.multipart.support.RequestPartServletServerHttpRequest;
 
-/**
+/**它用于解析参数被@RequestPart修饰，或者参数类型是MultipartFile | Servlet 3.0提供的javax.servlet.http.Part类型（并且没有被@RequestParam修饰），数据通过 HttpServletRequest获取
+
+当属性被标注为@RequestPart的话，那就会经过HttpMessageConverter结合Content-Type来解析，这个效果特别像@RequestBody的处理方式~
+————————————————
+版权声明：本文为CSDN博主「方向盘(YourBatman)」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/f641385712/article/details/100016055
  * Resolves the following method arguments:
  * <ul>
  * <li>Annotated with {@code @RequestPart}

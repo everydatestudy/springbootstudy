@@ -26,7 +26,9 @@ import org.springframework.util.Assert;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.context.request.NativeWebRequest;
 
-/**
+/**它用于处理标注有@Value注解的参数。对于这个注解我们太熟悉不过了，没想到在web层依旧能发挥作用。本文就重点来会会它~
+
+通过@Value让我们在配置文件里给参数赋值，在某些特殊场合（比如前端不用传，但你想给个默认值，这个时候用它也是一种方案）
  * Resolves method arguments annotated with {@code @Value}.
  *
  * <p>An {@code @Value} does not have a name but gets resolved from the default
@@ -75,7 +77,9 @@ public class ExpressionValueMethodArgumentResolver extends AbstractNamedValueMet
 		throw new UnsupportedOperationException("@Value is never required: " + parameter.getMethod());
 	}
 
-
+	// 这里name传值为固定值  因为只要你的key不是这个就木有问题
+	// required传固定值false
+	// defaultValue：取值为annotation.value() --> 它天然支持占位符和SpEL嘛
 	private static class ExpressionValueNamedValueInfo extends NamedValueInfo {
 
 		private ExpressionValueNamedValueInfo(Value annotation) {
