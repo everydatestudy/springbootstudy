@@ -63,7 +63,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	 */
 	String SCOPE_PROTOTYPE = ConfigurableBeanFactory.SCOPE_PROTOTYPE;
 
-	/**
+	/** //应用程序重要组成部分
 	 * Role hint indicating that a {@code BeanDefinition} is a major part of the
 	 * application. Typically corresponds to a user-defined bean.
 	 *
@@ -82,7 +82,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	 */
 	int ROLE_SUPPORT = 1;
 
-	/**
+	/**  指内部工作的基础构造  实际上是说我这Bean是Spring自己的，和你用户没有一毛钱关系
 	 * Role hint indicating that a {@code BeanDefinition} is providing an entirely
 	 * background role and has no relevance to the end-user. This hint is used when
 	 * registering beans that are completely part of the internal workings of a
@@ -93,7 +93,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 
 	// Modifiable attributes
 
-	/**
+	/**parent definition（若存在父类的话，就设置进去）
 	 * Set the name of the parent definition of this bean definition, if any.
 	 */
 	void setParentName(@Nullable String parentName);
@@ -104,7 +104,8 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	@Nullable
 	String getParentName();
 
-	/**
+	/** 指定Class类型。需要注意的是该类型还有可能被改变在Bean post-processing阶段
+	// 若是getFactoryBeanName  getFactoryMethodName这种情况下会改变
 	 * Specify the bean class name of this bean definition.
 	 * <p>
 	 * The class name can be modified during bean factory post-processing, typically
@@ -134,7 +135,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	@Nullable
 	String getBeanClassName();
 
-	/**
+	/**SCOPE_SINGLETON或者SCOPE_PROTOTYPE两种
 	 * Override the target scope of this bean, specifying a new scope name.
 	 *  //ROLE_APPLICATION
     //ROLE_SUPPORT
@@ -151,7 +152,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	@Nullable
 	String getScope();
 
-	/**
+	/** @Lazy 是否需要懒加载（默认都是立马加载的）
 	 * Set whether this bean should be lazily initialized.
 	 * <p>
 	 * If {@code false}, the bean will get instantiated on startup by bean factories
@@ -165,7 +166,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	 */
 	boolean isLazyInit();
 
-	/**
+	/** 此Bean定义需要依赖的Bean（显然可以有多个）
 	 * Set the names of the beans that this bean depends on being initialized. The
 	 * bean factory will guarantee that these beans get initialized first.
 	 */
@@ -178,7 +179,8 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	@Nullable
 	String[] getDependsOn();
 
-	/**
+	/**	// 这个Bean是否允许被自动注入到别的地方去（默认都是被允许的）
+	// 注意：此标志只影响按类型装配，不影响byName的注入方式的~~~~
 	 * Set whether this bean is a candidate for getting autowired into some other
 	 * bean.
 	 * <p>
@@ -203,7 +205,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	 */
 	void setPrimary(boolean primary);
 
-	/**
+	/** 是否是首选的  @Primary
 	 * Return whether this bean is a primary autowire candidate.
 	 */
 	boolean isPrimary();
@@ -239,7 +241,13 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	@Nullable
 	String getFactoryMethodName();
 
-	/**
+	/** 
+	 * 获取此Bean的构造函数参数值们  ConstructorArgumentValues：持有构造函数们的 
+	// 绝大多数情况下是空对象 new ConstructorArgumentValues出来的一个对象
+	// 当我们Scan实例化Bean的时候，可能用到它的非空构造，这里就会有对应的值了，然后后面就会再依赖注入了
+		————————————————
+		版权声明：本文为CSDN博主「YourBatman」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+		原文链接：https://blog.csdn.net/f641385712/article/details/88683596
 	 * Return the constructor argument values for this bean.
 	 * <p>
 	 * The returned instance can be modified during bean factory post-processing.

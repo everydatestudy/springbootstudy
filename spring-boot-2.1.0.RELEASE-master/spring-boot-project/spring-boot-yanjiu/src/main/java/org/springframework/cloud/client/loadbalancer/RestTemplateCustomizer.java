@@ -18,7 +18,7 @@ package org.springframework.cloud.client.loadbalancer;
 
 import org.springframework.web.client.RestTemplate;
 
-/**
+/**为 restTemplate 加上一个拦截器(也可以干点别的, 默认就这一个用处)
  * @author Spencer Gibb
  */
 public interface RestTemplateCustomizer {

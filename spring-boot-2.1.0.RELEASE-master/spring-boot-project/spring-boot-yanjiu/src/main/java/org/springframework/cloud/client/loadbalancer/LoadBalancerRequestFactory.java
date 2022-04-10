@@ -22,7 +22,8 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpResponse;
 
-/**
+/**LoadBalancerRequestFactory: 一个工厂, 包装一个为请求对象 HttpRequest 加料的回调 LoadBalancerRequest
+
  * Creates {@link LoadBalancerRequest}s for {@link LoadBalancerInterceptor} and
  * {@link RetryLoadBalancerInterceptor}. Applies {@link LoadBalancerRequestTransformer}s
  * to the intercepted {@link HttpRequest}.

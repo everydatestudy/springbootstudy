@@ -630,6 +630,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			finally {
 				// Reset common introspection caches in Spring's core, since we
 				// might not ever need metadata for singleton beans anymore...
+				// 重置Spring内核中的共用的缓存，因为我们可能再也不需要单例bean的元数据了
 				resetCommonCaches();
 			}
 		}
@@ -1009,13 +1010,14 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		beanFactory.preInstantiateSingletons();
 	}
 
-	/**
-	 * Finish the refresh of this context, invoking the LifecycleProcessor's
-	 * onRefresh() method and publishing the
-	 * {@link org.springframework.context.event.ContextRefreshedEvent}.
-	 */
+
+	 /**
+	  * 完成此上下文的刷新，调用LifecycleProcessor的onRefresh()方法
+	  * 并发布org.springframework.context.event.ContextRefreshedEvent 事件.
+     */
 	protected void finishRefresh() {
 		// Clear context-level resource caches (such as ASM metadata from scanning).
+		 // 清除上下文级别的资源缓存(如扫描的ASM元数据)。
 		clearResourceCaches();
 		// 初始化生命周期处理器
 		// Initialize lifecycle processor for this context.
@@ -1028,6 +1030,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		publishEvent(new ContextRefreshedEvent(this));
 
 		// Participate in LiveBeansView MBean, if active.
+		// 如何处于激活状态，将参与到 LiveBeansView MBean 中
 		LiveBeansView.registerApplicationContext(this);
 	}
 
@@ -1253,6 +1256,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	@Override
 	public <T> T getBean(Class<T> requiredType) throws BeansException {
 		// assertBeanFactoryActive();
+		//ConfigurableListableBeanFactory
 		return getBeanFactory().getBean(requiredType);
 	}
 

@@ -43,7 +43,8 @@ import com.netflix.servo.annotations.Monitor;
 import com.netflix.servo.monitor.Monitors;
 
 /**
-  * 用作操作特性和统计信息的存储库LaodBalancer中的每个节点/服务器，这些信息可以用来观察和理解运行时行为的LoadBalancer，
+  * 用作操作特性和统计信息的存储库LaodBalancer中的每个节点/服务器，
+  * 这些信息可以用来观察和理解运行时行为的LoadBalancer，
   * 用来决定负载平衡策略。简单的说，它就是作为ServerStats实例列表的容器，统一维护（当然还有zone区域的概念）。
   * 内部有三个缓存类型的成员变量，一是upServerListZoneMap，二是serverStatsCache，他俩的关系如下图所示：
  * Class that acts as a repository of operational charateristics and statistics
@@ -133,7 +134,8 @@ public class LoadBalancerStats implements IClientConfigAware {
     public void setName(String name) {
         this.name = name;
     }
-
+ // 这三个属性的赋值可以使用和name关联的个性化赋值方式，而非defualt全局公用
+ 	// 这是和ServerStat默认值不同之处
     CachedDynamicIntProperty getConnectionFailureCountThreshold() {
         if (connectionFailureThreshold == null) {
             connectionFailureThreshold = new CachedDynamicIntProperty(
@@ -249,7 +251,7 @@ public class LoadBalancerStats implements IClientConfigAware {
             getZoneStats(zone).incrementCounter();
         }
     }
-    // 用心的Map代替掉缓存内容。每次都调用一次getZoneStats()是为了确保每个zone都能有一个ZoneStats实例
+    // 用新的Map代替掉缓存内容。每次都调用一次getZoneStats()是为了确保每个zone都能有一个ZoneStats实例
     // updateZoneServerMapping是唯一给upServerListZoneMap赋值的方法哦~~~
     // 改方法会在DynamicServerListLoadBalancer#setServerListForZones调用
     public void updateZoneServerMapping(Map<String, List<Server>> map) {

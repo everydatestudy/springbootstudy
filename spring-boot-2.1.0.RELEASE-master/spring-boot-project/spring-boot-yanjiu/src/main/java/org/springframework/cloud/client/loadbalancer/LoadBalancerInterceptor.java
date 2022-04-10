@@ -25,11 +25,16 @@ import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.util.Assert;
 
-/**该类唯一被使用的地方就是LoadBalancerAutoConfiguration里配置上去~
+/**
+ * 该类唯一被使用的地方就是LoadBalancerAutoConfiguration里配置上去~
+ * 
  * @author Spencer Gibb
  * @author Dave Syer
  * @author Ryan Baxter
- * @author William Tran
+ * @author William Tran LoadBalancerInterceptor: restTemplate 的拦截器, 拦截后调用
+ *         LoadBalancerClient 修改 HttpRequest 对象(主要是 url), 且传入调用
+ *         LoadBalancerRequestFactory 生成的回调给 LoadBalancerClient
+ * 
  */
 //此拦截器拦截请求后把它的serviceName委托给了LoadBalancerClient去执行，
 //根据ServiceName可能对应N多个实际的Server，因此就可以从众多的Server中运用均衡算法，
@@ -41,8 +46,7 @@ public class LoadBalancerInterceptor implements ClientHttpRequestInterceptor {
 
 	private LoadBalancerRequestFactory requestFactory;
 
-	public LoadBalancerInterceptor(LoadBalancerClient loadBalancer,
-			LoadBalancerRequestFactory requestFactory) {
+	public LoadBalancerInterceptor(LoadBalancerClient loadBalancer, LoadBalancerRequestFactory requestFactory) {
 		this.loadBalancer = loadBalancer;
 		this.requestFactory = requestFactory;
 	}
@@ -57,10 +61,8 @@ public class LoadBalancerInterceptor implements ClientHttpRequestInterceptor {
 			final ClientHttpRequestExecution execution) throws IOException {
 		final URI originalUri = request.getURI();
 		String serviceName = originalUri.getHost();
-		Assert.state(serviceName != null,
-				"Request URI does not contain a valid hostname: " + originalUri);
-		return this.loadBalancer.execute(serviceName,
-				this.requestFactory.createRequest(request, body, execution));
+		Assert.state(serviceName != null, "Request URI does not contain a valid hostname: " + originalUri);
+		return this.loadBalancer.execute(serviceName, this.requestFactory.createRequest(request, body, execution));
 	}
 
 }

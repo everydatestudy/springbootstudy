@@ -100,7 +100,7 @@ public class TestPredicate {
         // 从lbs里拿到一些监控数据
         monitor(lbs);
 
-        TimeUnit.SECONDS.sleep(500);
+        TimeUnit.SECONDS.sleep(500000);
     }
 
 
@@ -179,11 +179,17 @@ public class TestPredicate {
                     serverStats.incrementActiveRequestsCount();
                     serverStats.incrementNumRequests();
                     long rt = doSomething();
+                    try {
+						Thread.sleep(10000l);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
                     // 请求结束， 记录响应耗时
                     serverStats.noteResponseTime(rt);
                     serverStats.decrementActiveRequestsCount();
                 }).start();
-            }, 10, 10, TimeUnit.MILLISECONDS);
+            }, 10, 1000000, TimeUnit.MILLISECONDS);
         }).start();
         // for (int i = 0; i < 5; i++) {
         //     new Thread(() -> {

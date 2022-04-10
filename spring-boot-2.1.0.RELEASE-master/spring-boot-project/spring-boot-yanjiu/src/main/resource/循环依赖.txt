@@ -1,0 +1,31 @@
+getBean --doGetBean-- 
+   getSingleton(beanName)--->
+     getSingleton(beanName, true)这里有三层缓存，第一次进入是空，没有实例化
+	    markBeanAsCreated(String beanName) 就是创建的bean都会放在里面alreadyCreated
+		  getSingleton(String beanName, ObjectFactory<?> singletonFactory)这个时候创建对象
+		    beforeSingletonCreation(beanName);这个是判断是否存在循环依赖，这里会增加这个bean到singletonsCurrentlyInCreation这个对象中
+			createBean(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) 处理 lookup-method 和 replace-method 配置，Spring 将这两个配置统称为 override method
+		       doCreateBean(final String beanName, final RootBeanDefinition mbd, final @Nullable Object[] args) 创建对象，会让这个属性暴露earlySingletonExposure成为该对象进行判断是否能够暴露早期对象的条件，这个时候是实例化a对象
+			    然后调用了addSingletonFactory(String beanName, ObjectFactory<?> singletonFactory)这个方法中，
+				 讲解一下这三个循环依赖的情况this.singletonFactories.put(beanName, singletonFactory);此时这个为空，没有数据，增加了aservice的beanname的值和把他的单例工厂放入里面
+				 this.earlySingletonObjects.remove(beanName);此事这个对象也是空，没有判断，直接进行移除了，this.registeredSingletons.add(beanName);这个是把aservice对象放入到容器中，此时不包含他
+				 populateBean(String beanName, RootBeanDefinition mbd, @Nullable BeanWrapper bw)这个是解析属性的依赖关系，循环依赖就是在这里解析出来的，
+				   这里有很多的后置处理器 ，执行了两次的后置处理器。。InstantiationAwareBeanPostProcessor这个的后置处理器 InstantiationAwareBeanPostProcessor（具体情况不清楚）
+				    这里执行到第二个InstantiationAwareBeanPostProcessor的时候进入了CommonAnnotationBeanPostProcessor对象的postProcessPropertyValues属性填充处理中，进入了metadata.inject(bean, beanName, pvs);的对象进行了属性注入
+					但是没有注入成功，因为他的是resource这个注解，我们写的是@autowire的注解，现在进入了AutowiredAnnotationBeanPostProcessor对象的，postProcessPropertyValues的这个方法
+					  又调用了AutowiredAnnotationBeanPostProcessor.postProcessPropertyValues这个方法来解析属性之中的依赖关系
+					    InjectionMetadata的对象inject这个方法来通过熟悉注入，发现依赖了B，然后调用了
+							doResolveDependency的方法来解析依赖,然后调用
+							  doGetBean(final String name, @Nullable final Class<T> requiredType, @Nullable final Object[] args,boolean typeCheckOnly)对象
+							    getSingleton(beanName)--->
+								  getSingleton(String beanName, ObjectFactory<?> singletonFactory)这时候是实例化b对象
+							       addSingletonFactory这是第二次调用singletonFactories这个已经包含了beanname的aservice对象，和aservice工厂，现在把b对象再放入进去，
+								     earlySingletonObjects 此时依然是空的对象，registeredSingletons把bservice放入进去
+									  此时对b进行实例化，然后属性填充，填充属性
+									   然后再次调用 getSingleton(beanName)，调用了getSingleton(beanName,true)这里设计到三级缓存，
+									   singletonObject = this.earlySingletonObjects.get(beanName);这个调用是空的值，从上面看，两次都没有加入进去，
+									    此时从singletonFactories中拿出aservice对象的工厂也就是singletonFactory然后做如下操作，aservice的工厂方法调用singletonFactory.getObject()，
+										此时singletonFactory.getObject()对象是addSingletonFactory这个对象加入进去的工厂方法， 这个工厂对象是() -> getEarlyBeanReference(beanName, mbd, bean)，调用
+										getEarlyBeanReference调用了这个方法，这个时候得到了Aservice这个的对象，然后放入到this.earlySingletonObjects.put(beanName, singletonObject)这个之中，此时有个一个对象
+										就是aservice和com.hmy.circular.dependency.Aservice@6337c201这个键值对，然后this.singletonFactories.remove(beanName)移除aservice的对象，
+										此时getSingleton这个返回因为已经得到了aservice的对象了此时注入属性值

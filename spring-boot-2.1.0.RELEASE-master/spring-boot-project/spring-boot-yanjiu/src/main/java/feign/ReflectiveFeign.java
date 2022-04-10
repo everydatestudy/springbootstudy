@@ -50,7 +50,8 @@ public class ReflectiveFeign extends Feign {
   @SuppressWarnings("unchecked")
   @Override
   public <T> T newInstance(Target<T> target) {
-	// 拿到该接口所有方法对应的处理器的Map
+	// 1 调用ParseHandlersByName的apply方法，创建方法名和对应的处理Handler的映射关系
+		// 方法名：SpecificationStockClient2#getStock2(Long,StockQueryParam) 
     Map<String, MethodHandler> nameToHandler = targetToHandlersByName.apply(target);
     // 真要处理调用的Method对应的处理器Map
     Map<Method, MethodHandler> methodToHandler = new LinkedHashMap<Method, MethodHandler>();
@@ -167,6 +168,7 @@ public class ReflectiveFeign extends Feign {
     //步骤、过程介绍都标注在源码处了，一句话总结ParseHandlersByName的作用：为指定接口类型的每个方法生成其对应的MethodHandler处理器（可能是默认方法直接执行处理、也可能是发送http请求去处理）。
     //该步骤中，涉及到元数据提取、编码、模版数据填充等动作，均交给不同的组件去完成，组件化的设计有助于模块化、可插拔等特性。
     public Map<String, MethodHandler> apply(Target key) {
+    	 // 用SpringMvcContract解析目标类的所有方法，并抽象为MethodMetadata列表返回
       List<MethodMetadata> metadata = contract.parseAndValidatateMetadata(key.type());
       // 一个方法一个方法的处理，生成器对应的MethodHandler处理器
 	  // 上篇文章有讲过，元数据都是交给RequestTemplate.Factory去构建成为一个请求模版的
@@ -184,6 +186,7 @@ public class ReflectiveFeign extends Feign {
         	// 否则就是普通形式：查询参数构建方式
           buildTemplate = new BuildTemplateByResolvingArgs(md, queryMapEncoder);
         }
+        // 这里MethodHandler的实现是由SynchronousMethodHandler.Factory#create创建的SynchronousMethodHandler实例，也就是说以后运行起来肯定能走SynchronousMethodHandler#invoke方法
         result.put(md.configKey(),
             factory.create(key, md, buildTemplate, options, decoder, errorDecoder));
       }

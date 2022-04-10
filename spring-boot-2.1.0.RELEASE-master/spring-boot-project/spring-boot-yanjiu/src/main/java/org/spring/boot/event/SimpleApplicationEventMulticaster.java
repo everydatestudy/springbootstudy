@@ -33,7 +33,7 @@ public class SimpleApplicationEventMulticaster implements DemoApplicationEventMu
     }
 
     private void doMulticastEvent(List<ContextListener<?>> contextListeners, AbstractContextEvent event) {
-        for (ContextListener contextListener : contextListeners) {
+        for (ContextListener<?> contextListener : contextListeners) {
             // 异步广播事件
             if (async) {
                 taskExecutor.execute(() -> invokeListener(contextListener, event));

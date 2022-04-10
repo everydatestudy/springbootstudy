@@ -558,9 +558,11 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			 * 增强 bean 实例。关于lookup-method和replace-method后面再说。
 			 */
 		    //使用合适的实例化策略来创建新的实例：工厂方法、构造函数自动注入、简单初始化 比较复杂也很重要
+			// 创建Bean对象，并且将对象包裹在BeanWrapper 中
 			instanceWrapper = createBeanInstance(beanName, mbd, args);
 		}
-		 // 4.拿到创建好的Bean实例
+		// 再从Wrapper中把Bean原始对象（非代理~~~）  这个时候这个Bean就有地址值了，就能被引用了~~~
+		// 注意：此处是原始对象，这点非常的重要
 		final Object bean = instanceWrapper.getWrappedInstance();
 		 // 5.拿到Bean实例的类型
 		Class<?> beanType = instanceWrapper.getWrappedClass();
@@ -586,16 +588,18 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Eagerly cache singletons to be able to resolve circular references
 		// even when triggered by lifecycle interfaces like BeanFactoryAware.
 	   /**
-	          * 该对象进行判断是否能够暴露早期对象的条件
-                   * 单实例 this.allowCircularReferences 默认为true
+	    * 该对象进行判断是否能够暴露早期对象的条件
+        * 单实例 this.allowCircularReferences 默认为true
         * isSingletonCurrentlyInCreation
         * (表示当前的bean对象正在创建singletonsCurrentlyInCreation包含当前正在创建的bean)
-   
-	          * 该对象进行判断是否能够暴露早期对象的条件
-                   * 单实例 this.allowCircularReferences 默认为true
+	    * 该对象进行判断是否能够暴露早期对象的条件
+        * 单实例 this.allowCircularReferences 默认为true
          * isSingletonCurrentlyInCreation
          * (表示当前的bean对象正在创建singletonsCurrentlyInCreation包含当前正在创建的bean)
          */
+		// earlySingletonExposure 用于表示是否”提前暴露“原始对象的引用，用于解决循环依赖。
+		// 对于单例Bean，该变量一般为 true   但你也可以通过属性allowCircularReferences = false来关闭循环引用
+		// isSingletonCurrentlyInCreation(beanName) 表示当前bean必须在创建中才行
 		boolean earlySingletonExposure = (mbd.isSingleton() && this.allowCircularReferences &&
 				isSingletonCurrentlyInCreation(beanName));
 		if (earlySingletonExposure) {
@@ -603,11 +607,13 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				logger.debug("Eagerly caching bean '" + beanName +
 						"' to allow for resolving potential circular references");
 			}
-		     //把我们的早期对象包装成一个singletonFactory对象 该对象提供了一个getObject方法,该方法内部调用getEarlyBeanReference方法	
-			// // 8.提前曝光beanName的ObjectFactory，用于解决循环引用
+			// 上面讲过调用此方法放进一个ObjectFactory，二级缓存会对应删除的
+			 // getEarlyBeanReference的作用：调用SmartInstantiationAwareBeanPostProcessor.getEarlyBeanReference()这个方法  否则啥都不做
+			 // 也就是给调用者个机会，自己去实现暴露这个bean的应用的逻辑~~~
+			// 比如在getEarlyBeanReference()里可以实现AOP的逻辑~~~  参考自动代理创建器AbstractAutoProxyCreator  实现了这个方法来创建代理对象
+			// 若不需要执行AOP的逻辑，直接返回Bean
 			addSingletonFactory(beanName, 
 					() -> 
-			   // 8.1 应用后置处理器SmartInstantiationAwareBeanPostProcessor，允许返回指定bean的早期引用，若没有则直接返回bean
 			getEarlyBeanReference(beanName, mbd, bean));
 		}
 
@@ -615,6 +621,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		Object exposedObject = bean;
 		try {
 		   // 9.对bean进行属性填充；其中，可能存在依赖于其他bean的属性，则会递归初始化依赖的bean实例
+			// 填充属于，解决@Autowired依赖~
 			populateBean(beanName, mbd, instanceWrapper);
 			//执行后置处理器，aop就是在这里完成的处理
 			//10.对bean进行初始

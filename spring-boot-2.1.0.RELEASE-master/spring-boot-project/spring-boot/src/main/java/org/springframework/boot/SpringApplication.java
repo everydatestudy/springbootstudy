@@ -193,7 +193,8 @@ public class SpringApplication {
 
 	private static final Log logger = LogFactory.getLog(SpringApplication.class);
 	/**
-	 * SpringBoot的启动类即包含main函数的主类
+	 * SpringBoot的启动类即包含main函数的主类,还有可能是springcould的启动类：
+	 * BootstrapImportSelectorConfiguration
 	 */
 	private Set<Class<?>> primarySources;
 
@@ -353,7 +354,8 @@ public class SpringApplication {
 		// exceptionReporters集合用来存储异常报告器，用来报告SpringBoot启动过程的异常
 		Collection<SpringBootExceptionReporter> exceptionReporters = new ArrayList<>();
 		// 配置headless属性，即“java.awt.headless”属性，默认为ture
-		// 其实是想设置该应用程序,即使没有检测到显示器,也允许其启动.对于服务器来说,是不需要显示器的,所以要这样设置.
+		// 其实是想设置该应用程序,即使没有检测到显示器,
+		//也允许其启动.对于服务器来说,是不需要显示器的,所以要这样设置.
 		configureHeadlessProperty();
 		// 【1】从spring.factories配置文件中加载到EventPublishingRunListener对象并赋值给SpringApplicationRunListeners
 		// EventPublishingRunListener对象主要用来发射SpringBoot启动过程中内置的一些生命周期事件，标志每个不同启动阶段
@@ -380,7 +382,8 @@ public class SpringApplication {
 			//代码做了3件事:
 			//获取或者创建ConfigurableEnvironment
 			//配置ConfigurableEnvironment
-			//通知所有的观察者,发送ApplicationEnvironmentPreparedEvent事件.			
+			//通知所有的观察者,发送ApplicationEnvironmentPreparedEvent事件.
+			//TODO这里会调用springcloud的实例化过程
 			ConfigurableEnvironment environment = prepareEnvironment(listeners,
 					applicationArguments);
 			// 配置spring.beaninfo.ignore属性，默认为true，即跳过搜索BeanInfo classes.

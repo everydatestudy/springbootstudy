@@ -50,13 +50,17 @@ public abstract class ScopedProxyUtils {
 			BeanDefinitionRegistry registry, boolean proxyTargetClass) {
 		//原始的beanName: myMath
 		String originalBeanName = definition.getBeanName();
-		BeanDefinition targetDefinition = definition.getBeanDefinition();//原始的bean定义信息
+		//原始的bean定义信息
+		BeanDefinition targetDefinition = definition.getBeanDefinition();
+		//代理bean名字，加了scopedTarget.前缀
 		String targetBeanName = getTargetBeanName(originalBeanName);
 
 		// Create a scoped proxy definition for the original bean name,
 		// "hiding" the target bean in an internal target definition.
-		RootBeanDefinition proxyDefinition = new RootBeanDefinition(ScopedProxyFactoryBean.class); //创建一个代理对象
-		proxyDefinition.setDecoratedDefinition(new BeanDefinitionHolder(targetDefinition, targetBeanName));//将原始的bean定义信息作为被装饰的bean定义信息
+		//创建一个代理对象
+		RootBeanDefinition proxyDefinition = new RootBeanDefinition(ScopedProxyFactoryBean.class); 
+		//将原始的bean定义信息作为被装饰的bean定义信息
+		proxyDefinition.setDecoratedDefinition(new BeanDefinitionHolder(targetDefinition, targetBeanName));
 		proxyDefinition.setOriginatingBeanDefinition(targetDefinition);//设置原始的bean定义信息
 		proxyDefinition.setSource(definition.getSource());
 		proxyDefinition.setRole(targetDefinition.getRole());
@@ -82,11 +86,13 @@ public abstract class ScopedProxyUtils {
 		targetDefinition.setPrimary(false);
 
 		// Register the target bean as separate bean in the factory.
-		registry.registerBeanDefinition(targetBeanName, targetDefinition);//这里将原始的bean定义信息注册到了spring容器，而bean的名称是scopedTarget.myMath
+		//这里将原始的bean定义信息注册到了spring容器，而bean的名称是scopedTarget.myMath
+		registry.registerBeanDefinition(targetBeanName, targetDefinition);
 
 		// Return the scoped proxy definition as primary bean definition
 		// (potentially an inner bean).
-		return new BeanDefinitionHolder(proxyDefinition, originalBeanName, definition.getAliases());//这里将代理bean定义信息返回，bean的名称是原始的beanName,myMath,该beanHodler返回去后，会被注册到spring
+		//这里将代理bean定义信息返回，bean的名称是原始的beanName,myMath,该beanHodler返回去后，会被注册到spring
+		return new BeanDefinitionHolder(proxyDefinition, originalBeanName, definition.getAliases());
 	}
 
 	/**

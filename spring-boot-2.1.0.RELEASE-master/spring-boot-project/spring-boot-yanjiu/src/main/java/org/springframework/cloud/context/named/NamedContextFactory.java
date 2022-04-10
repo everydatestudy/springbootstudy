@@ -29,6 +29,7 @@ import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
+import org.springframework.cloud.netflix.ribbon.RibbonClients;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -95,6 +96,7 @@ public abstract class NamedContextFactory<C extends NamedContextFactory.Specific
 	}
 
 	protected AnnotationConfigApplicationContext getContext(String name) {
+		//如果 map 中不存在，则创建
 		if (!this.contexts.containsKey(name)) {
 			synchronized (this.contexts) {
 				if (!this.contexts.containsKey(name)) {
@@ -119,6 +121,8 @@ public abstract class NamedContextFactory<C extends NamedContextFactory.Specific
 		}
 		// 配置类的key 是否是 "default." 开头的，如果是，那么也注册到服务对应的内置容器中
         // EurekaRibbonClientConfiguration 就是默认的配置，在此步骤注册
+		//这里是解析了@RibbonClients的注解,加入配置中，随后解析，实例化注解的类加入到容器中
+		//这里之后增加带RibbonClients的注解信息
 		for (Map.Entry<String, C> entry : this.configurations.entrySet()) {
 			if (entry.getKey().startsWith("default.")) {
 				for (Class<?> configuration : entry.getValue().getConfiguration()) {
@@ -126,7 +130,8 @@ public abstract class NamedContextFactory<C extends NamedContextFactory.Specific
 				}
 			}
 		}
-		 // 注册默认的配置和环境变量替换器 ， RibbonClientConfiguration 就是在此步骤注册
+		 // 注册默认的配置和环境变量替换器 ， RibbonClientConfiguration 就是在此步骤注册,
+		 //在这里增加RibbonClientConfiguration放到容器里面，通过容器实例化,这里nacos是通过ribbonclient的注解
 		context.register(PropertyPlaceholderAutoConfiguration.class,
 				this.defaultConfigType);
 		context.getEnvironment().getPropertySources().addFirst(new MapPropertySource(
@@ -137,6 +142,9 @@ public abstract class NamedContextFactory<C extends NamedContextFactory.Specific
 			context.setParent(this.parent);
 			// jdk11 issue
 			// https://github.com/spring-cloud/spring-cloud-netflix/issues/3101
+			//由于 JDK 11 LTS 相对于 JDK 8 LTS 多了模块化，通过 ClassUtils.getDefaultClassLoader() 有所不同
+			//在 JDK 8 中获取的就是定制的类加载器，JDK 11 中获取的是默认的类加载器，这样会有问题
+			//所以，这里需要手动设置当前 context 的类加载器为父 context 的类加载器
 			context.setClassLoader(this.parent.getClassLoader());
 		}
 		context.setDisplayName(generateDisplayName(name));
@@ -171,7 +179,13 @@ public abstract class NamedContextFactory<C extends NamedContextFactory.Specific
 		ResolvableType type = ResolvableType.forClassWithGenerics(clazz, generics);
 		return getInstance(name, type);
 	}
-
+	/**
+	 * 获取某个 name 的 ApplicationContext 里面的某个类型的 Bean
+	 * @param name 子 ApplicationContext 名称
+	 * @param type 类型
+	 * @param <T> Bean 类型
+	 * @return Bean
+	 */
 	@SuppressWarnings("unchecked")
 	public <T> T getInstance(String name, ResolvableType type) {
 		AnnotationConfigApplicationContext context = getContext(name);
