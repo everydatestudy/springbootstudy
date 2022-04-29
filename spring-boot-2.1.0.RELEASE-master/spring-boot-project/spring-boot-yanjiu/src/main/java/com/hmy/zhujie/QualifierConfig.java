@@ -1,12 +1,12 @@
 package com.hmy.zhujie;
 
-import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class QualifierConfig {
-	@LoadBalanced
+	
 	@Bean
 	public Friend friend1() {
 		return new Friend("丽丽-女");

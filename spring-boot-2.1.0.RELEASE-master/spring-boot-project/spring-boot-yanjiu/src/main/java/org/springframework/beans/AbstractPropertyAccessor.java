@@ -44,6 +44,7 @@ public abstract class AbstractPropertyAccessor extends TypeConverterSupport impl
 
 	@Override
 	public void setExtractOldValueForEditor(boolean extractOldValueForEditor) {
+		com.netflix.util.Pair dd;
 		this.extractOldValueForEditor = extractOldValueForEditor;
 	}
 

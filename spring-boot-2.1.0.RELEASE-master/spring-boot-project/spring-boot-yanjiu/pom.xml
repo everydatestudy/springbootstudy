@@ -86,6 +86,7 @@
 			<artifactId>javax.ejb-api</artifactId>
 			<version>3.2</version>
 		</dependency>
+
 		<dependency>
 			<groupId>javax.interceptor</groupId>
 			<artifactId>javax.interceptor-api</artifactId>
@@ -226,17 +227,9 @@
 			<version>2.8.5</version>
 			<optional>true</optional>
 		</dependency>
-		<dependency>
-			<groupId>com.alibaba.cloud</groupId>
-			<artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-			<version>2.1.1.RELEASE</version>
-			<exclusions>
-				<exclusion>
-					<groupId>com.netflix.hystrix</groupId>
-					<artifactId>hystrix-core</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
+		<!-- <dependency> <groupId>com.alibaba.cloud</groupId> <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId> 
+			<version>2.1.1.RELEASE</version> <exclusions> <exclusion> <groupId>com.netflix.hystrix</groupId> 
+			<artifactId>hystrix-core</artifactId> </exclusion> </exclusions> </dependency> -->
 		<dependency>
 			<groupId>org.springframework.retry</groupId>
 			<artifactId>spring-retry</artifactId>
@@ -263,36 +256,15 @@
 			<version>20.0</version>
 			<scope>compile</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-openfeign</artifactId>
-			<version>2.2.3.RELEASE</version>
-		</dependency>
-		<dependency>
-			<groupId>com.netflix.servo</groupId>
-			<artifactId>servo-core</artifactId>
-			<version>0.10.1</version>
-		</dependency>
-		<dependency>
-			<groupId>com.netflix.ribbon</groupId>
-			<artifactId>ribbon-httpclient</artifactId>
-			<version>2.3.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.jersey</groupId>
-			<artifactId>jersey-client</artifactId>
-			<version>1.19.4</version>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.jersey.contribs</groupId>
-			<artifactId>jersey-apache-client4</artifactId>
-			<version>1.19.1</version>
-		</dependency>
-		<dependency>
-			<groupId>com.netflix.hystrix</groupId>
-			<artifactId>hystrix-javanica</artifactId>
-			<version>1.5.18</version>
-		</dependency>
+		<!-- <dependency> <groupId>org.springframework.cloud</groupId> <artifactId>spring-cloud-starter-openfeign</artifactId> 
+			<version>2.2.3.RELEASE</version> </dependency> <dependency> <groupId>com.netflix.servo</groupId> 
+			<artifactId>servo-core</artifactId> <version>0.10.1</version> </dependency> 
+			<dependency> <groupId>com.netflix.ribbon</groupId> <artifactId>ribbon-httpclient</artifactId> 
+			<version>2.3.0</version> </dependency> <dependency> <groupId>com.sun.jersey</groupId> 
+			<artifactId>jersey-client</artifactId> <version>1.19.4</version> </dependency> 
+			<dependency> <groupId>com.sun.jersey.contribs</groupId> <artifactId>jersey-apache-client4</artifactId> 
+			<version>1.19.1</version> </dependency> <dependency> <groupId>com.netflix.hystrix</groupId> 
+			<artifactId>hystrix-javanica</artifactId> <version>1.5.18</version> </dependency> -->
 	</dependencies>
 
 	<build>

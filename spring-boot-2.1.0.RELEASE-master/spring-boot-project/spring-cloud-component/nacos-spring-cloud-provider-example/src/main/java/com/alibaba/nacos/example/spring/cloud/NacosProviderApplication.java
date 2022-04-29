@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class NacosProviderApplication {
 
 	public static void main(String[] args) {
+		
 		//NacosServiceRegistryAutoConfiguration ddd;
 		SpringApplication.run(NacosProviderApplication.class, args);
 	}
