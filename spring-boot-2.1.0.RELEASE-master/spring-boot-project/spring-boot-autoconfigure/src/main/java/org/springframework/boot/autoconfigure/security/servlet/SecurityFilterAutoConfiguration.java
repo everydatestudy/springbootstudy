@@ -35,8 +35,15 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.context.AbstractSecurityWebApplicationInitializer;
-
-/**
+//@AutoConfigureBefore({AAAA.class, BBBB.class})
+//public class CCCC {
+//}
+//说明 CCCC 将会在 AAAA 和BBBB之前加载
+//@AutoConfigureAfter(AAAA.class)
+//public class CCCC {
+//}
+//说明 CCCC 将会在 AAAA 之后加载
+/**可以将 1 个 FilterChainProxy 理解为 1 HttpFirewall + n SecurityFilterChain。
  * {@link EnableAutoConfiguration Auto-configuration} for Spring Security's Filter.
  * Configured separately from {@link SpringBootWebSecurityConfiguration} to ensure that
  * the filter's order is still configured when a user-provided
@@ -48,7 +55,9 @@ import org.springframework.security.web.context.AbstractSecurityWebApplicationIn
  * @since 1.3
  */
 @Configuration
+//仅在 Servlet 环境下生效
 @ConditionalOnWebApplication(type = Type.SERVLET)
+//确保安全属性配置信息被加载并以bean形式被注册到容器
 @EnableConfigurationProperties(SecurityProperties.class)
 @ConditionalOnClass({ AbstractSecurityWebApplicationInitializer.class,
 		SessionCreationPolicy.class })
@@ -56,6 +65,15 @@ import org.springframework.security.web.context.AbstractSecurityWebApplicationIn
 public class SecurityFilterAutoConfiguration {
 
 	private static final String DEFAULT_FILTER_NAME = AbstractSecurityWebApplicationInitializer.DEFAULT_FILTER_NAME;
+	
+	//用于向Servlet容器注册一个名称为securityFilterChainRegistration的bean, 
+	//实现类是DelegatingFilterProxyRegistrationBean
+	// 定义一个 bean securityFilterChainRegistration, 
+    // 该 bean 的目的是注册另外一个 bean 到 Servlet 容器 : 实现类为 DelegatingFilterProxy 的一个 Servlet Filter
+    // 该 DelegatingFilterProxy Filter 其实是一个代理过滤器，它被 Servlet 容器用于匹配特定URL模式的请求，
+    // 而它会将任务委托给指定给自己的名字为 springSecurityFilterChain 的 Filter, 也就是 Spring Security Web
+    // 提供的用于请求安全处理的一个 Filter bean，其实现类是 FilterChainProxy
+    // (可以将 1 个 FilterChainProxy 理解为 1 HttpFirewall + n SecurityFilterChain)
 
 	@Bean
 	@ConditionalOnBean(name = DEFAULT_FILTER_NAME)

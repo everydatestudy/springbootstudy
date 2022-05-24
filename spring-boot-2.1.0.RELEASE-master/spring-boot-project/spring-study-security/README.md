@@ -1,6 +1,12 @@
 HttpSecurityConfiguration的类有@EnableWebSecurity这个注解实例化，WebMvcSecurityConfiguration它加上了这个注解，
-SpringBootWebSecurityConfiguration这个是默认的不做任何配置，才会实例化这个对象，
-
+SpringBootWebSecurityConfiguration这个是默认的不做任何配置，才会实例化这个对象，他的代码如下
+@Configuration
+@ConditionalOnClass(WebSecurityConfigurerAdapter.class)
+@ConditionalOnMissingBean(WebSecurityConfigurerAdapter.class)
+@ConditionalOnWebApplication(type = Type.SERVLET)
+public class SpringBootWebSecurityConfiguration{
+}
+SecurityAutoConfiguration这个是自动装配的类，通过SecurityAutoConfiguration这个来实例化SecurityAutoConfiguration这个
 FormLoginConfigurer这个是spring security默认的实现,EnableGlobalAuthentication这个注解是在@EnableWebSecurity这个注解上面的
 
 这个是父子的关系

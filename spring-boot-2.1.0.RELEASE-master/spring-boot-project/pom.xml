@@ -31,5 +31,6 @@
         <module>spring-boot-yanjiu</module>
         <module>spring-cloud-component</module>
         <module>spring-study-project</module>
+    <module>spring-study-security</module>
   </modules>
 </project>

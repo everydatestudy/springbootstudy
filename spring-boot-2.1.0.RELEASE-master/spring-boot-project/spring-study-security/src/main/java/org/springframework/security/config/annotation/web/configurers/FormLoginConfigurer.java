@@ -111,7 +111,9 @@ public final class FormLoginConfigurer<H extends HttpSecurityBuilder<H>> extends
 	 * @see HttpSecurity#formLogin()
 	 */
 	public FormLoginConfigurer() {
+		  //<1>调用父类的 详情看里面
 		super(new UsernamePasswordAuthenticationFilter(), null);
+		 //用户名密码默认参数名
 		usernameParameter("username");
 		passwordParameter("password");
 	}
@@ -275,6 +277,7 @@ public final class FormLoginConfigurer<H extends HttpSecurityBuilder<H>> extends
 
 	@Override
 	public void init(H http) throws Exception {
+		 //<1>调用了父类的init
 		super.init(http);
 		initDefaultLoginFilter(http);
 	}

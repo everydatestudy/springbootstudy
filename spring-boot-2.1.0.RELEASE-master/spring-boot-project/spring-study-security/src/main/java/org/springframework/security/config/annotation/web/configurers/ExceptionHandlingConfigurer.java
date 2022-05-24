@@ -204,7 +204,6 @@ public final class ExceptionHandlingConfigurer<H extends HttpSecurityBuilder<H>>
 	@Override
 	public void configure(H http) throws Exception {
 		// 身份验证入口点（驱动应用开始进行身份验证），用于启动身份验证方案（默认：Http403ForbiddenEntryPoint）
-
 		AuthenticationEntryPoint entryPoint = getAuthenticationEntryPoint(http);
 		// 处理Filter链中抛出的AccessDeniedException与AuthenticationException类型的异常;
 		// 它提供了Java异常和HTTP响应之间的桥梁
