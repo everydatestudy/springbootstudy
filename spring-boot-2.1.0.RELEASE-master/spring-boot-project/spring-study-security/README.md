@@ -9,7 +9,14 @@ public class SpringBootWebSecurityConfiguration{
 SecurityAutoConfiguration这个是自动装配的类，通过SecurityAutoConfiguration这个来实例化SecurityAutoConfiguration这个
 FormLoginConfigurer这个是spring security默认的实现,EnableGlobalAuthentication这个注解是在@EnableWebSecurity这个注解上面的
 
-这个是父子的关系
+@EnableWebSecurity这个注解导入了三个类，他说最核心的注解
+@Import({ WebSecurityConfiguration.class,
+		SpringWebMvcImportSelector.class,
+		OAuth2ImportSelector.class })
+第一次：
+第一次是在WebSecurityConfiguration的setFilterChainProxySecurityConfigurer方法的webSecurity.apply方法
+然后调用AbstractConfiguredSecurityBuilder这个方法的doBuild
+第二次：这个是父子的关系
 AuthenticationConfiguration$EnableGlobalAuthenticationAutowiredConfigurer@75156240 这个只是打印了@EnableGlobalAuthentication这个注解的日志
 InitializeAuthenticationProviderBeanManagerConfigurer@6d099323将InitializeAuthenticationProviderBeanManagerConfigurer放入到AuthenticationManagerBuilder的configs属性里面，
 InitializeUserDetailsBeanManagerConfigurer@6198e9b5这个是将InitializeUserDetailsManagerConfigurer这个放入到AuthenticationManagerBuilder的configs属性
@@ -19,7 +26,8 @@ inMemoryUserDetailsManager这个对象，这个对象还是非常重要的
 
 UserDetailsServiceAutoConfiguration自动加载的类
 HttpSecurityConfiguration 这个是自动配置HttpSecurity的对象的
-这个子关系
+第三次
+这个子关系,每个Configurer对应一个filter
 CsrfConfigurer@2404b5a
 ExceptionHandlingConfigurer@5ec1963c
 HeadersConfigurer@3e8799f
@@ -33,3 +41,16 @@ LogoutConfigurer@daf22f0
 ExpressionUrlAuthorizationConfigurer@ef718de
 FormLoginConfigurer@11b32a14
 HttpBasicConfigurer@41ef1ea2
+这个是全局GlobalMethodSecurityConfiguration的配置，他配置了AuthenticationManagerBuilder这个类，
+权限管理AuthenticationManagerBuilder和权限AuthenticationProvider有什么关系呢
+WebSecurity ex AbstractSecurityBuilder ex SecurityBuilder 这里总共有三个地方调用，
+
+ 
+
+
+
+
+
+需要再看一下，先放在这里
+@EnableGlobalMethodSecurity 这个是全局的方法匹配
+

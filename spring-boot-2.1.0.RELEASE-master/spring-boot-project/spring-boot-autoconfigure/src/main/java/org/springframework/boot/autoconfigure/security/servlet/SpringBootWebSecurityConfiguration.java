@@ -25,7 +25,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
-/**
+/**这个类是通过springboot的SecurityAutoConfiguration这个import导入进来的
+ * 
  * The default configuration for web security. It relies on Spring Security's
  * content-negotiation strategy to determine what sort of authentication to use. If the
  * user specifies their own {@link WebSecurityConfigurerAdapter}, this will back-off

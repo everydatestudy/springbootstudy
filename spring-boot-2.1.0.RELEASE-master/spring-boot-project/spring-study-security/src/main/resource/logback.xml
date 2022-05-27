@@ -18,8 +18,7 @@
 	<property name="log.pattern"  value="%d{yyyy-MM-dd HH:mm:ss:SSS}[%thread]%-5level%logger{50}-%msg%n" />
 	<property name="log.charset" value="utf-8" />
 	<!-- 控制台设置,控制台输出日志 -->
-	<appender name="console"
-		class="ch.qos.logback.core.ConsoleAppender">
+	<appender name="console" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
 			<pattern>${log.pattern}</pattern>
 			<charset>${log.charset}</charset>
@@ -47,9 +46,9 @@
 			<onMismatch>DENY</onMismatch>
 		</filter>
 	</appender>
-	<root level="TRACE">
+	<root level="debug">
 		<!-- 控制台输出 -->
 		<appender-ref ref="console" />
-		<appender-ref ref="traceAppender" />
+	<!-- 	<appender-ref ref="traceAppender" /> -->
 	</root>
 </configuration>
