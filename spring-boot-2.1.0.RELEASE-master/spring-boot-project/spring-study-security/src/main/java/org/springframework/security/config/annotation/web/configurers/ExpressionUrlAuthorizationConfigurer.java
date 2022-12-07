@@ -73,7 +73,9 @@ import org.springframework.util.StringUtils;
  * 配置如下安全过滤器Filter FilterSecurityInterceptor
  * ExpressionUrlAuthorizationConfigurer可以为多组 RequestMatcher
  * 分别配置不同的权限属性。这里每组RequestMatcher表示一组调用者想设定成相同权限控制的Http method/URL
- * pattern,这里所设置的权限属性其实是基于SpEL的权限表达式。ExpressionUrlAuthorizationConfigurer可以接收一个调用者指定的安全表达式处理器来理解这些权限表达式。如果调用者不指定，则使用缺省的安全表达式处理器DefaultWebSecurityExpressionHandler来理解这些权限表达式。
+ * pattern,这里所设置的权限属性其实是基于SpEL的权限表达式。
+ * ExpressionUrlAuthorizationConfigurer可以接收一个调用者指定的安全表达式处理器来理解这些权限表达式。
+ * 如果调用者不指定，则使用缺省的安全表达式处理器DefaultWebSecurityExpressionHandler来理解这些权限表达式。
  * 
  * ExpressionUrlAuthorizationConfigurer继承自AbstractInterceptUrlConfigurer。
  * 作为一个安全配置器，它们对目标安全构建器HttpSecurity的主要配置逻辑实现在AbstractInterceptUrlConfigurer#configure。
@@ -105,7 +107,6 @@ public final class ExpressionUrlAuthorizationConfigurer<H extends HttpSecurityBu
 	// 继承自基类的 AbstractInterceptUrlRegistry ，通过该注册表类可以为当前
 	// 安全配置器指定一个安全表达式处理器 SecurityExpressionHandler<FilterInvocation>，
 	// 也就是指定下面的属性变量 expressionHandler
-
 	private final ExpressionInterceptUrlRegistry REGISTRY;
 
 	private SecurityExpressionHandler<FilterInvocation> expressionHandler;
@@ -141,9 +142,9 @@ public final class ExpressionUrlAuthorizationConfigurer<H extends HttpSecurityBu
 		// 针对指定的 HTTP method, 和 mvcPatterns 构造一组 RequestMatcher, 包装在一个
 		// MvcMatchersAuthorizedUrl 对象中，最终这组 RequestMatcher 上会应用相同的
 		// 权限设置
-//	————————————————
-//	版权声明：本文为CSDN博主「安迪源文」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
-//	原文链接：https://blog.csdn.net/andy_zhang2007/article/details/93376098
+		//	————————————————
+		//	版权声明：本文为CSDN博主「安迪源文」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+		//	原文链接：https://blog.csdn.net/andy_zhang2007/article/details/93376098
 		@Override
 		public MvcMatchersAuthorizedUrl mvcMatchers(HttpMethod method, String... mvcPatterns) {
 			return new MvcMatchersAuthorizedUrl(createMvcMatchers(method, mvcPatterns));
@@ -219,13 +220,12 @@ public final class ExpressionUrlAuthorizationConfigurer<H extends HttpSecurityBu
 					new AbstractConfigAttributeRequestMatcherRegistry.UrlMapping(requestMatcher, configAttributes));
 		}
 	}
-	 // 基类定义的抽象方法，要求实现类必须提供实现。
-    // 这里提供实现，创建缺省 AccessDecisionManager 时要用。
-    // 这里的实现其实提供了一个 WebExpressionVoter， 使用设置给本类的安全表达式处理器
-    // 或者缺省的安全表达式处理器，具体由方法 getExpressionHandler 决定
-//————————————————
-//版权声明：本文为CSDN博主「安迪源文」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
-//原文链接：https://blog.csdn.net/andy_zhang2007/article/details/93376098
+
+	// 基类定义的抽象方法，要求实现类必须提供实现。
+	// 这里提供实现，创建缺省 AccessDecisionManager 时要用。
+	// 这里的实现其实提供了一个 WebExpressionVoter， 使用设置给本类的安全表达式处理器
+	// 或者缺省的安全表达式处理器，具体由方法 getExpressionHandler 决定
+ 
 	@Override
 	@SuppressWarnings("rawtypes")
 	final List<AccessDecisionVoter<? extends Object>> getDecisionVoters(H http) {
@@ -235,15 +235,14 @@ public final class ExpressionUrlAuthorizationConfigurer<H extends HttpSecurityBu
 		decisionVoters.add(expressionVoter);
 		return decisionVoters;
 	}
-	 // 基类定义的抽象方法，要求实现类必须提供实现。
-    // 这里提供实现，创建目标安全拦截过滤器 FilterSecurityInterceptor 时要用。
-    // 这里的实现基于调用者提供的配置所形成的 <URL pattern,所需权限>映射信息，也就是 
-    // REGISTRY 生成一个 ExpressionBasedFilterInvocationSecurityMetadataSource 对象，
-    // 该对象会最终被设置到目标安全拦截过滤器 FilterSecurityInterceptor 上。
-    // FilterSecurityInterceptor 会在处理一个请求时，通过该 
-    // ExpressionBasedFilterInvocationSecurityMetadataSource 对象获取被请求URL所需的权限，
-    // 另外获取请求者所拥有的的权限，从而判断请求这是否可以访问相应资源。
-
+	// 基类定义的抽象方法，要求实现类必须提供实现。
+	// 这里提供实现，创建目标安全拦截过滤器 FilterSecurityInterceptor 时要用。
+	// 这里的实现基于调用者提供的配置所形成的 <URL pattern,所需权限>映射信息，也就是
+	// REGISTRY 生成一个 ExpressionBasedFilterInvocationSecurityMetadataSource 对象，
+	// 该对象会最终被设置到目标安全拦截过滤器 FilterSecurityInterceptor 上。
+	// FilterSecurityInterceptor 会在处理一个请求时，通过该
+	// ExpressionBasedFilterInvocationSecurityMetadataSource 对象获取被请求URL所需的权限，
+	// 另外获取请求者所拥有的的权限，从而判断请求这是否可以访问相应资源。
 
 	@Override
 	final ExpressionBasedFilterInvocationSecurityMetadataSource createMetadataSource(H http) {
@@ -256,6 +255,8 @@ public final class ExpressionUrlAuthorizationConfigurer<H extends HttpSecurityBu
 	}
 
 	private SecurityExpressionHandler<FilterInvocation> getExpressionHandler(H http) {
+		 // 如果调用者设置了属性  expressionHandler 使用之，
+	       // 否则使用缺省值 DefaultWebSecurityExpressionHandler
 		if (expressionHandler == null) {
 			DefaultWebSecurityExpressionHandler defaultHandler = new DefaultWebSecurityExpressionHandler();
 			AuthenticationTrustResolver trustResolver = http.getSharedObject(AuthenticationTrustResolver.class);
@@ -264,11 +265,11 @@ public final class ExpressionUrlAuthorizationConfigurer<H extends HttpSecurityBu
 			}
 			ApplicationContext context = http.getSharedObject(ApplicationContext.class);
 			if (context != null) {
-				   // 检查是否有 RoleHierarchy bean 可以应用，若检测到则应用
+				// 检查是否有 RoleHierarchy bean 可以应用，若检测到则应用
 				String[] roleHiearchyBeanNames = context.getBeanNamesForType(RoleHierarchy.class);
 				if (roleHiearchyBeanNames.length == 1) {
 					defaultHandler.setRoleHierarchy(context.getBean(roleHiearchyBeanNames[0], RoleHierarchy.class));
-				}// 检测是否有 GrantedAuthorityDefaults bean 可以应用，若检测到则应用
+				} // 检测是否有 GrantedAuthorityDefaults bean 可以应用，若检测到则应用
 				String[] grantedAuthorityDefaultsBeanNames = context
 						.getBeanNamesForType(GrantedAuthorityDefaults.class);
 				if (grantedAuthorityDefaultsBeanNames.length == 1) {
@@ -283,7 +284,7 @@ public final class ExpressionUrlAuthorizationConfigurer<H extends HttpSecurityBu
 					defaultHandler.setPermissionEvaluator(permissionEvaluator);
 				}
 			}
-
+			  // 新建对象的后置处理
 			expressionHandler = postProcess(defaultHandler);
 		}
 
@@ -340,8 +341,8 @@ public final class ExpressionUrlAuthorizationConfigurer<H extends HttpSecurityBu
 			return this;
 		}
 	}
-	 // 非静态内部类，主要是提供一组方法，便于往当前 ExpressionUrlAuthorizationConfigurer 中
-    // 添加一组需要共同权限设置的 RequestMatcher,并对这组 RequestMatcher 设置相同的权限控制。
+	// 非静态内部类，主要是提供一组方法，便于往当前 ExpressionUrlAuthorizationConfigurer 中
+	// 添加一组需要共同权限设置的 RequestMatcher,并对这组 RequestMatcher 设置相同的权限控制。
 
 	public class AuthorizedUrl {
 		private List<? extends RequestMatcher> requestMatchers;

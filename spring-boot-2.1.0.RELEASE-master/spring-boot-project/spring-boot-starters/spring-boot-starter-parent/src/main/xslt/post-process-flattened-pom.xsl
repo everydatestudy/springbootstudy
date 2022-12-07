@@ -11,7 +11,7 @@
 		</xsl:copy>
 	</xsl:template>
 	<xsl:template
-		match="/m:project/m:build/m:pluginManagement/m:plugins/m:plugin/m:dependencies/m:dependency/m:version/text()[. = '${revision}']">
+		match="/m:project/m:build/m:pluginManagement/m:plugins/m:plugin/m:dependencies/m:dependency/m:version/text()[. = '2.1.0.RELEASE']">
 		<xsl:value-of select="/m:project/m:version/text()" />
 	</xsl:template>
 	<xsl:template match="/m:project/m:properties/m:main.basedir" />

@@ -120,8 +120,11 @@ public final class HttpSecurity extends
 		AbstractConfiguredSecurityBuilder<DefaultSecurityFilterChain, HttpSecurity>
 		implements SecurityBuilder<DefaultSecurityFilterChain>,
 		HttpSecurityBuilder<HttpSecurity> {
+	//从变量名就可以看到是请求匹配过滤的配置信息    
 	private final RequestMatcherConfigurer requestMatcherConfigurer;
+	 //过滤器列表?
 	private List<Filter> filters = new ArrayList<>();
+	  //匹配任何请求的匹配器
 	private RequestMatcher requestMatcher = AnyRequestMatcher.INSTANCE;
 	private FilterComparator comparator = new FilterComparator();
 
@@ -1102,7 +1105,7 @@ public final class HttpSecurity extends
 	protected void beforeConfigure() throws Exception {
 		setSharedObject(AuthenticationManager.class, getAuthenticationRegistry().build());
 	}
-
+	//主要是为了构建过滤器链
 	@Override
 	protected DefaultSecurityFilterChain performBuild() throws Exception {
 		Collections.sort(filters, comparator);

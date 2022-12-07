@@ -220,23 +220,19 @@ public class FilterChainProxy extends GenericFilterBean {
 	// 应用当前过滤器到请求的具体逻辑实现
 	private void doFilterInternal(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
-
 		FirewalledRequest fwRequest = firewall.getFirewalledRequest((HttpServletRequest) request);
 		HttpServletResponse fwResponse = firewall.getFirewalledResponse((HttpServletResponse) response);
 		// 当前过滤器其实一个组合了多个过滤器链 SecurityFilterChain 的代理对象,
 		// 现在找到匹配当前请求的那个 SecurityFilterChain 中的所有安全过滤器
 		List<Filter> filters = getFilters(fwRequest);
-
 		if (filters == null || filters.size() == 0) {
 			if (logger.isDebugEnabled()) {
 				logger.debug(UrlUtils.buildRequestUrl(fwRequest)
 						+ (filters == null ? " has no matching filters" : " has an empty filter list"));
 			}
-
 			fwRequest.reset();
 			// 如果针对当前请求没有匹配的安全过滤器，则继续执行过滤器链 chain
 			chain.doFilter(fwRequest, fwResponse);
-
 			return;
 		}
 		// 如果针对当前请求有相应的安全过滤器，则将这些安全过滤器组成一个 VirtualFilterChain,
@@ -322,10 +318,16 @@ public class FilterChainProxy extends GenericFilterBean {
 	 * through the additional internal list of filters which match the request.
 	 */
 	private static class VirtualFilterChain implements FilterChain {
+		// 原始过滤器链，代表了spring 的application context中所有的过滤器连
+		// 其实可以参考DelegatingFilterProxy
 		private final FilterChain originalChain;
+		// spring security的过滤器链
 		private final List<Filter> additionalFilters;
+		// 因为在FilterChainProxy中request和response被封装到HttpFirewall中，所以我们从这里获取请求信息
 		private final FirewalledRequest firewalledRequest;
+		// spring security的过滤器的长度
 		private final int size;
+		// 当前执行到的位置
 		private int currentPosition = 0;
 
 		private VirtualFilterChain(FirewalledRequest firewalledRequest, FilterChain chain,
@@ -338,6 +340,7 @@ public class FilterChainProxy extends GenericFilterBean {
 
 		@Override
 		public void doFilter(ServletRequest request, ServletResponse response) throws IOException, ServletException {
+			//表示spring security的过滤器全部执行完成，那么可以执行spring的application context 中的其他的过滤器链了
 			if (currentPosition == size) {
 				if (logger.isDebugEnabled()) {
 					logger.debug(UrlUtils.buildRequestUrl(firewalledRequest)
@@ -349,6 +352,7 @@ public class FilterChainProxy extends GenericFilterBean {
 
 				originalChain.doFilter(request, response);
 			} else {
+				//获取当前过滤器执行到的为止
 				currentPosition++;
 
 				Filter nextFilter = additionalFilters.get(currentPosition - 1);

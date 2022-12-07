@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-tools</artifactId>
-		<version>${revision}</version>
+		<version>2.1.0.RELEASE</version>
 	</parent>
 	<artifactId>spring-boot-test-support</artifactId>
 	<name>Spring Boot Testing Support</name>

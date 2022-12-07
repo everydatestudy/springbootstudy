@@ -45,11 +45,12 @@ HttpBasicConfigurer@41ef1ea2
 权限管理AuthenticationManagerBuilder和权限AuthenticationProvider有什么关系呢
 WebSecurity ex AbstractSecurityBuilder ex SecurityBuilder 这里总共有三个地方调用，
 
- 
 
 
-
-
+AuthenticationManager
+ProviderManager 这个类的作用
+AuthenticationProvider  权限认证
+DaoAuthenticationProvider 这个类
 
 需要再看一下，先放在这里
 @EnableGlobalMethodSecurity 这个是全局的方法匹配

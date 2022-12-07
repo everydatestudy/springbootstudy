@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-parent</artifactId>
-		<version>${revision}</version>
+		<version>2.1.0.RELEASE</version>
 		<relativePath>../spring-boot-parent</relativePath>
 	</parent>
 	<artifactId>spring-boot-docs</artifactId>
@@ -34,12 +34,12 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-cli</artifactId>
-			<version>${revision}</version>
+			<version>2.1.0.RELEASE</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starters</artifactId>
-			<version>${revision}</version>
+			<version>2.1.0.RELEASE</version>
 			<type>pom</type>
 		</dependency>
 		<dependency>
@@ -1014,7 +1014,7 @@
 										<artifactItem>
 											<groupId>org.springframework.boot</groupId>
 											<artifactId>spring-boot-starters</artifactId>
-											<version>${revision}</version>
+											<version>2.1.0.RELEASE</version>
 											<type>pom</type>
 											<overWrite>true</overWrite>
 											<outputDirectory>${project.build.directory}/external-resources</outputDirectory>
@@ -1034,7 +1034,7 @@
 										<artifactItem>
 											<groupId>org.springframework.boot</groupId>
 											<artifactId>spring-boot-maven-plugin</artifactId>
-											<version>${revision}</version>
+											<version>2.1.0.RELEASE</version>
 											<classifier>site</classifier>
 											<type>jar</type>
 											<outputDirectory>
@@ -1045,7 +1045,7 @@
 										<artifactItem>
 											<groupId>org.springframework.boot</groupId>
 											<artifactId>spring-boot-gradle-plugin</artifactId>
-											<version>${revision}</version>
+											<version>2.1.0.RELEASE</version>
 											<classifier>docs</classifier>
 											<type>zip</type>
 											<outputDirectory>${project.build.directory}/contents/gradle-plugin</outputDirectory>
@@ -1054,7 +1054,7 @@
 										<artifactItem>
 											<groupId>org.springframework.boot</groupId>
 											<artifactId>spring-boot-actuator-autoconfigure</artifactId>
-											<version>${revision}</version>
+											<version>2.1.0.RELEASE</version>
 											<classifier>docs</classifier>
 											<type>zip</type>
 											<outputDirectory>${project.build.directory}/contents/actuator-api</outputDirectory>
@@ -1074,7 +1074,7 @@
 										<artifactItem>
 											<groupId>org.springframework.boot</groupId>
 											<artifactId>spring-boot-dependencies</artifactId>
-											<version>${revision}</version>
+											<version>2.1.0.RELEASE</version>
 											<type>effective-pom</type>
 											<overWrite>true</overWrite>
 											<outputDirectory>${project.build.directory}/external-resources</outputDirectory>
@@ -1094,7 +1094,7 @@
 										<artifactItem>
 											<groupId>org.springframework.boot</groupId>
 											<artifactId>spring-boot-autoconfigure</artifactId>
-											<version>${revision}</version>
+											<version>2.1.0.RELEASE</version>
 											<outputDirectory>
 												${project.build.directory}/auto-config/spring-boot-autoconfigure
 											</outputDirectory>
@@ -1103,7 +1103,7 @@
 										<artifactItem>
 											<groupId>org.springframework.boot</groupId>
 											<artifactId>spring-boot-actuator-autoconfigure</artifactId>
-											<version>${revision}</version>
+											<version>2.1.0.RELEASE</version>
 											<outputDirectory>
 												${project.build.directory}/auto-config/spring-boot-actuator-autoconfigure
 											</outputDirectory>
@@ -1123,7 +1123,7 @@
 										<artifactItem>
 											<groupId>org.springframework.boot</groupId>
 											<artifactId>spring-boot-starters</artifactId>
-											<version>${revision}</version>
+											<version>2.1.0.RELEASE</version>
 											<type>zip</type>
 											<classifier>starter-poms</classifier>
 											<outputDirectory>${project.build.directory}/external-resources/starter-poms</outputDirectory>
@@ -1142,7 +1142,7 @@
 										<artifactItem>
 											<groupId>org.springframework.boot</groupId>
 											<artifactId>spring-boot-test-autoconfigure</artifactId>
-											<version>${revision}</version>
+											<version>2.1.0.RELEASE</version>
 											<outputDirectory>
 												${project.build.directory}/test-auto-config
 											</outputDirectory>
@@ -1236,8 +1236,8 @@
 										<docinfo>true</docinfo>
 										<jooq-version>${jooq.version}</jooq-version>
 										<spring-framework-version>${spring-framework.version}</spring-framework-version>
-										<spring-boot-version>${revision}</spring-boot-version>
-										<spring-boot-docs-version>${revision}</spring-boot-docs-version>
+										<spring-boot-version>2.1.0.RELEASE</spring-boot-version>
+										<spring-boot-docs-version>2.1.0.RELEASE</spring-boot-docs-version>
 										<spring-boot-repo>${spring-boot-repo}</spring-boot-repo>
 										<spring-docs-version>${spring-framework.version}</spring-docs-version>
 										<spring-security-docs-version>${spring-security.version}</spring-security-docs-version>
@@ -1416,9 +1416,9 @@
 								<configuration>
 									<target>
 										<zip
-											destfile="${project.build.directory}/${project.artifactId}-${revision}.zip">
+											destfile="${project.build.directory}/${project.artifactId}-2.1.0.RELEASE.zip">
 											<zipfileset
-												src="${project.build.directory}/${project.artifactId}-${revision}-javadoc.jar"
+												src="${project.build.directory}/${project.artifactId}-2.1.0.RELEASE-javadoc.jar"
 												prefix="api" />
 											<fileset dir="${project.build.directory}/contents" />
 										</zip>
@@ -1436,7 +1436,7 @@
 									<target>
 										<taskdef resource="net/sf/antcontrib/antcontrib.properties" />
 										<taskdef name="stringutil" classname="ise.antelope.tasks.StringUtilTask" />
-										<var name="version-type" value="${revision}" />
+										<var name="version-type" value="2.1.0.RELEASE" />
 										<propertyregex property="version-type" override="true"
 											input="${version-type}" regexp=".*\.(.*)" replace="\1" />
 										<propertyregex property="version-type" override="true"
@@ -1448,7 +1448,7 @@
 										<stringutil string="${version-type}" property="spring-boot-repo">
 											<lowercase />
 										</stringutil>
-										<var name="github-tag" value="v${revision}" />
+										<var name="github-tag" value="v2.1.0.RELEASE" />
 										<propertyregex property="github-tag" override="true"
 											input="${github-tag}" regexp=".*SNAPSHOT" replace="master" />
 									</target>
