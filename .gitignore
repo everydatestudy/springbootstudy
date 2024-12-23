@@ -1,1 +1,35 @@
-/spring-boot-2.1.0.RELEASE-master/spring-boot-project/spring-boot-yanjiu/tomcat.9090
+# Compiled class file
+*.class
+
+.DS_Store
+.idea/
+*.iml
+target/
+ 
+# Log file
+*.log
+
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.settings
+*.project
+.settings/
+*.settings 
+.classpath 
+.project 
+*.idea 
+logs 
+.factorypath 
+*.mvn 
+.mvn 
+*.iml 
+*.factorypath 
+*.node_modules 
+node_modules 
+.sts4-cache

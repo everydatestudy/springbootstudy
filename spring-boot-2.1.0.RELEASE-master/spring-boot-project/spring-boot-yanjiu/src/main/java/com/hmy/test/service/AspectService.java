@@ -2,9 +2,6 @@ package com.hmy.test.service;
 
 import javax.annotation.PostConstruct;
 
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Service;
 
 import com.hmy.aaa.AspectDao;
@@ -17,11 +14,10 @@ public class AspectService {
 	AspectDao aspect;
 
 	@PostConstruct
-	public void init(){
-		
+	public void init() {
+		System.out.println("aaaaaaaa");
 	}
 
-	
 	public String sayHi(String name) {
 		System.out.println("方法：sayHi 执行中 ....");
 		return "Hello, " + name;
